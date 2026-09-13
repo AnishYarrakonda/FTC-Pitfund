@@ -198,7 +198,7 @@ export function SponsorReviewShell({
 
       <div className="grid lg:grid-cols-[1fr,400px] gap-12 lg:gap-8">
         {/* Left Column: Team Portfolio */}
-        <div className="space-y-8">
+        <div className="min-w-0 space-y-8">
           <section className="space-y-4">
             <div className="flex items-center gap-5">
               <div className="h-20 w-20 shrink-0 rounded-2xl bg-primary flex items-center justify-center text-3xl font-medium tracking-tight text-primary-foreground shadow-sm">
@@ -236,13 +236,13 @@ export function SponsorReviewShell({
             <CardContent className="space-y-6">
               <div className="space-y-3">
                 <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-mono">Why us?</Label>
-                <p className="whitespace-pre-wrap text-[15px] text-foreground leading-relaxed italic border-l-2 border-primary/30 pl-4">
+                <p className="whitespace-pre-wrap break-words text-[15px] text-foreground leading-relaxed italic border-l-2 border-primary/30 pl-4">
                   &ldquo;{htmlToPlainText(submissionData.custom_pitch_alignment) || 'No specific alignment provided.'}&rdquo;
                 </p>
               </div>
               <div className="space-y-3">
                 <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-mono">Specific Needs</Label>
-                <p className="whitespace-pre-wrap text-[15px] text-foreground leading-relaxed">
+                <p className="whitespace-pre-wrap break-words text-[15px] text-foreground leading-relaxed">
                   {htmlToPlainText(submissionData.specific_needs_statement) || 'General sponsorship request.'}
                 </p>
               </div>
@@ -250,7 +250,7 @@ export function SponsorReviewShell({
               {htmlToPlainText(submissionData.local_connection_notes) && (
                 <div className="space-y-3">
                   <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-mono">Local Connection</Label>
-                  <p className="whitespace-pre-wrap text-[15px] text-foreground leading-relaxed">
+                  <p className="whitespace-pre-wrap break-words text-[15px] text-foreground leading-relaxed">
                     {htmlToPlainText(submissionData.local_connection_notes)}
                   </p>
                 </div>
@@ -301,7 +301,7 @@ export function SponsorReviewShell({
                 <p className="text-[15px] leading-relaxed text-foreground">No mission statement provided.</p>
               )}
               {teamData?.coach_experience && (
-                <p className="text-[13px] leading-relaxed text-muted-foreground">
+                <p className="break-words text-[13px] leading-relaxed text-muted-foreground">
                   <span className="font-medium text-foreground">Coaching: </span>
                   {teamData.coach_experience}
                 </p>
@@ -333,7 +333,7 @@ export function SponsorReviewShell({
                   </ul>
                 )}
                 {teamData?.community_endorsements && (
-                  <p className="text-[13px] leading-relaxed text-muted-foreground italic border-l-2 border-border pl-3">
+                  <p className="break-words text-[13px] leading-relaxed text-muted-foreground italic border-l-2 border-border pl-3">
                     {htmlToPlainText(teamData.community_endorsements)}
                   </p>
                 )}
@@ -355,7 +355,7 @@ export function SponsorReviewShell({
                   </div>
                 )}
                 {teamData?.outreach_summary && (
-                  <p className="text-[15px] leading-relaxed text-foreground">{htmlToPlainText(teamData.outreach_summary)}</p>
+                  <p className="break-words text-[15px] leading-relaxed text-foreground">{htmlToPlainText(teamData.outreach_summary)}</p>
                 )}
               </div>
             )}
@@ -365,7 +365,7 @@ export function SponsorReviewShell({
               <div className="space-y-2 rounded-xl border border-border/70 bg-card/60 p-4">
                 <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-mono">Robot &amp; Engineering</Label>
                 {teamData?.technical_summary && (
-                  <p className="text-[13px] leading-relaxed text-muted-foreground">{htmlToPlainText(teamData.technical_summary)}</p>
+                  <p className="break-words text-[13px] leading-relaxed text-muted-foreground">{htmlToPlainText(teamData.technical_summary)}</p>
                 )}
                 {githubUrl && (
                   <a href={githubUrl} target="_blank" rel="noreferrer" className="text-[13px] text-primary hover:underline">

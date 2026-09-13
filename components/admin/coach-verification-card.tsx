@@ -298,7 +298,7 @@ export function CoachVerificationCard({ coach }: { coach: CoachData }) {
             <DialogTrigger render={<Button size="sm" className="bg-primary text-primary-foreground" />}>
               Review Application
             </DialogTrigger>
-            <DialogContent className="max-w-6xl w-[90vw] h-[85vh] flex flex-col p-0 overflow-hidden bg-background border-border">
+            <DialogContent className="max-w-6xl sm:max-w-6xl w-[90vw] h-[85vh] flex flex-col p-0 overflow-hidden bg-background border-border">
               <DialogHeader className="p-6 pb-2 border-b bg-muted/50">
                 <DialogTitle className="flex justify-between items-center text-xl">
                   <span>Application Review: {coach.full_name}</span>

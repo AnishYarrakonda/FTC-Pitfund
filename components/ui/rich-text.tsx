@@ -21,7 +21,7 @@ export function RichText({
   return (
     <div
       className={cn(
-        '[&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_p:last-child]:mb-0',
+        'min-w-0 break-words [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 [&_p:last-child]:mb-0',
         className,
       )}
       dangerouslySetInnerHTML={{ __html: clean }}

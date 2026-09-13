@@ -26,7 +26,7 @@ export default function RichTextEditorInner({ value, onChange, placeholder, disa
     editable: !disabled,
     immediatelyRender: false,
     onUpdate: ({ editor }) => { onChange(editor.getHTML()) },
-    editorProps: { attributes: { class: 'outline-none min-h-[80px] p-3' } },
+    editorProps: { attributes: { class: 'outline-none min-h-[80px] p-3 break-words' } },
   })
 
   // Sync external value resets without moving cursor on every keystroke
@@ -45,7 +45,7 @@ export default function RichTextEditorInner({ value, onChange, placeholder, disa
   }
 
   return (
-    <div className={cn('rounded-md border border-input bg-background focus-within:ring-1 focus-within:ring-ring', disabled && 'cursor-not-allowed opacity-50', className)}>
+    <div className={cn('min-w-0 rounded-md border border-input bg-background focus-within:ring-1 focus-within:ring-ring', disabled && 'cursor-not-allowed opacity-50', className)}>
       {!disabled && (
         <div className="flex gap-0.5 rounded-t-md border-b border-input bg-muted/40 p-1">
           <ToolbarButton onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive('bold') ?? false} title="Bold"><Bold className="h-3.5 w-3.5" /></ToolbarButton>
