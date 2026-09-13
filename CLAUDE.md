@@ -1,3 +1,9 @@
+> **REBUILD IN PROGRESS (planned 2026-09-13).** Everything below describes the **v1** app
+> (Clerk, RLS policies, capacity caps, sponsor roles), which is being replaced from scratch.
+> For any rebuild work, the source of truth is **`prompts/rebuild/00-REBUILD-PLAN.md`**, executed via
+> `prompts/rebuild/01-foundation.md` → `02` → `03` → `04`. Where this file disagrees with the plan,
+> the plan wins. Prompt 1 rewrites this file.
+
 # FTC Sponsorship Portal
 
 A platform connecting verified adult FTC robotics coaches with corporate sponsors.

@@ -1,5 +1,11 @@
 # Next session
 
+> **2026-09-13: SUPERSEDED. A full v2 rebuild was planned and approved.** Do not follow the
+> v1 guidance below ("don't change the stack", "don't strip features", "Vercel Pro is required";
+> all reversed). Start with **`prompts/rebuild/01-foundation.md`** in a fresh session; the plan
+> is `prompts/rebuild/00-REBUILD-PLAN.md`. Prompt 1 rewrites this file. Team email is
+> **ftcexodius@gmail.com** (exodiusftc@gmail.com is stale).
+
 **Rewritten 2026-08-26.** This file is the live handoff. Read it before anything else.
 
 ---
