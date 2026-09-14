@@ -1,11 +1,11 @@
 'use client'
 
-import * as Sentry from '@sentry/nextjs'
 import { RotateCcw } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState, useTransition } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { captureClientException } from '@/lib/client/sentry'
 import { SUPPORT_EMAIL } from '@/lib/shared/brand'
 
 /**
@@ -18,10 +18,14 @@ export function ErrorView({ error, retry, homeHref = '/' }: { error: Error & { d
   const offline = typeof navigator !== 'undefined' && navigator.onLine === false
 
   useEffect(() => {
-    const id = Sentry.captureException(error)
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- the reference only exists after reporting
-    if (!error.digest && id) setReference(id.slice(0, 12))
+    let current = true
+    void captureClientException(error).then((id) => {
+      if (current && !error.digest) setReference(id)
+    })
     console.error(error)
+    return () => {
+      current = false
+    }
   }, [error])
 
   return (

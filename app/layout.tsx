@@ -14,7 +14,8 @@ export const metadata: Metadata = {
   title: { default: PRODUCT_NAME, template: `%s · ${PRODUCT_NAME}` },
   description: 'Sponsorship pitches companies actually read. FTC teams pitch companies that already sponsor robotics, and a real person checks every pitch.',
   applicationName: PRODUCT_NAME,
-  robots: { index: true, follow: true },
+  // No default robots tag: pages are indexable unless they opt out, and a not-found page's
+  // injected `noindex` never competes with an inherited `index, follow`.
 }
 
 export const viewport: Viewport = {

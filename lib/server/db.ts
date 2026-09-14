@@ -31,7 +31,16 @@ function createClient() {
     idle_timeout: 20,
     connect_timeout: 10,
     onnotice: () => {},
+    // DEBUG_QUERIES=1 (local only) logs one line per query, to count what a page render costs.
+    ...(process.env.DEBUG_QUERIES === '1' && !process.env.VERCEL ? { debug: logQuery } : {}),
   })
+}
+
+let queryCount = 0
+
+function logQuery(_connection: number, query: string) {
+  queryCount++
+  console.log(`[db] #${queryCount} ${new Date().toISOString()} ${query.replace(/\s+/g, ' ').slice(0, 120)}`)
 }
 
 function rootDb(): Database {

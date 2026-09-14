@@ -35,15 +35,18 @@ type SearchInputProps = Omit<ComponentProps<'input'>, 'onChange' | 'value' | 'de
 /** Search field with an icon, a clear button and a debounced callback. */
 export function SearchInput({ value, defaultValue = '', onSearch, debounceMs = 250, label, className, ...props }: SearchInputProps) {
   const [text, setText] = useState(value ?? defaultValue)
-  const first = useRef(true)
+  // The last query handed to onSearch: re-running effects (StrictMode, a new onSearch after
+  // navigation) must not search again for text that hasn't changed.
+  const searched = useRef((value ?? defaultValue).trim())
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (first.current) {
-      first.current = false
-      return
-    }
-    const timer = setTimeout(() => onSearch(text.trim()), debounceMs)
+    const query = text.trim()
+    if (query === searched.current) return
+    const timer = setTimeout(() => {
+      searched.current = query
+      onSearch(query)
+    }, debounceMs)
     return () => clearTimeout(timer)
   }, [text, debounceMs, onSearch])
 
@@ -65,6 +68,7 @@ export function SearchInput({ value, defaultValue = '', onSearch, debounceMs = 2
           aria-label="Clear search"
           onClick={() => {
             setText('')
+            searched.current = ''
             onSearch('')
             inputRef.current?.focus()
           }}

@@ -44,7 +44,7 @@ export function Field({ label, children, hint, error, required = false, aside, c
     <FieldContext.Provider value={{ id: controlId, describedBy, invalid: Boolean(error), required }}>
       <div className={cn('flex min-w-0 flex-col gap-1.5', className)} data-invalid={error ? '' : undefined}>
         <div className={cn('flex items-baseline justify-between gap-3', hideLabel && 'sr-only')}>
-          <label htmlFor={controlId} className="text-small font-medium text-text">
+          <label htmlFor={controlId} className="min-w-0 text-small font-medium text-text">
             {label}
             {required ? (
               <span className="text-text-tertiary" aria-hidden="true">
@@ -53,7 +53,7 @@ export function Field({ label, children, hint, error, required = false, aside, c
               </span>
             ) : null}
           </label>
-          {aside ? <div className="text-caption text-text-tertiary">{aside}</div> : null}
+          {aside ? <div className="shrink-0 text-caption whitespace-nowrap text-text-tertiary">{aside}</div> : null}
         </div>
         {children}
         {hint && !error ? (
@@ -82,14 +82,17 @@ export function FormSection({
   description,
   children,
   className,
+  id,
 }: {
   title: ReactNode
   description?: ReactNode
   children: ReactNode
   className?: string
+  /** Anchor for deep links like /team#deck. */
+  id?: string
 }) {
   return (
-    <section className={cn('grid gap-5 border-t border-border py-8 first:border-t-0 first:pt-0', className)}>
+    <section id={id} className={cn('grid scroll-mt-24 gap-5 border-t border-border py-8 first:border-t-0 first:pt-0', className)}>
       <div className="grid gap-1">
         <h2 className="text-lead font-semibold tracking-tight text-text">{title}</h2>
         {description ? <p className="text-body text-text-secondary">{description}</p> : null}
