@@ -18,6 +18,12 @@ Anish does not click through the app. Agents verify everything with these comman
 - Tests that change shared state restore it (see the join-request test) or reseed.
 - Assert `problems` (console errors, page errors, failed requests) is empty on journeys.
 - Never gate a test on an unrelated env var; a skip reads as a pass.
+- Seeded rows have deterministic ids: import `SEED`, `seedPitchId(...)` and `SEED_INVITE_TOKENS` from
+  `scripts/seed/ids.ts` instead of querying. Upload fixtures (valid ~2 MB, 8-page, corrupt, not-a-pdf) are
+  written to `tests/.fixtures/` by every seed.
+- Inject failures in dev with the `pitfund-simulate` cookie (`ftc-timeout`, `ftc-not-found`, `save-draft`,
+  `submit-pitch`; see `lib/server/dev.ts`) and storage failures with `page.route(...)`.
+- Wait for hydration (`waitUntil: 'networkidle'`) before `setInputFiles`; an early change event is lost.
 
 ## QA gate — `npm run qa`
 - Sweeps `tests/qa/routes.ts` (add every new route there) × personas × 375/768/1280 on `demo`, then `edge`.
@@ -25,6 +31,8 @@ Anish does not click through the app. Agents verify everything with these comman
   (measured on text runs), axe serious/critical after animations settle, every dialog/sheet/popover
   (width ≥320 px at desktop, fits viewport, sticky close, focus trap, Esc, focus return), TTFB/LCP/CLS
   budgets on the production build, ActionButton pending ≤100 ms on `/dev/ui`.
+- States reachable only by interaction (a lookup result, a tab, an upload stage) go in the route's
+  `interactions`; each gets its own screenshot `{persona}-{width}[-edge]--{name}.png`.
 - Output: `qa/screens/{route}/{persona}-{width}[-edge].png`, `qa/results/*.json`, `qa/report.md`.
 - **Green is not done.** Open the screenshots and judge them against `.claude/rules/ux-contract.md`.
   Crop long pages with a Playwright element screenshot when a full-page image is too tall to read.

@@ -9,7 +9,13 @@ Source of truth: `prompts/rebuild/00-REBUILD-PLAN.md` §5. This file is the shor
   redirect signed-out visitors.
 - Route handlers that touch the DB call `await connection()` first.
 - Public pages that change rarely (`/t/[number]`, sponsor directory) use `'use cache'` + `cacheTag` +
-  `cacheLife`; invalidate with `revalidateTag(tag, 'max')` or `updateTag` in actions. Authed pages are dynamic.
+  `cacheLife`; invalidate with `revalidateTag(tag, 'max')` or `updateTag` in actions. Tag names live in
+  `lib/server/cache-tags.ts`. `POST /api/revalidate` (Bearer `CRON_SECRET`) expires them from outside the app
+  (the seed script calls it). Authed pages are dynamic.
+- `notFound()` inside Suspense streams a 200, and production builds stream every dynamic route's static shell
+  first, so a page-level 404 is a soft 404 (200 + 404 UI + `noindex`). Only `next dev` or a check in
+  `proxy.ts` gives a real 404 status (see `/t/[number]`).
+- `DEBUG_QUERIES=1 npm run dev` logs every query; keep list pages at ≤5 queries with no sequential independent awaits.
 - React Activity keeps hidden routes mounted: navigating back preserves form state. Design for it.
 
 ## Layers
@@ -38,6 +44,8 @@ sent synchronously; their payload is scrubbed after sending. Templates: `lib/ser
 
 ## Files
 `lib/server/storage.ts` only. Buckets: `public` (served), `staging` (private, signed uploads, cleaned daily).
+Browser uploads go to `staging` with a signed URL; `lib/server/uploads.ts` re-verifies the bytes and publishes
+under a fresh name (never trust the browser's file). Read public objects over HTTP, not `download()`.
 
 ## Jobs
 One Vercel cron: `/api/cron/daily` → `lib/server/jobs.ts` `runDailyCron()` (records `cron_runs`). Add jobs there.
