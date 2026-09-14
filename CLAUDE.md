@@ -1,77 +1,97 @@
-> **REBUILD IN PROGRESS (planned 2026-09-13).** Everything below describes the **v1** app
-> (Clerk, RLS policies, capacity caps, sponsor roles), which is being replaced from scratch.
-> For any rebuild work, the source of truth is **`prompts/rebuild/00-REBUILD-PLAN.md`**, executed via
-> `prompts/rebuild/01-foundation.md` → `02` → `03` → `04`. Where this file disagrees with the plan,
-> the plan wins. Prompt 1 rewrites this file.
+# FTC Pitfund (v2)
 
-# FTC Sponsorship Portal
+**Rebuild in progress on branch `rebuild`.** The source of truth is
+**`prompts/rebuild/00-REBUILD-PLAN.md`**; work is executed by `prompts/rebuild/01` → `02` → `03` → `04`.
+Where anything disagrees with the plan, the plan wins. Read `prompts/_NEXT-SESSION.md` first.
+The v1 app (Clerk, RLS policies, capacity caps, ledger) is gone; it is preserved at git tag `legacy-v1`.
 
-A platform connecting verified adult FTC robotics coaches with corporate sponsors.
-Coaches build a team Portfolio and submit tailored pitches; admins moderate and
-gate sponsor-facing outreach; sponsors accept in full or for a smaller amount under strict
-capacity caps. The platform never touches the money and tracks nothing after acceptance —
-both parties get each other's contact details and settle up directly. Next.js 16 (App Router) + Clerk (auth) + Supabase (Postgres + Storage) + Resend.
+## Product
 
-## Core Mandates (never violate)
-- **COPPA Compliance**: No student PII collected or exposed. Verified adult coaches only.
-- **Admin-Gatekept Outreach**: Sponsor-facing **pitch dispatch** requires Admin approval via the review queue (`lib/dispatch.ts`). This gate is ONLY for outreach to sponsors. **Transactional notifications** (status changes, decisions, new-submission alerts) auto-send to BOTH the in-app inbox AND the recipient's email via `createInAppNotification` in `lib/notify.ts`. (Auth-flow emails — email verification, password reset — are owned by Clerk, separate from this path.)
-- **Capacity Integrity**: Sponsor funding caps are strictly enforced. Never let a submission reserve beyond a sponsor's remaining cap.
-- **Data Architecture Distinction**: Keep Global Team Data (the Portfolio — reused across pitches) strictly separate from Submission-Specific Data (custom pitch alignment, specific needs, local connection — unique per pitch).
+FTC Pitfund connects FIRST® Tech Challenge teams with companies that sponsor robotics teams.
+Adult coaches sign in (Google or a 6-digit email code), create or join one shared team account,
+upload a sponsorship deck PDF (≤5 pages, ≤10 MB) and a one-line summary, and pitch **approved**
+companies by answering each company's own questions (≤10, or 3 defaults). **An admin reviews every
+pitch** before the company sees it. A company answers **Interested** (contacts are exchanged, the
+pitch is *matched*) or **Not a fit**. One pitch per team per company per season (Sept 1).
+No money handling, no caps, no messaging. $0 budget except the domain.
 
-## Detailed rules (auto-loaded)
-@.claude/rules/architecture.md
-@.claude/rules/auth-supabase.md
-@.claude/rules/conventions.md
-@.claude/rules/workflows.md
+## Core rules (plan §1; never violate)
 
-## Working here
-- General-purpose commands: `/feature`, `/fix`, `/supa`, `/ship`.
-- Project agents: `rls-auditor`, `action-reviewer`, `auth-flow-debugger`.
-- Auth is **Clerk** (`@clerk/nextjs`); Supabase trusts Clerk via native third-party auth, and RLS keys off the Clerk user id in `auth.jwt()->>'sub'` (not `auth.uid()`). See `.claude/rules/auth-supabase.md`.
-- Validate before pushing: `npm run typecheck && npm run lint`. Build uses Turbopack (`next build`); keep the `jsdom`/`cssstyle` `overrides` in `package.json`.
-- Deploys are **manual** — there is no Git integration on the Vercel project. Pushing to `main` does not deploy. Ship with `vercel deploy --prod --yes`.
+- Adults only. No student accounts. Teams and companies are one shared account with equal members; **no roles**.
+- Pitches go only to approved companies. Pending companies are invisible to coaches.
+- Every pitch is admin-reviewed before a company sees it.
+- One pitch per team × company × season; withdrawing before a response frees the slot.
+- Sign-in is Google or email code. **No passwords, no MFA.**
+- Email is capped at 100/day: it is always queued through the outbox, quota-aware, and never fails silently.
+  The in-app notification is always written; email is a copy.
+- Contact details are returned only for matched pitches, only to the two orgs involved.
+- Non-goals (plan §1) must not be built: messaging, caps/ledger, roles, SSO, e-sign, payments, student accounts, dark mode.
 
-## `prompts/` — roadmap and audits
+## Stack
 
-`prompts/_NEXT-SESSION.md` is the live handoff; read it first.
+Next.js 16 App Router (`cacheComponents: true`) · React 19 · TypeScript strict · Tailwind v4 + Radix
+(`radix-ui`) · Supabase Auth (`@supabase/ssr`) · Postgres via **Drizzle** (`postgres` driver,
+`prepare: false`) · Supabase Storage · Resend + React Email (`react-email`) + `email_outbox` ·
+Sentry · Vercel BotID · Vitest · Playwright + axe · Vercel Hobby (`iad1`), one cron.
 
-**The app is code-complete.** Everything remaining before launch is accounts, DNS and
-dashboards, enumerated in **`docs/LAUNCH-CHECKLIST.md`**, which is now the SINGLE authoritative
-launch doc (`GO-LIVE-CUTOVER.md` and `PURCHASE-CHECKLIST.md` were folded into it and deleted
-2026-08-26). The app gets its **own domain** — `exodiusftc.com` is the team WEBSITE and is not
-involved. Launch costs ~$28: a domain plus **Vercel Pro, which their terms require** because
-soliciting donations is commercial use.
+## Module layout
 
-`prompts/revamp/` holds the 18 sequential enterprise-readiness prompts (funding fulfillment,
-W-9s, e-sign, sponsor orgs, SSO, CSR reporting, accessibility). **All 18 are shipped and
-audited** — that pack is history, not a queue. `prompts/revamp/_CONTEXT.md` is still the most
-complete written snapshot of the schema and architecture (accurate as of migration `0075`;
-later migrations have moved past it, so the code wins on conflict).
+```text
+app/(public)/      landing, login, legal            app/(app)/          shell: welcome, account
+app/(app)/(workspace)/  pitches sponsors team inbox company (org required)
+app/admin/         review, directory, system        app/dev/            /dev, /dev/ui (local only)
+app/actions/       server actions ('use server')    app/api/            auth/send-email, webhooks/resend, cron/daily, health, dev/sign-in
+lib/server/        server-only: db, schema, env, authz, viewer, result, audit, notify, storage,
+                   ftc-records, jobs, page-guards, transaction, supabase(-admin), data/*, email/*
+lib/shared/        types, labels, format, season, questions, personas, result, schemas/* (client-safe)
+lib/client/        use-action, supabase (browser)   components/ui/      the design system
+components/app/    shell, top bar, bell, menus      drizzle/            generated migrations
+scripts/           setup, db-*, seed/, admin-grant, drain-outbox, serve-prod
+tests/unit         Vitest (rolled-back transactions)  tests/e2e  Playwright  tests/qa  the UX gate
+proxy.ts           session refresh only (plus x-pathname); no role logic
+```
 
-`prompts/audits/` holds the Gemini audit pack — 16 deep audit prompts written to be executed
-by an external Gemini agent, which writes evidence to `prompts/audits/findings/` and emits a
-self-contained fix prompt to `prompts/audits/handoff/` for Claude Code to execute. Start with
-`prompts/audits/_RUNNER-AUDIT.md`; `prompts/audits/_CONTEXT-AUDIT.md` is their shared contract.
+## The action shape (every mutation)
 
-Decisions already locked there — do not relitigate: the platform **never touches funds**,
-sponsor multi-user is built on **Clerk Organizations**, and FTC verification uses the
-**official FIRST API** with FTCScout as fallback.
+```ts
+export const doThing = defineAction(schema, async (input) => {   // 1. zod validation → Result
+  const viewer = await requireTeamMember()                         // 2. authz guard (lib/server/authz.ts)
+  const row = await inTransaction(async () => {                    // 3. data function(s) (lib/server/data/*)
+    const r = await updateThing(viewer, input)
+    await audit({ actorId: viewer.id, action: 'thing.updated', entityType: 'team', entityId: r.id })  // 4. audit
+    await notifyTeam(r.teamId, { type, title, href }, { exceptUserId: viewer.id })                     // 5. in-app notify
+    await enqueueEmail({ to, template, data, priority: PRIORITY.transactional, dedupeKey })          //    email copy
+    return r
+  })
+  after(() => drainOutbox())                                        // 6. send email after the response
+  revalidateTag(`team:${row.teamId}`, 'max')                        // 7. revalidate
+  return { ...row }                                                 // 8. Result (never throw to the client)
+})
+```
 
-**REVERSED (migration `0111`).** These were locked decisions and are no longer true:
-- ~~e-sign is in-house (ESIGN/UETA)~~ — **there is no e-signature layer.** Agreement
-  templates, signatures, the signing pages and the executed-agreements bucket are gone.
-- ~~pledge-and-track~~ — the platform tracks nothing after acceptance. The payment state
-  machine, W-9/payout profiles, tax receipts and recognition tiers were all removed.
+Client side: `useAction(action)` or `<ActionButton action pendingLabel>`; never a bare onClick.
 
-The product is now a **matchmaker**: coach pitches → admin moderates → sponsor accepts (in
-full or for less) → both parties get each other's contact details → everything after that
-happens off-platform. `prompts/revamp/05-*` and `06-*` describe the removed layers and are
-history, not a spec.
+## Commands
 
-The one post-acceptance capacity operation that remains is **voiding a match**
-(`void_match_atomic`, `app/actions/void-match.ts`, exposed at `/admin/capacity`). It is the
-only way to release capacity a sponsor committed, and it writes a compensating NEGATIVE
-`transactions_ledger` row rather than deleting anything.
+| Command | What it does |
+| --- | --- |
+| `npm run setup` | Docker check → `supabase start` → `.env.local` → migrate → seed `demo` (only prerequisite: Docker) |
+| `npm run dev` | `http://127.0.0.1:3000` · personas at `/dev` · gallery at `/dev/ui` · email at `http://127.0.0.1:54324` |
+| `npm run check` | typecheck + lint (0 warnings) + Vitest |
+| `npm run build` | production build |
+| `npm run e2e` | Playwright journeys (dev server :3000 + production build :3100) |
+| `npm run qa` | the UX gate over `tests/qa/routes.ts`, `demo` then `edge`; writes `qa/report.md` and `qa/screens/` |
+| `npm run db:generate` / `db:migrate` / `db:reset` | Drizzle migrations (migrate refuses non-local hosts without `--remote` + `CONFIRM_REMOTE=1`) |
+| `npm run seed -- --scenario demo\|empty\|edge` | idempotent fixtures |
+| `npm run admin:grant -- email` · `email:drain` · `db:backup` | ops |
+
+## Rules for agents
+
+- **Never ask Anish to click-test, paste SQL, or create test accounts.** Use the scripts, `/dev`, Playwright and Mailpit.
+- **Never hand-write SQL against a real database.** Change `lib/server/schema.ts`, `npm run db:generate`, `npm run db:migrate`.
+- Before calling UI work done: `npm run check`, `npm run e2e`, `npm run qa`, then **open the screenshots** in `qa/screens/` and fix anything that looks unfinished (plan §7).
+- New routes go into `tests/qa/routes.ts`. New components get every state on `/dev/ui`.
+- Details: `.claude/rules/architecture.md`, `data-and-auth.md`, `ux-contract.md`, `testing-and-qa.md`.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
