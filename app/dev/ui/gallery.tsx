@@ -38,6 +38,7 @@ import { EMAIL_STATUS, PITCH_STATUS, SPONSOR_STATUS } from '@/lib/shared/labels'
 import { err, type Result } from '@/lib/shared/result'
 
 import { CoachSections } from './coach-sections'
+import { SponsorSections } from './sponsor-sections'
 
 // A fixed clock so server and client render identical timestamps (no hydration mismatch).
 const GALLERY_NOW = Date.parse('2026-09-13T17:00:00Z')
@@ -64,6 +65,12 @@ const SECTIONS = [
   ['pitch-view', 'Pitch view'],
   ['uploads', 'Uploads'],
   ['directory', 'Directory'],
+  ['inbox', 'Inbox'],
+  ['connected', 'Connected'],
+  ['company-status', 'Company status'],
+  ['questions', 'Questions editor'],
+  ['company-preview', 'What teams see'],
+  ['admin', 'Admin console'],
   ['long', 'Long content'],
 ] as const
 
@@ -96,6 +103,7 @@ export function Gallery({ deck }: { deck: Deck }) {
         <LoadingSection />
         <PdfSection deck={deck} />
         <CoachSections deck={deck} />
+        <SponsorSections />
         <LongContentSection />
       </div>
     </PageContainer>

@@ -43,3 +43,4 @@ supabase/.temp
 /.idea/
 /scratchpad/
 .claude/settings.local.json
+tests/.local/

@@ -44,6 +44,17 @@ export const SEED = {
   northpeak: seedSponsorId('Northpeak Software'),
   keystone: seedSponsorId('Keystone Robotics Foundation'),
   atlasPending: seedSponsorId('Atlas Components'),
+  greenfieldPending: seedSponsorId('Greenfield Analytics'),
+  quickcashRejected: seedSponsorId('QuickCash Promotions'),
+  vantageSuspended: seedSponsorId('Vantage Promotions'),
+  cedar: seedSponsorId('Cedar Valley Credit Union'),
+  harbor: seedSponsorId('Harbor Point Energy'),
+  reports: {
+    /** Open: Tidal Robotics, from a parent. */
+    tidal: seedUuid('report', 'tidal'),
+    /** Open: Quantum Quokkas, from the sponsor persona. */
+    quokkas: seedUuid('report', 'quokkas'),
+  },
   pitches: {
     exodiusMatched: seedPitchId(31579, 'Brightline Engineering'),
     exodiusSent: seedPitchId(31579, 'Cedar Valley Credit Union'),
@@ -56,5 +67,18 @@ export const SEED = {
     exodiusWithdrawn: seedPitchId(31579, 'Lakeshore Medical Devices'),
     /** Voltage Vultures (coach-unverified) draft: another team's draft. */
     voltageDraft: seedPitchId(24890, 'Northpeak Software'),
+    // The `sponsor` persona's inbox (Brightline Engineering).
+    voltageToBrightlineSent: seedPitchId(24890, 'Brightline Engineering'),
+    quokkasToBrightlineSent: seedPitchId(18215, 'Brightline Engineering'),
+    gearToBrightlineDeclined: seedPitchId(16072, 'Brightline Engineering'),
+    lotusToBrightlineInReview: seedPitchId(20443, 'Brightline Engineering'),
+    /** In review, submitted a few hours ago (not late). */
+    tidalToHarborInReview: seedPitchId(14398, 'Harbor Point Energy'),
+    /** In review to a suspended company: approval is blocked. */
+    sagesToVantageInReview: seedPitchId(19904, 'Vantage Promotions'),
+    /** `sponsor2`'s inbox (Cedar Valley): sent. */
+    exodiusToCedarSent: seedPitchId(31579, 'Cedar Valley Credit Union'),
+    /** Sent to Brightline, then withdrawn (the company sees a read-only notice). */
+    knightsToBrightlineWithdrawn: seedPitchId(22761, 'Brightline Engineering'),
   },
 } as const

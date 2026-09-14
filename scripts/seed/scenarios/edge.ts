@@ -1,20 +1,20 @@
 import { eq, inArray, sql } from 'drizzle-orm'
 
 import { getDb } from '@/lib/server/db'
-import { emailOutbox, notifications, pitches, reports, sponsors, teams, users } from '@/lib/server/schema'
+import { cronRuns, emailOutbox, notifications, pitches, reports, sponsors, teams, users } from '@/lib/server/schema'
 import { BUCKETS, uploadObject } from '@/lib/server/storage'
 import { personaEmail } from '@/lib/shared/personas'
 
 import { generateDeckPdf, generateDeckThumbnail } from '../assets'
 import { ago, DAY, HOUR, unbroken } from '../base'
 import { seedSponsorId } from '../ids'
-import type { World } from '../world'
+import { cronHistory, type World } from '../world'
 
 /**
  * `edge`: the demo world pushed to every limit (plan §10) — 5,000-char unbroken strings in
  * every free-text field, a 10-question company, 60-char team names, a max-size 5-page PDF, 33 approved companies (two directory pages),
  * the email quota exhausted (95 sent in 24 h), a failed and a bounced email, a suspended team
- * and a withdrawn pitch (already in demo).
+ * and a withdrawn pitch (already in demo), and a daily job that hasn't run in 50 hours.
  */
 export async function applyEdge(world: World) {
   const db = getDb()
@@ -115,6 +115,10 @@ export async function applyEdge(world: World) {
     { toEmail: personaEmail('sponsor'), template: 'notice', payload, priority: 1, status: 'queued', sendAfter: ago(now, 60_000), createdAt: ago(now, 10 * 60_000) },
     { toEmail: personaEmail('admin'), template: 'notice', payload, priority: 3, status: 'queued', sendAfter: ago(now, 60_000), createdAt: ago(now, 9 * 60_000) },
   ])
+
+  // The daily job last ran over 36 hours ago: System warns that it's stale.
+  await db.delete(cronRuns)
+  await db.insert(cronRuns).values(cronHistory(now, { lastRunHoursAgo: 50 }))
 }
 
 export async function run() {

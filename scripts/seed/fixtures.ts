@@ -200,7 +200,7 @@ export type SponsorFixture = {
   about: string
   supportTypes: Array<'funding' | 'equipment' | 'software' | 'mentorship' | 'other'>
   questions: Question[]
-  status: 'approved' | 'pending' | 'rejected'
+  status: 'approved' | 'pending' | 'rejected' | 'suspended'
   statusNote?: string
   members: Array<PersonaKey | { email: string; name: string; jobTitle?: string }>
 }
@@ -400,6 +400,21 @@ export const SPONSORS: SponsorFixture[] = [
     statusNote: 'We couldn’t verify that this company sponsors student programs.',
     members: [{ email: 'member-quickcash@pitfund.test', name: 'Rick Dawson', jobTitle: 'CEO' }],
   },
+  {
+    name: 'Vantage Promotions',
+    website: 'https://example.com/vantage',
+    city: 'Phoenix',
+    state: 'AZ',
+    region: 'Southwest',
+    color: '#7C2D12',
+    shape: 'ring',
+    about: 'Event marketing agency. Suspended after teams reported sales pitches instead of sponsorship.',
+    supportTypes: ['funding'],
+    questions: [],
+    // Approved, then suspended by an admin: hidden from coaches, its in-review pitch can't be approved.
+    status: 'suspended',
+    members: [{ email: 'member-vantage@pitfund.test', name: 'Tara Quinn', jobTitle: 'Account Director' }],
+  },
 ]
 
 export const PITCHES: Array<[number, string, PitchStatus]> = [
@@ -433,6 +448,10 @@ export const PITCHES: Array<[number, string, PitchStatus]> = [
   [25530, 'Ridgeway Aerospace', 'sent'],
   [19904, 'Brightline Engineering', 'changes_requested'],
   [27112, 'Lakeshore Medical Devices', 'matched'],
+  // Waiting for review but blocked: the company was suspended after the team pitched it.
+  [19904, 'Vantage Promotions', 'in_review'],
+  // Sent to Brightline (the sponsor persona), then withdrawn: the inbox shows a read-only notice.
+  [22761, 'Brightline Engineering', 'withdrawn'],
 ]
 
 /** Plausible answers, picked by question id (or by position for defaults). */

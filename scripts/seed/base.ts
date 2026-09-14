@@ -119,23 +119,28 @@ export async function uploadTeamAssets(
   deck: Parameters<typeof generateDeckPdf>[0] | null,
 ) {
   let logoPath: string | null = null
+  let logoBytes: number | null = null
   if (logo) {
     logoPath = `teams/${teamId}/logo-${crypto.randomUUID()}.png`
-    await uploadObject(BUCKETS.public, logoPath, generateLogo(logo.color, logo.shape), 'image/png')
+    const image = generateLogo(logo.color, logo.shape)
+    logoBytes = image.byteLength
+    await uploadObject(BUCKETS.public, logoPath, image, 'image/png')
   }
-  if (!deck) return { logoPath, pdf: null }
+  if (!deck) return { logoPath, logoBytes, pdf: null }
   const pdfBytes = await generateDeckPdf(deck)
   const pdfPath = `teams/${teamId}/deck-${crypto.randomUUID()}.pdf`
   const thumbPath = `teams/${teamId}/thumb-${crypto.randomUUID()}.png`
+  const thumb = generateDeckThumbnail(deck.color)
   await uploadObject(BUCKETS.public, pdfPath, pdfBytes, 'application/pdf')
-  await uploadObject(BUCKETS.public, thumbPath, generateDeckThumbnail(deck.color), 'image/png')
-  return { logoPath, pdf: { path: pdfPath, bytes: pdfBytes.byteLength, pages: deck.pages, thumbPath } }
+  await uploadObject(BUCKETS.public, thumbPath, thumb, 'image/png')
+  return { logoPath, logoBytes, pdf: { path: pdfPath, bytes: pdfBytes.byteLength, pages: deck.pages, thumbPath, thumbBytes: thumb.byteLength } }
 }
 
 export async function uploadSponsorLogo(sponsorId: string, color: string, shape: Parameters<typeof generateLogo>[1]) {
   const path = `sponsors/${sponsorId}/logo-${crypto.randomUUID()}.png`
-  await uploadObject(BUCKETS.public, path, generateLogo(color, shape), 'image/png')
-  return path
+  const image = generateLogo(color, shape)
+  await uploadObject(BUCKETS.public, path, image, 'image/png')
+  return { path, bytes: image.byteLength }
 }
 
 /** An unbroken string of `length` characters (the layout torture test). */

@@ -44,7 +44,7 @@ import {
   type SponsorFixture,
   type TeamFixture,
 } from './fixtures'
-import { SEED_INVITE_TOKENS, seedPitchId, seedSponsorId, seedTeamId } from './ids'
+import { SEED, SEED_INVITE_TOKENS, seedPitchId, seedSponsorId, seedTeamId } from './ids'
 
 export type World = {
   now: Date
@@ -60,6 +60,11 @@ const APP_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://127.0.0.1:3000'
 function memberUser(m: TeamFixture['members'][number] | SponsorFixture['members'][number]): SeedUser | null {
   if (typeof m === 'string') return null
   return { key: m.email, email: m.email, name: m.name, jobTitle: 'jobTitle' in m ? m.jobTitle : undefined }
+}
+
+function applicantTitle(m: SponsorFixture['members'][number]) {
+  if (typeof m !== 'string') return m.jobTitle ?? null
+  return PERSONA_USERS.find((u) => u.email === personaEmail(m))?.jobTitle ?? null
 }
 
 function memberEmail(m: TeamFixture['members'][number] | SponsorFixture['members'][number]) {
@@ -112,10 +117,12 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
       website: mode === 'demo' ? t.website : null,
       summary: mode === 'demo' ? t.summary : null,
       logoPath: assets?.logoPath ?? null,
+      logoBytes: assets?.logoBytes ?? null,
       pdfPath: assets?.pdf?.path ?? null,
       pdfPages: assets?.pdf?.pages ?? null,
       pdfBytes: assets?.pdf?.bytes ?? null,
       pdfThumbPath: assets?.pdf?.thumbPath ?? null,
+      pdfThumbBytes: assets?.pdf?.thumbBytes ?? null,
       pdfUpdatedAt: assets?.pdf ? ago(now, (20 - i) * DAY) : null,
       mediaConsentAt: assets?.pdf ? ago(now, (20 - i) * DAY) : null,
       recordStatus: t.recordStatus,
@@ -141,13 +148,14 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
   for (const [i, s] of sponsorFixtures.entries()) {
     const id = seedSponsorId(s.name)
     sponsorIds.set(s.name, id)
-    const logoPath = mode === 'demo' ? await uploadSponsorLogo(id, s.color, s.shape) : null
+    const logo = mode === 'demo' ? await uploadSponsorLogo(id, s.color, s.shape) : null
     const decided = s.status !== 'pending'
     await db.insert(sponsors).values({
       id,
       name: s.name,
       website: s.website,
-      logoPath,
+      logoPath: logo?.path ?? null,
+      logoBytes: logo?.bytes ?? null,
       city: s.city,
       state: s.state,
       region: mode === 'demo' ? s.region : null,
@@ -158,7 +166,8 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
       statusNote: s.statusNote ?? null,
       decidedBy: decided ? adminId : null,
       decidedAt: decided ? ago(now, (28 - i) * DAY) : null,
-      applicantTitle: 'Community Partnerships Lead',
+      applicantTitle: applicantTitle(s.members[0]),
+      applicantLinkedin: i % 2 === 0 ? `https://www.linkedin.com/in/${memberEmail(s.members[0]).split('@')[0]}` : null,
       createdAt: ago(now, (32 - i) * DAY),
     })
     const members = mode === 'demo' ? s.members : s.members.filter((m) => typeof m === 'string')
@@ -190,12 +199,14 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
     const id = seedPitchId(teamNumber, sponsorName)
     world.pitchIds.set(`${teamNumber}:${sponsorName}`, id)
 
-    const base = ago(now, (26 - (i % 20)) * DAY + i * HOUR)
+    // Tidal → Harbor Point was submitted a few hours ago, so the queue shows a pitch that isn't late.
+    const base = teamNumber === 14398 && status === 'in_review' ? ago(now, 5 * HOUR) : ago(now, (26 - (i % 20)) * DAY + i * HOUR)
     const step = (n: number) => new Date(base.getTime() + n * 7 * HOUR)
     const reached = (s: PitchStatus[]) => s.includes(status)
     const submitted = !reached(['draft'])
-    const reviewed = reached(['changes_requested', 'rejected', 'sent', 'matched', 'declined']) || (status === 'withdrawn' && i % 2 === 0)
-    const sent = reached(['sent', 'matched', 'declined']) || (status === 'withdrawn' && i % 2 === 0)
+    const withdrawnAfterSending = status === 'withdrawn' && (i % 2 === 0 || sponsorName === 'Brightline Engineering')
+    const reviewed = reached(['changes_requested', 'rejected', 'sent', 'matched', 'declined']) || withdrawnAfterSending
+    const sent = reached(['sent', 'matched', 'declined']) || withdrawnAfterSending
     const responded = reached(['matched', 'declined'])
 
     const questions = questionsFor({ name: company.name, questions: company.questions })
@@ -216,12 +227,16 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
       email: coachEmail,
       phone: coachUser?.phone ?? null,
       teamUrl: `${APP_URL}/t/${teamNumber}`,
+      teamName: team.name,
+      teamNumber,
     }
     const sponsorContact: ContactSnapshot = {
       name: sponsorUser?.name ?? (company.members[0] as { name: string }).name,
       email: sponsorMemberEmail,
       phone: sponsorUser?.phone ?? null,
       jobTitle: sponsorUser?.jobTitle ?? (company.members[0] as { jobTitle?: string }).jobTitle ?? null,
+      companyName: company.name,
+      website: company.website,
     }
 
     await getDb().insert(pitches).values({
@@ -259,7 +274,7 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
     if (sent) ev(2, 'pitch.approved', adminId)
     if (status === 'matched') ev(4, 'pitch.matched', sponsorMemberId)
     if (status === 'declined') ev(4, 'pitch.declined', sponsorMemberId)
-    if (status === 'withdrawn') ev(3, 'pitch.withdrawn', coachId)
+    if (status === 'withdrawn') ev(3, 'pitch.withdrawn', coachId, { from: sent ? 'sent' : 'in_review' })
 
     // In-app notifications for the people involved.
     const href = `/pitches/${id}`
@@ -300,8 +315,9 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
   ])
 
   await db.insert(reports).values([
-    { teamId: teamIds.get(14398)!, reporterEmail: 'concerned.parent@pitfund.test', reason: 'Not a real team', details: 'I could not find this team in FIRST records for this season.', createdAt: ago(now, 3 * DAY) },
-    { teamId: teamIds.get(18215)!, reporterUserId: personaId('sponsor'), reason: 'Inappropriate content', details: 'The deck included a photo that looked like it was used without permission.', status: 'resolved', resolvedBy: adminId, resolvedAt: ago(now, 5 * DAY), createdAt: ago(now, 6 * DAY) },
+    { id: SEED.reports.tidal, teamId: teamIds.get(14398)!, reporterEmail: 'concerned.parent@pitfund.test', reason: 'impersonation', details: 'I could not find this team in FIRST records for this season.', createdAt: ago(now, 3 * DAY) },
+    { id: SEED.reports.quokkas, teamId: teamIds.get(18215)!, reporterUserId: personaId('sponsor'), reason: 'spam', details: 'The team sent the same generic pitch text to several companies, word for word.', createdAt: ago(now, 7 * HOUR) },
+    { teamId: teamIds.get(18215)!, reporterUserId: personaId('sponsor'), reason: 'inappropriate', details: 'The deck included a photo that looked like it was used without permission.', status: 'resolved', resolvedBy: adminId, resolvedAt: ago(now, 5 * DAY), createdAt: ago(now, 6 * DAY) },
   ])
 
   // ─── Email outbox and cron ─────────────────────────────────────────────────────────
@@ -314,9 +330,42 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
   outbox.push({ toEmail: personaEmail('admin'), template: 'notice', payload: notice('Daily summary: 2 new teams, 1 new company'), priority: 3, status: 'queued', sendAfter: new Date(now.getTime() + 14 * HOUR), createdAt: ago(now, 1 * HOUR) })
   outbox.push({ toEmail: personaEmail('coach-unverified'), template: 'notice', payload: notice('Your pitch to Cedar Valley Credit Union is in review'), priority: 1, status: 'queued', sendAfter: new Date(now.getTime() + 3 * HOUR), attempts: 2, lastError: 'rate_limit_exceeded: Too many requests', createdAt: ago(now, 30 * 60 * 1000) })
   outbox.push({ toEmail: 'member-tidal@pitfund.test', template: 'notice', payload: notice('Welcome to FTC Pitfund'), priority: 1, status: 'failed', attempts: 5, lastError: 'validation_error: The to address is invalid', createdAt: ago(now, 5 * HOUR), updatedAt: ago(now, 4 * HOUR) })
+  outbox.push({ toEmail: 'old-address@pitfund.test', template: 'notice', payload: notice('New pitch from Quantum Quokkas'), priority: 1, status: 'bounced', attempts: 1, resendId: 'seed-bounced', sentAt: ago(now, 9 * HOUR), sendAfter: ago(now, 9 * HOUR), lastError: 'bounced: Mailbox does not exist', createdAt: ago(now, 9 * HOUR), updatedAt: ago(now, 8 * HOUR) })
   await db.insert(emailOutbox).values(outbox)
 
-  await db.insert(cronRuns).values({ job: 'daily', startedAt: ago(now, 20 * HOUR), finishedAt: ago(now, 20 * HOUR - 4200), ok: true, detail: { drained: 3, stagingDeleted: 0 } })
+  await db.insert(cronRuns).values(cronHistory(now, { lastRunHoursAgo: 20 }))
 
   return world
+}
+
+const CRON_JOBS = ['drain-outbox', 'admin-digest', 'clean-staging', 'recheck-records', 'keepalive'] as const
+
+/**
+ * Three days of daily-cron history, one row per job per run. `lastRunHoursAgo` over 36 makes System
+ * warn that the job is stale (edge). The run two days ago had a failed record check.
+ */
+export function cronHistory(now: Date, { lastRunHoursAgo }: { lastRunHoursAgo: number }): Array<typeof cronRuns.$inferInsert> {
+  const rows: Array<typeof cronRuns.$inferInsert> = []
+  for (let day = 0; day < 3; day++) {
+    const started = ago(now, (lastRunHoursAgo + day * 24) * HOUR)
+    for (const [j, job] of CRON_JOBS.entries()) {
+      const at = new Date(started.getTime() + j * 1500)
+      const failed = day === 1 && job === 'recheck-records'
+      const result = {
+        'drain-outbox': { claimed: 4 - day, sent: 4 - day, deferred: 0, retried: 0, failed: 0 },
+        'admin-digest': { skipped: false, queued: 1, deduped: 0, sent: 1 },
+        'clean-staging': { deleted: day },
+        'recheck-records': { checked: 1, matched: 0, not_found: 0, unavailable: 1 },
+        keepalive: { result: 1 },
+      }[job]
+      rows.push({
+        job,
+        startedAt: at,
+        finishedAt: new Date(at.getTime() + 900),
+        ok: !failed,
+        detail: failed ? { error: 'FTCScout responded 503', reference: 'seed0000cron' } : { result },
+      })
+    }
+  }
+  return rows
 }
