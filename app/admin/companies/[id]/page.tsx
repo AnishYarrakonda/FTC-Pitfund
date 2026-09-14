@@ -56,7 +56,9 @@ export default async function AdminCompanyPage({ params }: PageProps<'/admin/com
             ) : null}
           </p>
         </div>
-        <CompanyDecisions sponsorId={company.id} name={company.name} status={company.status} />
+        <div className="shrink-0">
+          <CompanyDecisions sponsorId={company.id} name={company.name} status={company.status} />
+        </div>
       </header>
 
       {company.status === 'rejected' && company.statusNote ? (

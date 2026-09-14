@@ -68,7 +68,7 @@ const SECTIONS = [
   ['inbox', 'Inbox'],
   ['connected', 'Connected'],
   ['company-status', 'Company status'],
-  ['questions', 'Questions editor'],
+  ['questions-editor', 'Questions editor'],
   ['company-preview', 'What teams see'],
   ['admin', 'Admin console'],
   ['long', 'Long content'],

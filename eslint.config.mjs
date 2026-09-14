@@ -34,6 +34,8 @@ export default defineConfig([
     'supabase/.branches/**',
     'drizzle/**',
     'qa/**',
+    // Local, gitignored verification scripts.
+    'tests/.local/**',
     'backups/**',
     'test-results/**',
     'playwright-report/**',

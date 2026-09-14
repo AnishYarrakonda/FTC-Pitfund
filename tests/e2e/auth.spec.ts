@@ -130,6 +130,8 @@ test('Google: the button renders, explains when unavailable, and shows cancel co
   await page.goto('/login')
   const google = page.getByRole('button', { name: 'Continue with Google' })
   await expect(google).toBeVisible()
+  // Plan §1 rule 10: Google or an email code, never a password.
+  await expect(page.locator('input[type="password"]')).toHaveCount(0)
   if (process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED !== 'true') {
     await google.click()
     await expect(page.getByText("Google sign-in isn't available yet. Use an email code instead.")).toBeVisible()

@@ -2,12 +2,12 @@
 
 import { RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { toast } from 'sonner'
 
 import { approvePitchAction, rejectPitchAction, sendBackPitchAction } from '@/app/actions/admin'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogClose, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogClose, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { Banner, KeyboardHint } from '@/components/ui/feedback'
 import { Field } from '@/components/ui/field'
 import { Textarea } from '@/components/ui/textarea'
@@ -154,14 +154,36 @@ export function ReviewDecisions({ pitchId, teamNumber, companyName, blocker, pre
             <span>Approve &amp; send</span>
             <KeyboardHint keys={['A']} className="hidden lg:inline-flex [&_kbd]:border-white/40 [&_kbd]:bg-white/10 [&_kbd]:text-white [&_kbd]:shadow-none" />
           </Button>
-          <Button variant="secondary" data-qa-overlay="Send back" disabled={approve.pending || Boolean(conflict)} onClick={() => setDialog('send-back')} className="lg:justify-between">
-            <span>Send back</span>
-            <KeyboardHint keys={['S']} className="hidden lg:inline-flex" />
-          </Button>
-          <Button variant="secondary" data-qa-overlay="Reject" disabled={approve.pending || Boolean(conflict)} onClick={() => setDialog('reject')} className="text-danger lg:justify-between">
-            <span>Reject</span>
-            <KeyboardHint keys={['R']} className="hidden lg:inline-flex" />
-          </Button>
+          <NoteDialog
+            open={dialog === 'send-back'}
+            onOpenChange={(open) => setDialog(open ? 'send-back' : null)}
+            kind="send-back"
+            pitchId={pitchId}
+            teamNumber={teamNumber}
+            onDone={advance}
+            onConflict={setConflict}
+            trigger={
+              <Button variant="secondary" disabled={approve.pending || Boolean(conflict)} className="lg:justify-between">
+                <span>Send back</span>
+                <KeyboardHint keys={['S']} className="hidden lg:inline-flex" />
+              </Button>
+            }
+          />
+          <NoteDialog
+            open={dialog === 'reject'}
+            onOpenChange={(open) => setDialog(open ? 'reject' : null)}
+            kind="reject"
+            pitchId={pitchId}
+            teamNumber={teamNumber}
+            onDone={advance}
+            onConflict={setConflict}
+            trigger={
+              <Button variant="secondary" disabled={approve.pending || Boolean(conflict)} className="text-danger lg:justify-between">
+                <span>Reject</span>
+                <KeyboardHint keys={['R']} className="hidden lg:inline-flex" />
+              </Button>
+            }
+          />
         </div>
         <p id="approve-hint" className="hidden text-small text-text-tertiary lg:block">
           Approving sends it to {companyName} and emails everyone there.
@@ -170,25 +192,6 @@ export function ReviewDecisions({ pitchId, teamNumber, companyName, blocker, pre
           <KeyboardHint keys={['J']} /> next <KeyboardHint keys={['K']} className="ml-2" /> previous
         </p>
       </div>
-
-      <NoteDialog
-        open={dialog === 'send-back'}
-        onOpenChange={(open) => setDialog(open ? 'send-back' : null)}
-        kind="send-back"
-        pitchId={pitchId}
-        teamNumber={teamNumber}
-        onDone={advance}
-        onConflict={setConflict}
-      />
-      <NoteDialog
-        open={dialog === 'reject'}
-        onOpenChange={(open) => setDialog(open ? 'reject' : null)}
-        kind="reject"
-        pitchId={pitchId}
-        teamNumber={teamNumber}
-        onDone={advance}
-        onConflict={setConflict}
-      />
     </div>
   )
 }
@@ -201,7 +204,9 @@ function NoteDialog({
   teamNumber,
   onDone,
   onConflict,
+  trigger,
 }: {
+  trigger: ReactNode
   open: boolean
   onOpenChange: (open: boolean) => void
   kind: 'send-back' | 'reject'
@@ -247,6 +252,7 @@ function NoteDialog({
         onOpenChange(next)
       }}
     >
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent
         size="md"
         title={sendBack ? `Send back to Team ${teamNumber}` : `Reject Team ${teamNumber}’s pitch`}

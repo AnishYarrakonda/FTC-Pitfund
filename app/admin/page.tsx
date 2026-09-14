@@ -159,7 +159,7 @@ export default async function AdminReviewPage({ searchParams }: PageProps<'/admi
                               <TeamMark name={r.team.name} number={r.team.number} logoSrc={r.team.logoUrl} meta={r.team.suspended ? 'Suspended' : null} />
                               <LinkPendingIndicator />
                             </Link>
-                            <span className="shrink-0 pl-[52px] text-small text-text-tertiary sm:pl-0">
+                            <span className="min-w-0 pl-[52px] text-small text-text-tertiary line-clamp-2 sm:max-w-[45%] sm:pl-0 sm:text-right">
                               Reported {formatRelative(r.createdAt, now)} by <span className="user-text">{r.reporter ?? 'an anonymous visitor'}</span>
                             </span>
                           </div>

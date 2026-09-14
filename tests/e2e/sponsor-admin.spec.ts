@@ -253,14 +253,19 @@ test('keyboard-only review: S and R open their note dialogs, A approves, J and K
   await page.waitForURL('**/admin/pitches/**', { waitUntil: 'networkidle' })
 
   const heading = () => page.getByRole('heading', { level: 1 }).innerText()
+  // Keys only work once the pitch page (and its key listener) has rendered, not while it streams.
+  const ready = () => expect(page.getByRole('button', { name: /Approve & send/ })).toBeVisible()
+  await ready()
   const decide = async (key: 'A' | 'S' | 'R') => {
-    const before = page.url()
     // Skip pitches that can't be approved (a suspended company) when approving.
     while (key === 'A' && (await (await decideOnPage(page)).isDisabled())) {
+      const skipped = await heading()
       await page.keyboard.press('j')
-      await page.waitForURL((url) => url.toString() !== before, { waitUntil: 'networkidle' })
+      await expect.poll(heading).not.toBe(skipped)
+      await ready()
     }
     const current = page.url()
+    const title = await heading()
     await page.keyboard.press(key.toLowerCase())
     if (key !== 'A') {
       const dialog = page.getByRole('dialog')
@@ -272,14 +277,18 @@ test('keyboard-only review: S and R open their note dialogs, A approves, J and K
       await page.keyboard.press('Enter')
     }
     await expect(page.getByText(key === 'A' ? /^Sent to / : key === 'S' ? /^Sent back · / : /^Rejected · /)).toBeVisible()
-    await page.waitForURL((url) => url.toString() !== current, { waitUntil: 'networkidle' })
+    await page.waitForURL((url) => url.toString() !== current)
+    await expect.poll(heading).not.toBe(title)
+    await ready()
   }
 
   const firstHeading = await heading()
   await page.keyboard.press('j')
   await expect.poll(heading).not.toBe(firstHeading)
+  await ready()
   await page.keyboard.press('k')
   await expect.poll(heading).toBe(firstHeading)
+  await ready()
 
   await decide('S')
   await decide('R')

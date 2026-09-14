@@ -239,9 +239,9 @@ function QueueLink({ href, label, children }: { href: string | null; label: stri
   const cls = 'grid size-8 place-items-center rounded-control border'
   if (!href)
     return (
-      <span aria-disabled="true" aria-label={label} className={cn(cls, 'border-border text-text-tertiary/60')}>
+      <button type="button" disabled aria-label={label} className={cn(cls, 'cursor-not-allowed border-border text-text-tertiary/60')}>
         {children}
-      </span>
+      </button>
     )
   return (
     <Link href={href} aria-label={label} className={cn(cls, 'border-border-strong bg-surface text-text-secondary hover:bg-muted hover:text-text')}>

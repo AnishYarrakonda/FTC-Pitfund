@@ -45,11 +45,9 @@ export default async function AdminTeamPage({ params }: PageProps<'/admin/teams/
         <div className="flex min-w-0 items-center gap-4">
           <OrgLogo name={team.name} src={team.logoUrl} size="lg" />
           <div className="grid min-w-0 gap-1.5">
-            <h1 className="flex min-w-0 items-center gap-2 text-h2 font-semibold tracking-tighter text-text">
-              <span className="min-w-0 user-text">
-                Team {team.number} · {team.name}
-              </span>
-              {team.verifiedAt ? <VerifiedCheck /> : null}
+            <h1 className="min-w-0 text-h2 font-semibold tracking-tighter text-text user-text">
+              Team {team.number} · {team.name}
+              {team.verifiedAt ? <VerifiedCheck className="ml-2 align-[-1px]" /> : null}
             </h1>
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-text-secondary">
               {team.suspendedAt ? <StatusBadge label="Suspended" tone="danger" /> : team.verifiedAt ? <StatusBadge label="Verified" tone="success" /> : <StatusBadge label="Not verified" tone="warning" />}
@@ -58,7 +56,9 @@ export default async function AdminTeamPage({ params }: PageProps<'/admin/teams/
             </p>
           </div>
         </div>
-        <TeamDecisions teamId={team.id} number={team.number} verified={Boolean(team.verifiedAt)} suspended={Boolean(team.suspendedAt)} />
+        <div className="shrink-0">
+          <TeamDecisions teamId={team.id} number={team.number} verified={Boolean(team.verifiedAt)} suspended={Boolean(team.suspendedAt)} />
+        </div>
       </header>
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-12">

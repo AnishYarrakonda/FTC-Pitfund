@@ -109,7 +109,7 @@ export function SponsorSections() {
         </div>
       </Section>
 
-      <Section id="questions" title="Questions editor" description="The defaults with Customize, and a full list of ten (Add question is disabled with its reason). Reorder with the arrow buttons.">
+      <Section id="questions-editor" title="Questions editor" description="The defaults with Customize, and a full list of ten (Add question is disabled with its reason). Reorder with the arrow buttons.">
         <div className="grid gap-6 lg:grid-cols-2">
           <Specimen label="Default questions">
             <QuestionsEditor companyName="Brightline Engineering" customQuestions={[]} reviewed={false} onPreviewChange={noop} />
