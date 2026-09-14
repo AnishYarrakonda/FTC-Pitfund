@@ -24,6 +24,7 @@ supabase/.temp
 /blob-report/
 /playwright/.cache/
 /tests/.auth/
+/tests/.fixtures/
 /qa/
 /coverage/
 

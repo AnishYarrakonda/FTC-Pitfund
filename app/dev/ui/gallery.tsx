@@ -37,6 +37,8 @@ import { useAction } from '@/lib/client/use-action'
 import { EMAIL_STATUS, PITCH_STATUS, SPONSOR_STATUS } from '@/lib/shared/labels'
 import { err, type Result } from '@/lib/shared/result'
 
+import { CoachSections } from './coach-sections'
+
 // A fixed clock so server and client render identical timestamps (no hydration mismatch).
 const GALLERY_NOW = Date.parse('2026-09-13T17:00:00Z')
 const LONG = 'Supercalifragilisticexpialidocious'.repeat(148).slice(0, 5000)
@@ -59,6 +61,9 @@ const SECTIONS = [
   ['menus', 'Menus'],
   ['loading', 'Loading'],
   ['pdf', 'PDF viewer'],
+  ['pitch-view', 'Pitch view'],
+  ['uploads', 'Uploads'],
+  ['directory', 'Directory'],
   ['long', 'Long content'],
 ] as const
 
@@ -90,6 +95,7 @@ export function Gallery({ deck }: { deck: Deck }) {
         <MenusSection />
         <LoadingSection />
         <PdfSection deck={deck} />
+        <CoachSections deck={deck} />
         <LongContentSection />
       </div>
     </PageContainer>

@@ -1,5 +1,3 @@
-import { createHash, randomBytes } from 'node:crypto'
-
 import { sql } from 'drizzle-orm'
 
 import { getDb } from '@/lib/server/db'
@@ -17,10 +15,6 @@ export const DAY = 24 * HOUR
 
 export function ago(now: Date, ms: number) {
   return new Date(now.getTime() - ms)
-}
-
-export function tokenHash() {
-  return createHash('sha256').update(randomBytes(32)).digest('hex')
 }
 
 const APP_TABLES = [
@@ -121,18 +115,20 @@ export async function insertUsers(seedUsers: SeedUser[], ids: Map<string, string
 
 export async function uploadTeamAssets(
   teamId: string,
-  color: string,
-  shape: Parameters<typeof generateLogo>[1],
+  logo: { color: string; shape: Parameters<typeof generateLogo>[1] } | null,
   deck: Parameters<typeof generateDeckPdf>[0] | null,
 ) {
-  const logoPath = `teams/${teamId}/logo-${crypto.randomUUID()}.png`
-  await uploadObject(BUCKETS.public, logoPath, generateLogo(color, shape), 'image/png')
+  let logoPath: string | null = null
+  if (logo) {
+    logoPath = `teams/${teamId}/logo-${crypto.randomUUID()}.png`
+    await uploadObject(BUCKETS.public, logoPath, generateLogo(logo.color, logo.shape), 'image/png')
+  }
   if (!deck) return { logoPath, pdf: null }
   const pdfBytes = await generateDeckPdf(deck)
   const pdfPath = `teams/${teamId}/deck-${crypto.randomUUID()}.pdf`
   const thumbPath = `teams/${teamId}/thumb-${crypto.randomUUID()}.png`
   await uploadObject(BUCKETS.public, pdfPath, pdfBytes, 'application/pdf')
-  await uploadObject(BUCKETS.public, thumbPath, generateDeckThumbnail(color), 'image/png')
+  await uploadObject(BUCKETS.public, thumbPath, generateDeckThumbnail(deck.color), 'image/png')
   return { logoPath, pdf: { path: pdfPath, bytes: pdfBytes.byteLength, pages: deck.pages, thumbPath } }
 }
 

@@ -39,9 +39,11 @@ export type TeamFixture = {
   website: string | null
   members: Array<PersonaKey | { email: string; name: string }>
   recordStatus: 'matched' | 'manual' | 'unchecked'
+  /** Defaults to true; `false` seeds a team with no logo. */
+  logo?: boolean
 }
 
-const member = (slug: string, name: string) => ({ email: `member-${slug}@pitfund.test`, name })
+export const member = (slug: string, name: string) => ({ email: `member-${slug}@pitfund.test`, name })
 
 export const TEAMS: TeamFixture[] = [
   {
@@ -141,6 +143,7 @@ export const TEAMS: TeamFixture[] = [
     website: null,
     members: [member('tidal', 'Chris Alvarez')],
     recordStatus: 'unchecked',
+    logo: false,
   },
   {
     number: 25530,
@@ -305,7 +308,12 @@ export const SPONSORS: SponsorFixture[] = [
     shape: 'chevron',
     about: 'Sheet metal and laser cutting for teams in Oregon and Washington.',
     supportTypes: ['equipment'],
-    questions: [],
+    // Changed after Exodius started its draft (see SUMMIT_DRAFT_ANSWERS).
+    questions: [
+      q('sf-parts', 'Which parts would you want cut or bent, and do you have drawings ready?', true, 'DXF or STEP files are ideal.'),
+      q('sf-timeline', 'When do you need the parts in hand?'),
+      q('sf-pickup', 'Can someone pick the parts up from our Portland shop?', false),
+    ],
     status: 'approved',
     members: [{ email: 'member-summit@pitfund.test', name: 'Megan Lowe', jobTitle: 'Owner' }],
   },
@@ -322,6 +330,32 @@ export const SPONSORS: SponsorFixture[] = [
     questions: [q('lm-volunteer', 'Does anyone at Lakeshore volunteer with your team?', false)],
     status: 'approved',
     members: [{ email: 'member-lakeshore@pitfund.test', name: 'Irene Walsh', jobTitle: 'Giving Program Lead' }],
+  },
+  {
+    name: 'Keystone Robotics Foundation',
+    website: 'https://example.org/keystone',
+    city: 'Pittsburgh',
+    state: 'PA',
+    region: 'Pennsylvania, Ohio and West Virginia',
+    color: '#0F172A',
+    shape: 'diamond',
+    about:
+      'A family foundation that funds a handful of FTC teams each season for three years at a time. We look for teams with a plan to keep going after our support ends.',
+    supportTypes: ['funding', 'mentorship', 'other'],
+    questions: [
+      q('kf-story', 'Tell us how your team started and who keeps it running today.'),
+      q('kf-students', 'How many students are on the team, and how are new members recruited?'),
+      q('kf-budget', 'What does a season cost your team? List the biggest items.', true, 'Rough numbers are fine.'),
+      q('kf-gap', 'Which of those costs is hardest to cover right now?'),
+      q('kf-plan', 'If we fund you for three seasons, what is different at the end of year three?'),
+      q('kf-outreach', 'What outreach did your team do last season?', false),
+      q('kf-mentors', 'Who mentors the team, and how often do they meet with students?'),
+      q('kf-access', 'How do you make sure cost never keeps a student off the team?'),
+      q('kf-recognition', 'How would you recognize the foundation’s support?', false),
+      q('kf-else', 'Is there anything else we should know?', false, 'Optional. Leave it blank if not.'),
+    ],
+    status: 'approved',
+    members: [{ email: 'member-keystone@pitfund.test', name: 'Eleanor Brandt', jobTitle: 'Program Officer' }],
   },
   {
     name: 'Atlas Components',
@@ -414,6 +448,9 @@ export function answerFor(questionId: string, team: TeamFixture, company: string
     'mm-parts': `Two drivetrain side plates and a set of intake brackets. CAD is finished and exported as STEP files.`,
     'hp-county': `Hillsborough County.`,
     'hp-students': `Fourteen students, eight of them new this year.`,
+    'sf-parts': `Four polycarbonate side panels and a bent aluminum intake guard. Drawings are exported as DXF.`,
+    'sf-timeline': `By mid-November, two weeks before our first qualifier.`,
+    'sf-pickup': index % 2 === 0 ? `Yes, a parent drives through Portland every Thursday.` : '',
     'lm-volunteer': index % 2 === 0 ? `Not yet, but a parent on our team works in your Cambridge office and has offered to help.` : '',
   }
   return byId[questionId] ?? `We are ${team.name}, team ${team.number} from ${team.city}. This season we are focused on building a reliable robot and growing our outreach.`
@@ -424,5 +461,15 @@ export const REVIEW_NOTES = {
     'Thanks for this. Please say what the funding would pay for in the second answer. Companies respond much better to specific amounts and items.',
   rejected: 'This pitch reads as a generic template and doesn’t answer the company’s questions. You’re welcome to pitch other companies.',
 }
+
+/**
+ * Exodius's Summit Fabrication draft was started before Summit edited its questions: one saved
+ * answer belongs to a question Summit removed, one to a prompt Summit reworded, and the new
+ * required question is unanswered. The composer shows "Summit Fabrication updated its questions".
+ */
+export const SUMMIT_DRAFT_ANSWERS = [
+  { questionId: 'sf-material', prompt: 'Which material do you need?', answer: '1/8 inch 6061 aluminum sheet and 1/4 inch polycarbonate.' },
+  { questionId: 'sf-parts', prompt: 'What parts do you need?', answer: 'Four polycarbonate side panels and a bent aluminum intake guard.' },
+]
 
 export const DECLINE_REASONS = ['Outside our region this season', 'Our budget for this season is already committed']

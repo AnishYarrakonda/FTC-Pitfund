@@ -7,11 +7,12 @@ import { personaEmail } from '@/lib/shared/personas'
 
 import { generateDeckPdf, generateDeckThumbnail } from '../assets'
 import { ago, DAY, HOUR, unbroken } from '../base'
+import { seedSponsorId } from '../ids'
 import type { World } from '../world'
 
 /**
  * `edge`: the demo world pushed to every limit (plan §10) — 5,000-char unbroken strings in
- * every free-text field, a 10-question company, 60-char team names, a max-size 5-page PDF,
+ * every free-text field, a 10-question company, 60-char team names, a max-size 5-page PDF, 33 approved companies (two directory pages),
  * the email quota exhausted (95 sent in 24 h), a failed and a bounced email, a suspended team
  * and a withdrawn pitch (already in demo).
  */
@@ -64,6 +65,25 @@ export async function applyEdge(world: World) {
     })
     .where(eq(sponsors.id, brightlineId))
   await db.update(sponsors).set({ name: sql`left(${sponsors.name} || ${long(60, 'Incorporated')}, 60)`, about: long(5000, 'About'), region: long(5000, 'Region'), statusNote: long(5000, 'Note') })
+
+  // Enough approved companies for a second directory page (25 per page).
+  await db.insert(sponsors).values(
+    Array.from({ length: 24 }, (_, i) => ({
+      id: seedSponsorId(`edge-${i + 1}`),
+      name: `${String(i + 1).padStart(2, '0')} ${long(57, 'Sponsor')}`,
+      website: `https://example.com/${long(300, 'sponsor')}`,
+      city: long(80, 'City'),
+      state: long(40, 'State'),
+      region: long(5000, 'Region'),
+      about: long(5000, 'About'),
+      supportTypes: (['funding', 'equipment', 'software', 'mentorship', 'other'] as const).slice(0, 1 + (i % 5)),
+      questions: [],
+      status: 'approved' as const,
+      decidedBy: world.personaId('admin'),
+      decidedAt: ago(now, 10 * DAY),
+      createdAt: ago(now, (40 + i) * HOUR),
+    })),
+  )
 
   // Pitches: every free-text field at 5,000 unbroken characters.
   await db

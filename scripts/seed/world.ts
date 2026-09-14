@@ -1,3 +1,4 @@
+import { hashInviteToken } from '@/lib/server/data/invites'
 import { getDb } from '@/lib/server/db'
 import {
   auditEvents,
@@ -26,7 +27,6 @@ import {
   HOUR,
   insertUsers,
   reconcileAuthUsers,
-  tokenHash,
   uploadSponsorLogo,
   uploadTeamAssets,
   wipeAppData,
@@ -39,10 +39,12 @@ import {
   PITCHES,
   REVIEW_NOTES,
   SPONSORS,
+  SUMMIT_DRAFT_ANSWERS,
   TEAMS,
   type SponsorFixture,
   type TeamFixture,
 } from './fixtures'
+import { SEED_INVITE_TOKENS, seedPitchId, seedSponsorId, seedTeamId } from './ids'
 
 export type World = {
   now: Date
@@ -91,11 +93,11 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
   const teamFixtures = mode === 'demo' ? TEAMS : TEAMS.filter((t) => t.members.some((m) => m === 'coach' || m === 'coach-unverified'))
   const teamIds = new Map<number, string>()
   for (const [i, t] of teamFixtures.entries()) {
-    const id = crypto.randomUUID()
+    const id = seedTeamId(t.number)
     teamIds.set(t.number, id)
     const assets =
       mode === 'demo'
-        ? await uploadTeamAssets(id, t.color, t.shape, t.pages
+        ? await uploadTeamAssets(id, t.logo === false ? null : { color: t.color, shape: t.shape }, t.pages
             ? { teamName: t.name, teamNumber: t.number, location: `${t.city}, ${t.state}`, color: t.color, pages: t.pages }
             : null)
         : null
@@ -129,12 +131,15 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
       .onConflictDoNothing()
   }
 
+  // A FIRST record for a team that isn't on FTC Pitfund yet ("Is this your team?" in QA).
+  await db.insert(ftcTeamCache).values({ number: 23014, name: 'Robo Ravens', city: 'Boise', state: 'ID', country: 'USA', source: 'ftcscout', fetchedAt: now })
+
   // ─── Sponsors ──────────────────────────────────────────────────────────────────────
   const sponsorFixtures =
     mode === 'demo' ? SPONSORS : SPONSORS.filter((s) => s.members.some((m) => m === 'sponsor' || m === 'sponsor2' || m === 'sponsor-pending'))
   const sponsorIds = new Map<string, string>()
   for (const [i, s] of sponsorFixtures.entries()) {
-    const id = crypto.randomUUID()
+    const id = seedSponsorId(s.name)
     sponsorIds.set(s.name, id)
     const logoPath = mode === 'demo' ? await uploadSponsorLogo(id, s.color, s.shape) : null
     const decided = s.status !== 'pending'
@@ -182,7 +187,7 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
     const coachId = idOf(coachEmail)
     const sponsorMemberEmail = memberEmail(company.members[0])
     const sponsorMemberId = idOf(sponsorMemberEmail)
-    const id = crypto.randomUUID()
+    const id = seedPitchId(teamNumber, sponsorName)
     world.pitchIds.set(`${teamNumber}:${sponsorName}`, id)
 
     const base = ago(now, (26 - (i % 20)) * DAY + i * HOUR)
@@ -194,7 +199,14 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
     const responded = reached(['matched', 'declined'])
 
     const questions = questionsFor({ name: company.name, questions: company.questions })
-    const answers = questions.map((qn, qi) => ({ questionId: qn.id, prompt: qn.prompt, answer: answerFor(qn.id, team, company.name, i + qi) }))
+    const fullAnswers = questions.map((qn, qi) => ({ questionId: qn.id, prompt: qn.prompt, answer: answerFor(qn.id, team, company.name, i + qi) }))
+    // Drafts are half-written: only the first answer is filled in.
+    const answers =
+      status !== 'draft'
+        ? fullAnswers
+        : teamNumber === 31579 && sponsorName === 'Summit Fabrication'
+          ? SUMMIT_DRAFT_ANSWERS
+          : fullAnswers.map((a, qi) => (qi === 0 ? a : { ...a, answer: '' }))
     const askType = (['amount', 'in_kind', 'open', 'none'] as const)[i % 4]
 
     const coachUser = PERSONA_USERS.find((u) => u.email === coachEmail)
@@ -280,11 +292,11 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
 
   const brightlineId = sponsorIds.get('Brightline Engineering')!
   await db.insert(invites).values([
-    { kind: 'team', teamId: exodiusId, email: 'mentor.alvarez@pitfund.test', tokenHash: tokenHash(), invitedBy: personaId('coach'), expiresAt: new Date(now.getTime() + 10 * DAY), createdAt: ago(now, 4 * DAY) },
-    { kind: 'team', teamId: exodiusId, email: 'old.invite@pitfund.test', tokenHash: tokenHash(), invitedBy: personaId('coach'), expiresAt: ago(now, 2 * DAY), createdAt: ago(now, 16 * DAY) },
-    { kind: 'team', teamId: exodiusId, email: 'revoked.invite@pitfund.test', tokenHash: tokenHash(), invitedBy: personaId('coach'), expiresAt: new Date(now.getTime() + 5 * DAY), revokedAt: ago(now, 1 * DAY), createdAt: ago(now, 9 * DAY) },
-    { kind: 'sponsor', sponsorId: brightlineId, email: 'member-brightline@pitfund.test', tokenHash: tokenHash(), invitedBy: personaId('sponsor'), expiresAt: ago(now, 10 * DAY), acceptedAt: ago(now, 22 * DAY), createdAt: ago(now, 23 * DAY) },
-    { kind: 'sponsor', sponsorId: brightlineId, email: 'finance@pitfund.test', tokenHash: tokenHash(), invitedBy: personaId('sponsor'), expiresAt: new Date(now.getTime() + 12 * DAY), createdAt: ago(now, 2 * DAY) },
+    { kind: 'team', teamId: exodiusId, email: personaEmail('coach-new'), tokenHash: hashInviteToken(SEED_INVITE_TOKENS.valid), invitedBy: personaId('coach'), expiresAt: new Date(now.getTime() + 10 * DAY), createdAt: ago(now, 4 * DAY) },
+    { kind: 'team', teamId: exodiusId, email: 'old.invite@pitfund.test', tokenHash: hashInviteToken(SEED_INVITE_TOKENS.expired), invitedBy: personaId('coach'), expiresAt: ago(now, 2 * DAY), createdAt: ago(now, 16 * DAY) },
+    { kind: 'team', teamId: exodiusId, email: 'revoked.invite@pitfund.test', tokenHash: hashInviteToken(SEED_INVITE_TOKENS.revoked), invitedBy: personaId('coach'), expiresAt: new Date(now.getTime() + 5 * DAY), revokedAt: ago(now, 1 * DAY), createdAt: ago(now, 9 * DAY) },
+    { kind: 'sponsor', sponsorId: brightlineId, email: 'member-brightline@pitfund.test', tokenHash: hashInviteToken(SEED_INVITE_TOKENS.used), invitedBy: personaId('sponsor'), expiresAt: ago(now, 10 * DAY), acceptedAt: ago(now, 22 * DAY), createdAt: ago(now, 23 * DAY) },
+    { kind: 'sponsor', sponsorId: brightlineId, email: 'finance@pitfund.test', tokenHash: hashInviteToken(SEED_INVITE_TOKENS.sponsorValid), invitedBy: personaId('sponsor'), expiresAt: new Date(now.getTime() + 12 * DAY), createdAt: ago(now, 2 * DAY) },
   ])
 
   await db.insert(reports).values([

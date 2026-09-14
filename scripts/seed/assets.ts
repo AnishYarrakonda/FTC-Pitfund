@@ -148,6 +148,8 @@ export type DeckContent = {
   pages: number
   /** Adds a large incompressible image so the file lands just under 10 MB. */
   maxSize?: boolean
+  /** Adds a smaller noise image of this side length (px) instead, e.g. 820 for ~2 MB. */
+  noiseSide?: number
 }
 
 const SECTIONS: Array<[string, string[]]> = [
@@ -263,9 +265,9 @@ export async function generateDeckPdf(deck: DeckContent): Promise<Uint8Array> {
   for (let i = 0; i < deck.pages; i++) {
     const page = pdf.addPage([612, 792])
     drawPage(page, i, deck, fonts)
-    if (deck.maxSize && i === deck.pages - 1) {
-      // Random noise does not compress: ~9.8 MB of image data.
-      const side = 1850
+    if ((deck.maxSize || deck.noiseSide) && i === deck.pages - 1) {
+      // Random noise does not compress: ~9.8 MB of image data at 1850 px.
+      const side = deck.noiseSide ?? 1850
       const noise = new Uint8Array(side * side * 3)
       for (let j = 0; j < noise.length; j += 65536) {
         crypto.getRandomValues(noise.subarray(j, Math.min(j + 65536, noise.length)))

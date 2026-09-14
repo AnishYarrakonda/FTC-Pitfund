@@ -9,6 +9,8 @@ import { closeDb } from '@/lib/server/db'
 
 import { argValue, guardTarget, isLocalHost, loadEnv } from '../lib/env'
 
+import { writePdfFixtures } from './pdf-fixtures'
+
 loadEnv()
 
 const SCENARIOS = ['demo', 'empty', 'edge'] as const
@@ -37,7 +39,21 @@ async function main() {
   const started = Date.now()
   const { run } = await import(`./scenarios/${scenario}.ts`)
   await run()
+  await writePdfFixtures()
+  await expireServerCaches()
   console.log(`✓ Seeded "${scenario}" in ${((Date.now() - started) / 1000).toFixed(1)} s`)
+}
+
+/** Running local servers keep `'use cache'` entries in memory; tell them the data changed. */
+async function expireServerCaches() {
+  const secret = process.env.CRON_SECRET
+  if (!secret) return
+  const servers = [process.env.E2E_BASE_URL ?? 'http://127.0.0.1:3000', process.env.QA_BASE_URL ?? 'http://127.0.0.1:3100']
+  await Promise.all(
+    servers.map((base) =>
+      fetch(`${base}/api/revalidate`, { method: 'POST', headers: { authorization: `Bearer ${secret}` }, signal: AbortSignal.timeout(5000) }).catch(() => null),
+    ),
+  )
 }
 
 main()
