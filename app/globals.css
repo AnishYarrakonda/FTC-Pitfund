@@ -1,0 +1,252 @@
+@import 'tailwindcss';
+
+/*
+ * FTC Pitfund design tokens (plan §7). Light theme only. Tailwind's default palette, type
+ * scale, radii and shadows are cleared so only these values exist: if a class isn't built
+ * from a token below, it doesn't compile.
+ */
+
+@theme {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-white: #ffffff;
+
+  --color-canvas: #fafafa;
+  --color-surface: #ffffff;
+  --color-muted: #f4f4f5; /* neutral hover/selected fill, derived from the border scale */
+  --color-border: #e7e7ea;
+  --color-border-strong: #d4d4d8;
+
+  --color-text: #0b0b0c;
+  --color-text-secondary: #52525b;
+  --color-text-tertiary: #71717a;
+
+  --color-accent: #1f6f5c;
+  --color-accent-hover: #185a4b;
+  --color-accent-subtle: #eaf3f0;
+
+  --color-success: #15803d;
+  --color-success-subtle: #effaf2;
+  --color-warning: #b45309;
+  --color-warning-subtle: #fdf6ea;
+  --color-danger: #b91c1c;
+  --color-danger-hover: #991b1b;
+  --color-danger-subtle: #fdf0f0;
+  --color-info: #1d4ed8;
+  --color-info-subtle: #eff4ff;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --text-*: initial;
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+  --text-small: 13px;
+  --text-small--line-height: 20px;
+  --text-body: 14px;
+  --text-body--line-height: 22px;
+  --text-lead: 16px;
+  --text-lead--line-height: 24px;
+  --text-h3: 20px;
+  --text-h3--line-height: 28px;
+  --text-h2: 24px;
+  --text-h2--line-height: 32px;
+  --text-h1: 30px;
+  --text-h1--line-height: 38px;
+  --text-display: 44px;
+  --text-display--line-height: 52px;
+  --text-display-lg: 56px;
+  --text-display-lg--line-height: 64px;
+
+  --font-weight-*: initial;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  --tracking-tight: -0.011em;
+  --tracking-tighter: -0.022em;
+
+  --radius-*: initial;
+  --radius-control: 6px;
+  --radius-menu: 8px;
+  --radius-dialog: 12px;
+
+  --shadow-*: initial;
+  --shadow-sm: 0 1px 2px rgb(11 11 12 / 0.05), 0 2px 8px rgb(11 11 12 / 0.06);
+  --shadow-lg: 0 8px 24px rgb(11 11 12 / 0.1), 0 24px 64px rgb(11 11 12 / 0.12);
+
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+
+  --container-auth: 380px;
+  --container-form: 640px;
+  --container-reading: 720px;
+  --container-app: 1080px;
+  --container-review: 1280px;
+
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+
+  --animate-overlay-in: overlay-in 180ms var(--ease-out);
+  --animate-overlay-out: overlay-out 120ms var(--ease-out);
+  --animate-content-in: content-in 180ms var(--ease-out);
+  --animate-content-out: content-out 120ms var(--ease-out);
+  --animate-sheet-in: sheet-in 180ms var(--ease-out);
+  --animate-sheet-out: sheet-out 120ms var(--ease-out);
+  --animate-spin: spin 700ms linear infinite;
+  --animate-pulse: pulse 1.6s ease-in-out infinite;
+  --animate-progress: progress 1.2s ease-in-out infinite;
+
+  @keyframes overlay-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes overlay-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes content-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+  @keyframes content-out {
+    to {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+  @keyframes sheet-in {
+    from {
+      opacity: 0;
+      transform: translateX(4px);
+    }
+  }
+  @keyframes sheet-out {
+    to {
+      opacity: 0;
+      transform: translateX(4px);
+    }
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes pulse {
+    50% {
+      opacity: 0.55;
+    }
+  }
+  @keyframes progress {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(250%);
+    }
+  }
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color-scheme: light;
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-feature-settings: 'cv11', 'ss01';
+    /*
+     * User-generated text never breaks layout (plan §3.1 #11): a 5,000-character word must
+     * wrap instead of widening its container. Controls opt out with whitespace-nowrap.
+     */
+    overflow-wrap: anywhere;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-accent-subtle);
+    color: var(--color-text);
+  }
+
+  [data-numeric],
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@utility user-text {
+  overflow-wrap: anywhere;
+  word-break: normal;
+  min-width: 0;
+}
+
+@utility user-text-block {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Overlays still fade, but never move. */
+  [data-motion='overlay'] {
+    animation-name: overlay-in !important;
+  }
+  [data-motion='overlay'][data-state='closed'] {
+    animation-name: overlay-out !important;
+  }
+}
