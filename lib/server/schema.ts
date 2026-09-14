@@ -59,12 +59,19 @@ export const ftcRecordSource = pgEnum('ftc_record_source', ['first', 'ftcscout']
 
 export type SponsorQuestion = { id: string; prompt: string; help?: string; required: boolean }
 export type PitchAnswer = { questionId: string; prompt: string; answer: string }
+/** Who to contact on a match, snapshotted when the company says it's interested. */
 export type ContactSnapshot = {
   name: string
   email: string
   phone: string | null
   jobTitle?: string | null
+  /** Team side: the public team page. */
   teamUrl?: string | null
+  teamName?: string | null
+  teamNumber?: number | null
+  /** Company side. */
+  companyName?: string | null
+  website?: string | null
 }
 
 // ─── People ─────────────────────────────────────────────────────────────────────────────
@@ -106,10 +113,12 @@ export const teams = pgTable(
     website: text('website'),
     summary: text('summary'),
     logoPath: text('logo_path'),
+    logoBytes: integer('logo_bytes'),
     pdfPath: text('pdf_path'),
     pdfPages: smallint('pdf_pages'),
     pdfBytes: integer('pdf_bytes'),
     pdfThumbPath: text('pdf_thumb_path'),
+    pdfThumbBytes: integer('pdf_thumb_bytes'),
     pdfUpdatedAt: ts('pdf_updated_at'),
     mediaConsentAt: ts('media_consent_at'),
     recordStatus: recordStatus('record_status').notNull().default('unchecked'),
@@ -181,6 +190,7 @@ export const sponsors = pgTable(
     name: text('name').notNull(),
     website: text('website').notNull(),
     logoPath: text('logo_path'),
+    logoBytes: integer('logo_bytes'),
     city: text('city'),
     state: text('state'),
     region: text('region'),
@@ -348,6 +358,8 @@ export const emailOutbox = pgTable(
     dedupeKey: text('dedupe_key'),
     sendAfter: ts('send_after').notNull().defaultNow(),
     sentAt: ts('sent_at'),
+    // An admin dismissed a failed or bounced email on the System page (it stays for the quota count).
+    dismissedAt: ts('dismissed_at'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

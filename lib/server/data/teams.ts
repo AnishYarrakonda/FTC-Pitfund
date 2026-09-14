@@ -352,7 +352,7 @@ export async function finalizeDeck(viewer: TeamViewer, input: { receipt: string;
   const now = new Date()
   const [row] = await getDb()
     .update(teams)
-    .set({ pdfPath, pdfPages: receipt.pages, pdfBytes: receipt.bytes, pdfThumbPath: thumbPath, pdfUpdatedAt: now, mediaConsentAt: now })
+    .set({ pdfPath, pdfPages: receipt.pages, pdfBytes: receipt.bytes, pdfThumbPath: thumbPath, pdfThumbBytes: thumbBytes.byteLength, pdfUpdatedAt: now, mediaConsentAt: now })
     .where(eq(teams.id, viewer.team.id))
     .returning()
   await audit({ actorId: viewer.id, action: 'team.deck_updated', entityType: 'team', entityId: viewer.team.id, data: { pages: receipt.pages, bytes: receipt.bytes } })
@@ -367,7 +367,7 @@ export async function finalizeTeamLogo(viewer: TeamViewer, stagingPath: string) 
   const [before] = await getDb().select({ logoPath: teams.logoPath }).from(teams).where(eq(teams.id, viewer.team.id))
   const logoPath = await publishVerified(prefix, 'logo', bytes, kind)
   await discard('staging', [stagingPath])
-  const [row] = await getDb().update(teams).set({ logoPath }).where(eq(teams.id, viewer.team.id)).returning()
+  const [row] = await getDb().update(teams).set({ logoPath, logoBytes: bytes.byteLength }).where(eq(teams.id, viewer.team.id)).returning()
   await audit({ actorId: viewer.id, action: 'team.logo_updated', entityType: 'team', entityId: viewer.team.id })
   return { profile: toProfile(row), replaced: [before?.logoPath], published: [logoPath] }
 }

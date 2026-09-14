@@ -1,0 +1,1 @@
+ALTER TABLE "email_outbox" ADD COLUMN "dismissed_at" timestamp with time zone;
