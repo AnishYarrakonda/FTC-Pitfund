@@ -68,11 +68,23 @@ function writeSupabaseEnv(existing: Map<string, string>): boolean {
   return changed
 }
 
-async function startSupabase(configChanged: boolean) {
+/** The Send Email hook secret the running auth container was started with, if it's running. */
+function runningHookSecret(): string | null {
+  const projectId = readFileSync('supabase/config.toml', 'utf8').match(/^project_id\s*=\s*"([^"]+)"/m)?.[1]
+  if (!projectId) return null
+  const inspect = run('docker', ['inspect', `supabase_auth_${projectId}`, '--format', '{{range .Config.Env}}{{println .}}{{end}}'])
+  if (inspect.code !== 0) return null
+  return inspect.stdout.match(/^GOTRUE_HOOK_SEND_EMAIL_SECRETS=(.*)$/m)?.[1] ?? null
+}
+
+async function startSupabase(settingsChanged: boolean, hookSecret: string) {
   step('Starting the local Supabase stack')
   const bin = supabaseBin()
   const status = run(bin, ['status', '-o', 'env'])
   const running = status.code === 0 && status.stdout.includes('API_URL')
+  // Another checkout may have started the stack with its own hook secret; auth emails would fail.
+  const liveSecret = running ? runningHookSecret() : null
+  const configChanged = settingsChanged || (liveSecret !== null && liveSecret !== hookSecret)
   if (running && configChanged) {
     console.log('  Auth settings changed; restarting the stack')
     await runInherit(bin, ['stop'])
@@ -160,7 +172,7 @@ async function main() {
   const configChanged = writeSupabaseEnv(existing)
   const hookSecret = readEnvFile(SUPABASE_ENV_FILE).get('SEND_EMAIL_HOOK_SECRET')!
 
-  const stack = await startSupabase(configChanged)
+  const stack = await startSupabase(configChanged, hookSecret)
   const env = mergeEnvLocal(existing, stack, hookSecret)
   const childEnv = { ...process.env, ...Object.fromEntries(env) }
 
