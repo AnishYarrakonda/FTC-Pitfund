@@ -3,27 +3,19 @@ import { PageContainer } from '@/components/ui/page'
 
 /* Segment loading states. Each mirrors the page it stands in for, so nothing shifts. */
 
-export function ListPageSkeleton({ action = true }: { action?: boolean }) {
+export function ListPageSkeleton({ action = true, width = 'app', tabs = false }: { action?: boolean; width?: 'app' | 'review'; tabs?: boolean }) {
   return (
-    <PageContainer>
+    <PageContainer width={width}>
       <div role="status" aria-label="Loading">
         <PageHeaderSkeleton action={action} />
-        <SkeletonList rows={6} />
-      </div>
-    </PageContainer>
-  )
-}
-
-export function PlaceholderPageSkeleton() {
-  return (
-    <PageContainer>
-      <div role="status" aria-label="Loading">
-        <PageHeaderSkeleton action={false} />
-        <div className="grid justify-items-center gap-3 rounded-dialog border border-border bg-surface px-6 py-20">
-          <Skeleton className="h-5 w-48" />
-          <Skeleton className="h-4 w-72 max-w-full" />
-          <Skeleton className="mt-3 h-9 w-36" />
-        </div>
+        {tabs ? (
+          <div className="mb-6 flex gap-5 border-b border-border pb-3">
+            {Array.from({ length: 4 }, (_, i) => (
+              <Skeleton key={i} className="h-4 w-20" />
+            ))}
+          </div>
+        ) : null}
+        <SkeletonList rows={6} className="rounded-dialog" />
       </div>
     </PageContainer>
   )

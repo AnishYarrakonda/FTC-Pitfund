@@ -1,5 +1,5 @@
-import { PlaceholderPageSkeleton } from '@/components/app/page-skeletons'
+import { ListPageSkeleton } from '@/components/app/page-skeletons'
 
 export default function Loading() {
-  return <PlaceholderPageSkeleton />
+  return <ListPageSkeleton width="review" action={false} />
 }

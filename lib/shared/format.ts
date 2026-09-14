@@ -52,3 +52,12 @@ export function initials(name: string): string {
 export function pluralize(n: number, one: string, many = `${one}s`): string {
   return `${n} ${n === 1 ? one : many}`
 }
+
+/** How long something has waited, for the review queue: "waiting 26 h", "waiting 3 days". */
+export function formatWaiting(since: Date | string, now: Date = new Date()): string {
+  const d = typeof since === 'string' ? new Date(since) : since
+  const diff = Math.max(0, now.getTime() - d.getTime())
+  if (diff < HOUR) return `waiting ${Math.max(1, Math.floor(diff / MINUTE))} min`
+  if (diff < 3 * DAY) return `waiting ${Math.floor(diff / HOUR)} h`
+  return `waiting ${Math.floor(diff / DAY)} days`
+}

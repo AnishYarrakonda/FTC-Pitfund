@@ -1,10 +1,10 @@
 import { Mail } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-import { PageContainer, PageHeader } from '@/components/ui/page'
+import { PageContainer } from '@/components/ui/page'
 import { SUPPORT_EMAIL } from '@/lib/shared/brand'
 
-/* Whole-page states shared by layouts: suspended accounts/orgs and not-yet-built steps. */
+/* Whole-page states shared by layouts: suspended accounts and organizations. */
 
 export function SuspendedNotice({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -21,39 +21,6 @@ export function SuspendedNotice({ title, children }: { title: string; children: 
           <Mail aria-hidden="true" className="size-4 text-text-tertiary" />
           Email {SUPPORT_EMAIL}
         </a>
-      </div>
-    </PageContainer>
-  )
-}
-
-/**
- * A destination that exists in the navigation but whose feature ships in a later build step.
- * It says so plainly and offers the one useful next action; it never fakes content.
- */
-export function PlaceholderPage({
-  title,
-  description,
-  emptyTitle,
-  emptyDescription,
-  action,
-  width = 'app',
-}: {
-  title: string
-  description: string
-  emptyTitle: string
-  emptyDescription: ReactNode
-  action?: ReactNode
-  width?: 'app' | 'form' | 'review'
-}) {
-  return (
-    <PageContainer width={width}>
-      <PageHeader title={title} description={description} />
-      <div className="rounded-dialog border border-border bg-surface">
-        <div className="mx-auto flex max-w-md flex-col items-center px-6 py-16 text-center sm:py-20">
-          <h2 className="text-lead font-semibold tracking-tight text-text">{emptyTitle}</h2>
-          <p className="mt-2 text-body text-text-secondary">{emptyDescription}</p>
-          {action ? <div className="mt-6">{action}</div> : null}
-        </div>
       </div>
     </PageContainer>
   )
