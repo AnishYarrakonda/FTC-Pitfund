@@ -24,11 +24,11 @@ export default function PitchWithdrawnEmail(props: PitchWithdrawnProps) {
         Team {p.teamNumber} · {p.teamName} withdrew its pitch
       </Text>
       <Text style={{ ...text.body, wordBreak: 'break-word' }}>
-        The team withdrew the pitch it sent to {p.companyName}, so you don&apos;t need to respond. It stays in your FTC Pitfund
-        inbox, marked withdrawn.
+        The team withdrew the pitch it sent to {p.companyName}, so you don&apos;t need to respond. The link below shows it as
+        withdrawn.
       </Text>
       <Section style={{ padding: '4px 0 0' }}>
-        <EmailButton href={p.inboxUrl}>Open your inbox</EmailButton>
+        <EmailButton href={p.inboxUrl}>View the pitch</EmailButton>
       </Section>
     </EmailLayout>
   )

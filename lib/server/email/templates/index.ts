@@ -3,12 +3,24 @@ import 'server-only'
 import { render, toPlainText } from 'react-email'
 import { createElement, type ComponentType } from 'react'
 
+import AdminDigestEmail, { adminDigestSchema, adminDigestSubject } from './admin-digest'
 import AdminNewPitchEmail, { adminNewPitchSchema, adminNewPitchSubject } from './admin-new-pitch'
+import AdminReportEmail, { adminReportSchema, adminReportSubject } from './admin-report'
 import JoinDecisionEmail, { joinDecisionSchema, joinDecisionSubject } from './join-decision'
 import JoinRequestEmail, { joinRequestSchema, joinRequestSubject } from './join-request'
 import LoginCodeEmail, { loginCodeSchema, loginCodeSubject } from './login-code'
+import MatchSponsorEmail, { matchSponsorSchema, matchSponsorSubject } from './match-sponsor'
+import MatchTeamEmail, { matchTeamSchema, matchTeamSubject } from './match-team'
+import NewPitchSponsorEmail, { newPitchSponsorSchema, newPitchSponsorSubject } from './new-pitch-sponsor'
 import NoticeEmail, { noticeSchema } from './notice'
+import PitchApprovedCoachEmail, { pitchApprovedCoachSchema, pitchApprovedCoachSubject } from './pitch-approved-coach'
+import PitchNotAFitEmail, { pitchNotAFitSchema, pitchNotAFitSubject } from './pitch-not-a-fit'
+import PitchRejectedEmail, { pitchRejectedSchema, pitchRejectedSubject } from './pitch-rejected'
+import PitchSentBackEmail, { pitchSentBackSchema, pitchSentBackSubject } from './pitch-sent-back'
 import PitchWithdrawnEmail, { pitchWithdrawnSchema, pitchWithdrawnSubject } from './pitch-withdrawn'
+import SponsorApprovedEmail, { sponsorApprovedSchema, sponsorApprovedSubject } from './sponsor-approved'
+import SponsorInviteEmail, { sponsorInviteSchema, sponsorInviteSubject } from './sponsor-invite'
+import SponsorRejectedEmail, { sponsorRejectedSchema, sponsorRejectedSubject } from './sponsor-rejected'
 import TeamInviteEmail, { teamInviteSchema, teamInviteSubject } from './team-invite'
 
 /*
@@ -42,6 +54,24 @@ const registry = {
   'join-decision': { schema: joinDecisionSchema, subject: joinDecisionSubject, component: JoinDecisionEmail, sensitive: false },
   'admin-new-pitch': { schema: adminNewPitchSchema, subject: adminNewPitchSubject, component: AdminNewPitchEmail, sensitive: false },
   'pitch-withdrawn': { schema: pitchWithdrawnSchema, subject: pitchWithdrawnSubject, component: PitchWithdrawnEmail, sensitive: false },
+  'match-team': { schema: matchTeamSchema, subject: matchTeamSubject, component: MatchTeamEmail, sensitive: false },
+  'match-sponsor': { schema: matchSponsorSchema, subject: matchSponsorSubject, component: MatchSponsorEmail, sensitive: false },
+  'pitch-not-a-fit': { schema: pitchNotAFitSchema, subject: pitchNotAFitSubject, component: PitchNotAFitEmail, sensitive: false },
+  'pitch-approved-coach': { schema: pitchApprovedCoachSchema, subject: pitchApprovedCoachSubject, component: PitchApprovedCoachEmail, sensitive: false },
+  'new-pitch-sponsor': { schema: newPitchSponsorSchema, subject: newPitchSponsorSubject, component: NewPitchSponsorEmail, sensitive: false },
+  'pitch-sent-back': { schema: pitchSentBackSchema, subject: pitchSentBackSubject, component: PitchSentBackEmail, sensitive: false },
+  'pitch-rejected': { schema: pitchRejectedSchema, subject: pitchRejectedSubject, component: PitchRejectedEmail, sensitive: false },
+  'sponsor-approved': { schema: sponsorApprovedSchema, subject: sponsorApprovedSubject, component: SponsorApprovedEmail, sensitive: false },
+  'sponsor-rejected': { schema: sponsorRejectedSchema, subject: sponsorRejectedSubject, component: SponsorRejectedEmail, sensitive: false },
+  'sponsor-invite': {
+    schema: sponsorInviteSchema,
+    subject: sponsorInviteSubject,
+    component: SponsorInviteEmail,
+    // The accept link carries the invite token; it is scrubbed once the email is sent.
+    sensitive: true,
+  },
+  'admin-report': { schema: adminReportSchema, subject: adminReportSubject, component: AdminReportEmail, sensitive: false },
+  'admin-digest': { schema: adminDigestSchema, subject: adminDigestSubject, component: AdminDigestEmail, sensitive: false },
 } as const
 
 export type TemplateName = keyof typeof registry

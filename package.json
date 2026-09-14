@@ -24,7 +24,8 @@
     "e2e": "playwright test --config playwright.config.ts",
     "qa": "playwright test --config playwright.qa.config.ts",
     "knip": "knip --no-progress",
-    "email:drain": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/drain-outbox.ts"
+    "email:drain": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/drain-outbox.ts",
+    "cron:run": "node --import tsx scripts/cron-run.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
