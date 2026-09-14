@@ -244,6 +244,9 @@ test('two admins deciding the same pitch: the second is told who decided', async
 
 test('keyboard-only review: S and R open their note dialogs, A approves, J and K move, and each decision advances', async ({ browser }) => {
   test.setTimeout(120_000)
+  // Earlier tests decided some seeded pitches: put three approvable ones back in the queue.
+  const queue = [SEED.pitches.lotusToBrightlineInReview, SEED.pitches.quokkasToBrightlineSent, SEED.pitches.tidalToHarborInReview]
+  await db()`update pitches set status = 'in_review', sent_at = null, reviewed_by = null, reviewed_at = null, review_note = null where id = any(${queue})`
   const admin = await as(browser, 'admin')
   const { page } = admin
   await page.goto('/admin', { waitUntil: 'networkidle' })
@@ -278,8 +281,14 @@ test('keyboard-only review: S and R open their note dialogs, A approves, J and K
     }
     await expect(page.getByText(key === 'A' ? /^Sent to / : key === 'S' ? /^Sent back · / : /^Rejected · /)).toBeVisible()
     await page.waitForURL((url) => url.toString() !== current)
+    if (new URL(page.url()).pathname === '/admin') {
+      // The queue is empty: auto-advance lands on the review page.
+      await expect(page.getByRole('heading', { name: 'You’re all caught up' })).toBeVisible()
+      return false
+    }
     await expect.poll(heading).not.toBe(title)
     await ready()
+    return true
   }
 
   const firstHeading = await heading()
@@ -290,8 +299,8 @@ test('keyboard-only review: S and R open their note dialogs, A approves, J and K
   await expect.poll(heading).toBe(firstHeading)
   await ready()
 
-  await decide('S')
-  await decide('R')
+  expect(await decide('S')).toBe(true)
+  expect(await decide('R')).toBe(true)
   await decide('A')
   expect(admin.problems).toEqual([])
   await admin.close()

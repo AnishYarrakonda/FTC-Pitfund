@@ -74,6 +74,12 @@ Team email: **ftcexodius@gmail.com**.
   Ran twice: the digest dedupes and the re-check has nothing left.
 - Schema: `teams.logo_bytes`, `teams.pdf_thumb_bytes`, `sponsors.logo_bytes` (storage meter), `email_outbox.dismissed_at`.
 
+**Verified at hand-off (2026-09-14):** `npm run db:reset`, `check` (119 unit/integration tests, including an action ×
+persona authz matrix for every new action), `build`, `e2e` (56 journeys), `qa` (422 route × persona × width checks on
+`demo` and `edge`, screenshots reviewed), `cron:run` twice, the three-person browser flow from `/login` to a match with
+every email checked in Mailpit, Slow 3G (buttons acknowledge in ~14 ms), Resend 429/500 injection, two admins deciding
+the same pitch, and a company deleted mid-review.
+
 ## For prompt 4
 
 - `/dev/ui` has new sections: Inbox, Connected, Company status, Questions editor, What teams see, Admin console.
