@@ -45,7 +45,7 @@ for (const route of QA_ROUTES) {
         const response = await page.goto(route.path, { waitUntil: 'load' })
         const status = response?.status() ?? 0
         if (status !== (route.expectStatus ?? 200)) failures.push(`HTTP ${status}, expected ${route.expectStatus ?? 200}`)
-        if (new URL(page.url()).pathname !== route.path) failures.push(`redirected to ${page.url()}`)
+        if (new URL(page.url()).pathname + new URL(page.url()).search !== route.path) failures.push(`redirected to ${page.url()}`)
 
         await settle(page)
 

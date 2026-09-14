@@ -81,6 +81,46 @@ const searchNoResults: QaInteraction = {
   },
 }
 
+const notAFitOther: QaInteraction = {
+  name: 'not-a-fit-other',
+  run: async (page) => {
+    await page.getByRole('button', { name: 'Not a fit' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Mark this pitch not a fit?' })
+    await dialog.getByRole('radio', { name: 'Other' }).click()
+    await expect(dialog.getByLabel('Tell the team why')).toBeVisible()
+  },
+}
+
+const customizeQuestions: QaInteraction = {
+  name: 'questions-editing',
+  run: async (page) => {
+    const section = page.locator('#questions')
+    const customize = section.getByRole('button', { name: 'Customize' })
+    if (await customize.isVisible()) await customize.click()
+    await expect(section.getByRole('button', { name: 'Add question' })).toBeVisible()
+    await section.getByRole('button', { name: /Move question 1 down/ }).click()
+    await expect(section.getByText('Unsaved changes')).toBeVisible()
+  },
+}
+
+const directorySearchEmpty: QaInteraction = {
+  name: 'search-empty',
+  run: async (page) => {
+    await page.getByLabel('Search teams by name or number').fill('zzz no such team')
+    await expect(page.getByText(/No teams match/)).toBeVisible({ timeout: 10_000 })
+  },
+}
+
+const personActionDialog: QaInteraction = {
+  name: 'person-action',
+  widths: [375, 1280],
+  run: async (page) => {
+    await page.getByRole('button', { name: /^Actions for / }).first().click()
+    await page.getByRole('menuitem').first().click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+  },
+}
+
 export const QA_ROUTES: QaRoute[] = [
   // Public
   { name: 'landing', path: '/', personas: ['anonymous'], budget: 'public' },
@@ -139,14 +179,31 @@ export const QA_ROUTES: QaRoute[] = [
 
   // Company workspace
   { name: 'inbox', path: '/inbox', personas: ['sponsor', 'sponsor-pending', 'sponsor2'], budget: 'authed' },
-  { name: 'company', path: '/company', personas: ['sponsor'], budget: 'authed' },
+  { name: 'inbox-new', path: `/inbox/${SEED.pitches.voltageToBrightlineSent}`, personas: ['sponsor'], budget: 'authed', interactions: [notAFitOther] },
+  { name: 'inbox-matched', path: `/inbox/${SEED.pitches.exodiusMatched}`, personas: ['sponsor'], budget: 'authed' },
+  { name: 'inbox-declined', path: `/inbox/${SEED.pitches.gearToBrightlineDeclined}`, personas: ['sponsor'], budget: 'authed' },
+  { name: 'inbox-withdrawn', path: `/inbox/${SEED.pitches.knightsToBrightlineWithdrawn}`, personas: ['sponsor'], budget: 'authed' },
+  { name: 'company', path: '/company', personas: ['sponsor', 'sponsor-pending'], budget: 'authed', interactions: [customizeQuestions] },
 
   // Shared
   { name: 'account', path: '/account', personas: ['coach', 'coach-unverified', 'sponsor', 'admin'], budget: 'authed' },
 
   // Admin
   { name: 'admin-review', path: '/admin', personas: ['admin'], budget: 'authed' },
-  { name: 'admin-directory', path: '/admin/directory', personas: ['admin'], budget: 'authed' },
+  { name: 'admin-review-companies', path: '/admin?tab=companies', personas: ['admin'], budget: 'authed' },
+  { name: 'admin-review-teams', path: '/admin?tab=teams', personas: ['admin'], budget: 'authed' },
+  { name: 'admin-review-reports', path: '/admin?tab=reports', personas: ['admin'], budget: 'authed' },
+  { name: 'admin-pitch', path: `/admin/pitches/${SEED.pitches.lotusToBrightlineInReview}`, personas: ['admin'], budget: 'authed' },
+  { name: 'admin-pitch-blocked', path: `/admin/pitches/${SEED.pitches.sagesToVantageInReview}`, personas: ['admin'], budget: 'authed' },
+  { name: 'admin-pitch-decided', path: `/admin/pitches/${SEED.pitches.exodiusMatched}`, personas: ['admin'], budget: 'authed' },
+  { name: 'admin-company-pending', path: `/admin/companies/${SEED.atlasPending}`, personas: ['admin'], budget: 'authed' },
+  { name: 'admin-company-rejected', path: `/admin/companies/${SEED.quickcashRejected}`, personas: ['admin'], budget: 'authed' },
+  { name: 'admin-company-suspended', path: `/admin/companies/${SEED.vantageSuspended}`, personas: ['admin'], budget: 'authed' },
+  { name: 'admin-team-unverified', path: `/admin/teams/${SEED.tidal.id}`, personas: ['admin'], budget: 'authed' },
+  { name: 'admin-team-verified', path: `/admin/teams/${SEED.exodius.id}`, personas: ['admin'], budget: 'authed' },
+  { name: 'admin-directory', path: '/admin/directory', personas: ['admin'], budget: 'authed', interactions: [directorySearchEmpty] },
+  { name: 'admin-directory-companies', path: '/admin/directory?tab=companies', personas: ['admin'], budget: 'authed' },
+  { name: 'admin-directory-people', path: '/admin/directory?tab=people', personas: ['admin'], budget: 'authed', interactions: [personActionDialog] },
   { name: 'admin-system', path: '/admin/system', personas: ['admin'], budget: 'authed' },
 
   // Local development tools

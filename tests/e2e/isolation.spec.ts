@@ -28,7 +28,7 @@ test.describe('pending company member', () => {
   test.use(asPersona('sponsor-pending'))
   test('sees the waiting-for-approval banner', async ({ page }) => {
     await page.goto('/inbox')
-    await expect(page.getByText('Atlas Components is waiting for approval')).toBeVisible()
+    await expect(page.getByText('Your company is under review', { exact: true })).toBeVisible()
   })
 })
 
