@@ -14,7 +14,7 @@ import { invites, sponsorMembers, sponsors, teamJoinRequests, teamMembers, teams
 import { publicUrl } from '../storage'
 
 /*
- * Invites, generic over `kind = team | sponsor` (prompt 3 reuses this for companies).
+ * Invites, generic over `kind = team | sponsor`. A company invites only once it is approved.
  * The token is 32 random bytes shown once (in the email link); only its SHA-256 is stored.
  * An invite is bound to one email address, expires in 14 days and works once.
  */
@@ -54,7 +54,18 @@ async function isMemberByEmail(org: InviteOrg, email: string) {
   return rows.length > 0
 }
 
+/** Only an approved company can invite coworkers (plan §1 rule 5); teams can always invite. */
+async function assertCanInvite(org: InviteOrg) {
+  if (org.kind !== 'sponsor') return
+  const [company] = await getDb().select({ name: sponsors.name, status: sponsors.status }).from(sponsors).where(eq(sponsors.id, org.id)).limit(1)
+  if (!company) throw new AppError('NOT_FOUND', "That company doesn't exist or you're not part of it.")
+  if (company.status !== 'approved') {
+    throw new AppError('FORBIDDEN', company.status === 'pending' ? `You can invite coworkers once ${company.name} is approved.` : `${company.name} can’t invite coworkers right now.`)
+  }
+}
+
 export async function createInvite(viewer: Viewer, org: InviteOrg, email: string, now = new Date()) {
+  await assertCanInvite(org)
   const address = email.trim().toLowerCase()
   if (await isMemberByEmail(org, address)) {
     throw new AppError('CONFLICT', `${address} is already a member.`, { field: 'email' })
@@ -85,6 +96,7 @@ export async function createInvite(viewer: Viewer, org: InviteOrg, email: string
 
 /** A new token and a fresh 14 days; the old link stops working. */
 export async function resendInvite(viewer: Viewer, org: InviteOrg, inviteId: string, now = new Date()) {
+  await assertCanInvite(org)
   const { token, tokenHash } = newInviteToken()
   const [invite] = await getDb()
     .update(invites)
