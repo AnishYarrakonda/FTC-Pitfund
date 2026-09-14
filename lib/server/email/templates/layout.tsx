@@ -86,6 +86,20 @@ export function EmailLayout({ preview, children }: { preview: string; children: 
   )
 }
 
+/** Label/value rows (e.g. team, company, ask), with long values wrapping instead of widening. */
+export function EmailFacts({ rows }: { rows: Array<[string, ReactNode]> }) {
+  return (
+    <Section style={{ borderTop: `1px solid ${emailColors.border}`, margin: '4px 0 20px' }}>
+      {rows.map(([label, value]) => (
+        <Section key={label} style={{ borderBottom: `1px solid ${emailColors.border}`, padding: '10px 0' }}>
+          <Text style={{ ...text.small, margin: '0 0 2px' }}>{label}</Text>
+          <Text style={{ ...text.body, color: emailColors.text, margin: 0, wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{value}</Text>
+        </Section>
+      ))}
+    </Section>
+  )
+}
+
 export function EmailButton({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link

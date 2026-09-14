@@ -3,8 +3,13 @@ import 'server-only'
 import { render, toPlainText } from 'react-email'
 import { createElement, type ComponentType } from 'react'
 
+import AdminNewPitchEmail, { adminNewPitchSchema, adminNewPitchSubject } from './admin-new-pitch'
+import JoinDecisionEmail, { joinDecisionSchema, joinDecisionSubject } from './join-decision'
+import JoinRequestEmail, { joinRequestSchema, joinRequestSubject } from './join-request'
 import LoginCodeEmail, { loginCodeSchema, loginCodeSubject } from './login-code'
 import NoticeEmail, { noticeSchema } from './notice'
+import PitchWithdrawnEmail, { pitchWithdrawnSchema, pitchWithdrawnSubject } from './pitch-withdrawn'
+import TeamInviteEmail, { teamInviteSchema, teamInviteSubject } from './team-invite'
 
 /*
  * Template registry. The outbox stores `template` + `payload`; rendering happens at send
@@ -26,6 +31,17 @@ const registry = {
     component: NoticeEmail,
     sensitive: false,
   },
+  'team-invite': {
+    schema: teamInviteSchema,
+    subject: teamInviteSubject,
+    component: TeamInviteEmail,
+    // The accept link carries the invite token; it is scrubbed once the email is sent.
+    sensitive: true,
+  },
+  'join-request': { schema: joinRequestSchema, subject: joinRequestSubject, component: JoinRequestEmail, sensitive: false },
+  'join-decision': { schema: joinDecisionSchema, subject: joinDecisionSubject, component: JoinDecisionEmail, sensitive: false },
+  'admin-new-pitch': { schema: adminNewPitchSchema, subject: adminNewPitchSubject, component: AdminNewPitchEmail, sensitive: false },
+  'pitch-withdrawn': { schema: pitchWithdrawnSchema, subject: pitchWithdrawnSubject, component: PitchWithdrawnEmail, sensitive: false },
 } as const
 
 export type TemplateName = keyof typeof registry

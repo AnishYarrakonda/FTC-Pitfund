@@ -5,7 +5,7 @@ import { createSupabaseServerClient } from '@/lib/server/supabase'
 import { ensureUserRow, loadViewer } from '@/lib/server/viewer'
 import { requestOrigin } from '@/lib/shared/request-origin'
 import { safeNext } from '@/lib/shared/schemas/account'
-import { homeFor } from '@/lib/shared/viewer'
+import { signInDestination } from '@/lib/shared/viewer'
 
 /*
  * Returns from Google (PKCE `code`) or an emailed link (`token_hash` + `type`), sets the
@@ -47,6 +47,6 @@ export async function GET(request: Request) {
 
   await ensureUserRow(claims)
   const viewer = await loadViewer(userId)
-  const destination = !viewer ? '/welcome' : !viewer.team && !viewer.sponsor && !viewer.isAdmin ? '/welcome' : (next ?? homeFor(viewer))
+  const destination = signInDestination(viewer, next)
   return NextResponse.redirect(new URL(destination, origin), 303)
 }

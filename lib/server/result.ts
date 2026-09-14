@@ -38,6 +38,12 @@ function pgErrorOf(e: unknown): PgError | undefined {
   return undefined
 }
 
+/** True for a unique violation (optionally of one named constraint). */
+export function isUniqueViolation(e: unknown, constraint?: string) {
+  const pg = pgErrorOf(e)
+  return pg?.code === '23505' && (!constraint || (pg.constraint_name ?? pg.constraint) === constraint)
+}
+
 /**
  * Map a database error to an ActionError. Unique violations become CONFLICT with the
  * caller's human message (optionally chosen per constraint); anything else returns null so

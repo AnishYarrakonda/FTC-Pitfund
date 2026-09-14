@@ -46,6 +46,16 @@ export function homeFor(viewer: Pick<Viewer, 'team' | 'sponsor' | 'isAdmin' | 'p
   return '/welcome'
 }
 
+/**
+ * Where sign-in lands. First-timers go to /welcome, except when they came from an invite link:
+ * accepting the invite is their first run.
+ */
+export function signInDestination(viewer: Pick<Viewer, 'team' | 'sponsor' | 'isAdmin' | 'pendingJoin'> | null, next: string | null): string {
+  if (next?.startsWith('/invite/')) return next
+  if (!viewer || (!viewer.team && !viewer.sponsor && !viewer.isAdmin)) return '/welcome'
+  return next ?? homeFor(viewer)
+}
+
 export function displayName(viewer: Pick<Viewer, 'name' | 'email'>) {
   return viewer.name.trim() || viewer.email.split('@')[0]
 }

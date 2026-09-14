@@ -7,7 +7,7 @@ import { AppError, defineAction } from '@/lib/server/result'
 import { createSupabaseServerClient } from '@/lib/server/supabase'
 import { ensureUserRow, loadViewer } from '@/lib/server/viewer'
 import { codeSchema, emailSchema, safeNext } from '@/lib/shared/schemas/account'
-import { homeFor } from '@/lib/shared/viewer'
+import { signInDestination } from '@/lib/shared/viewer'
 
 /*
  * Email-code sign-in (plan §3.2 "Sign in, email code"). Both steps run on the server so the
@@ -65,12 +65,19 @@ export const verifyLoginCode = defineAction(codeSchema, async ({ email, code, ne
 
   await ensureUserRow({ sub: data.user.id, email: data.user.email, user_metadata: data.user.user_metadata })
   const viewer = await loadViewer(data.user.id)
-  const destination = safeNext(next) ?? (viewer ? homeFor(viewer) : '/welcome')
-  return { redirectTo: viewer && !viewer.team && !viewer.sponsor && !viewer.isAdmin ? '/welcome' : destination }
+  return { redirectTo: signInDestination(viewer, safeNext(next)) }
 })
 
 export async function signOut() {
   const supabase = await createSupabaseServerClient()
   await supabase.auth.signOut({ scope: 'local' })
   redirect('/login?signed_out=1')
+}
+
+/** Sign out and come back to an invite link, to accept it with the invited address. */
+export async function signOutForInvite(token: string) {
+  const supabase = await createSupabaseServerClient()
+  await supabase.auth.signOut({ scope: 'local' })
+  const next = safeNext(`/invite/${encodeURIComponent(token)}`)
+  redirect(next ? `/login?next=${encodeURIComponent(next)}` : '/login')
 }

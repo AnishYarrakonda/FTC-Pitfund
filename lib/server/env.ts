@@ -86,6 +86,11 @@ export function env(): Env {
   return cached
 }
 
+/** An absolute link into the app, for emails. */
+export function absoluteUrl(path: string) {
+  return new URL(path, env().NEXT_PUBLIC_SITE_URL).toString()
+}
+
 export function isLocalSupabase(url: string | undefined) {
   if (!url) return true
   try {

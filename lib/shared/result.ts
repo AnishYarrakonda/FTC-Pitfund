@@ -26,6 +26,8 @@ export type ActionError = {
   fieldErrors?: Record<string, string>
   /** Sentry event id (or a local reference) for unexpected errors. */
   reference?: string
+  /** Where the fix lives, e.g. the existing pitch behind a season conflict. */
+  href?: string
 }
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: ActionError }

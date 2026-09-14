@@ -56,6 +56,20 @@ export async function sampleDeck() {
   return { name: team.name, src: publicUrl(team.pdfPath)!, pages: team.pdfPages, thumb: publicUrl(team.thumb), logo: publicUrl(team.logo) }
 }
 
+export const SIMULATE_COOKIE = 'pitfund-simulate'
+
+/**
+ * Failure injection for local verification and E2E (never active in production): set the cookie
+ * `pitfund-simulate` to a comma list such as `ftc-timeout,save-draft` and the named step fails
+ * the way the real outage would. Keys: ftc-timeout, ftc-not-found, save-draft, submit-pitch.
+ */
+export async function simulated(key: string): Promise<boolean> {
+  if (!devToolsEnabled()) return false
+  const { cookies } = await import('next/headers')
+  const value = (await cookies()).get(SIMULATE_COOKIE)?.value ?? ''
+  return value.split(',').map((v) => v.trim()).includes(key)
+}
+
 export function runSeed(scenario: 'demo' | 'empty' | 'edge'): Promise<{ ok: boolean; output: string }> {
   assertDevTools()
   return new Promise((resolve) => {

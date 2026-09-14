@@ -107,3 +107,39 @@ export function useAction<I, T>(action: (input: I) => Promise<Result<T>>, option
 
   return { run, retry, reset, pending: isPending, ...state }
 }
+
+/**
+ * For lookups driven by typing (e.g. the team number): a new run supersedes the one in flight,
+ * and only the latest result lands. Same Result and network-error mapping as useAction; no toasts,
+ * because the result renders in place.
+ */
+export function useLatestAction<I, T>(action: (input: I) => Promise<Result<T>>) {
+  const sequence = useRef(0)
+  const [state, setState] = useState<{ pending: boolean; result: Result<T> | null; input: I | null }>({ pending: false, result: null, input: null })
+
+  const run = useCallback(
+    async (input: I) => {
+      const id = ++sequence.current
+      setState((s) => ({ ...s, pending: true, input }))
+      let result: Result<T>
+      try {
+        result = await action(input)
+      } catch (e) {
+        result = {
+          ok: false,
+          error: isNetworkError(e) ? { code: 'UNAVAILABLE', message: NETWORK_ERROR_MESSAGE } : { code: 'UNKNOWN', message: 'Something went wrong. Try again in a moment.' },
+        }
+      }
+      if (id === sequence.current) setState({ pending: false, result, input })
+      return id === sequence.current ? result : null
+    },
+    [action],
+  )
+
+  const cancel = useCallback(() => {
+    sequence.current++
+    setState({ pending: false, result: null, input: null })
+  }, [])
+
+  return { run, cancel, ...state }
+}

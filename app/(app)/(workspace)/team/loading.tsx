@@ -1,5 +1,5 @@
-import { PlaceholderPageSkeleton } from '@/components/app/page-skeletons'
+import { TeamPageSkeleton } from '@/components/app/page-skeletons'
 
 export default function Loading() {
-  return <PlaceholderPageSkeleton />
+  return <TeamPageSkeleton />
 }

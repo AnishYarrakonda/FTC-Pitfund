@@ -8,24 +8,17 @@ import { createSupabaseAdminClient } from './supabase-admin'
  *
  * public bucket:   teams/{teamId}/logo-{uuid}.webp · deck-{uuid}.pdf · thumb-{uuid}.webp
  *                  sponsors/{sponsorId}/logo-{uuid}.webp
- * staging bucket:  browser uploads land here via a signed upload URL; finalizeUpload (prompt 2)
- *                  verifies on the server and moves the object into `public`. The daily cron
+ * staging bucket:  browser uploads land here via a signed upload URL; lib/server/uploads.ts
+ *                  verifies them on the server and promotes them into `public`. The daily cron
  *                  deletes staging objects older than 24 h.
  */
 
 export const BUCKETS = { public: 'public', staging: 'staging' } as const
 export type Bucket = (typeof BUCKETS)[keyof typeof BUCKETS]
 
-export const MAX_PDF_BYTES = 10 * 1024 * 1024
-export const MAX_PDF_PAGES = 5
-
 export function publicUrl(path: string | null | undefined): string | null {
   if (!path) return null
   return `${env().NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKETS.public}/${path}`
-}
-
-export function objectName(prefix: string, kind: 'logo' | 'deck' | 'thumb', ext: 'webp' | 'pdf' | 'png') {
-  return `${prefix}/${kind}-${crypto.randomUUID()}.${ext}`
 }
 
 export async function uploadObject(bucket: Bucket, path: string, body: ArrayBuffer | Uint8Array | Blob, contentType: string) {
@@ -48,12 +41,24 @@ export async function downloadObject(bucket: Bucket, path: string): Promise<Uint
   return new Uint8Array(await data.arrayBuffer())
 }
 
-/** Move a verified staging object into the public bucket. */
+/**
+ * Move a verified staging object into the public bucket. A server-side move keeps the content
+ * type the server set when it wrote the verified copy; if the move API fails, copy the bytes.
+ */
 export async function promoteFromStaging(stagingPath: string, publicPath: string, contentType: string) {
+  const { error } = await createSupabaseAdminClient()
+    .storage.from(BUCKETS.staging)
+    .move(stagingPath, publicPath, { destinationBucket: BUCKETS.public })
+  if (!error) return publicPath
   const bytes = await downloadObject(BUCKETS.staging, stagingPath)
   await uploadObject(BUCKETS.public, publicPath, bytes, contentType)
   await removeObjects(BUCKETS.staging, [stagingPath])
   return publicPath
+}
+
+/** A link that downloads a public object (instead of opening it) under a friendly file name. */
+export function downloadUrl(path: string, fileName: string) {
+  return `${publicUrl(path)}?download=${encodeURIComponent(fileName)}`
 }
 
 export async function removeObjects(bucket: Bucket, paths: Array<string | null | undefined>) {
