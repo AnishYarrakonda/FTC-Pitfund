@@ -67,6 +67,28 @@ for (const route of QA_ROUTES) {
         failures.push(...overlays.failures)
         failures.push(...(await checkOverflow(page)).map((f) => `after overlays: ${f}`))
 
+        // States reachable only by interaction: fresh page, run the steps, then the same checks.
+        const interactions: string[] = []
+        for (const interaction of route.interactions ?? []) {
+          if (interaction.widths && !interaction.widths.includes(width)) continue
+          await page.goto(route.path, { waitUntil: 'load' })
+          await settle(page)
+          const problemsBefore = problems.length
+          try {
+            await interaction.run(page)
+          } catch (e) {
+            failures.push(`interaction "${interaction.name}" failed: ${(e instanceof Error ? e.message : String(e)).split('\n')[0]}`)
+            continue
+          }
+          await settle(page)
+          const caused = problems.splice(problemsBefore)
+          problems.push(...caused.filter((p) => !interaction.expectedErrors?.some((r) => r.test(p))))
+          await page.screenshot({ path: screenshot.replace(/\.png$/, `--${interaction.name}.png`), fullPage: true, animations: 'disabled' })
+          failures.push(...(await checkOverflow(page)).map((f) => `${interaction.name}: ${f}`))
+          failures.push(...(await checkAxe(page)).map((f) => `${interaction.name}: ${f}`))
+          interactions.push(interaction.name)
+        }
+
         let latencies: Record<string, number> | undefined
         if (route.actionButtons && width === 1280) {
           const actions = await checkActionButtons(page)
@@ -80,7 +102,7 @@ for (const route of QA_ROUTES) {
         mkdirSync('qa/results', { recursive: true })
         writeFileSync(
           `qa/results/${scenario}-${route.name}-${persona}-${width}.json`,
-          JSON.stringify({ scenario, route: route.name, path: route.path, persona, width, screenshot, status, perf, overlaysOpened: overlays.opened, latencies, failures: unique }, null, 2),
+          JSON.stringify({ scenario, route: route.name, path: route.path, persona, width, screenshot, status, perf, overlaysOpened: overlays.opened, interactions, latencies, failures: unique }, null, 2),
         )
         await context.close()
         expect(unique, `QA failures for ${route.path} as ${persona} at ${width}px`).toEqual([])
