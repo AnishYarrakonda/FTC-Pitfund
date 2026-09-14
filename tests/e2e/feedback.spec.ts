@@ -1,3 +1,4 @@
+import { PROD_URL } from '../support/env'
 import { asPersona, expect, test } from '../support/fixtures'
 
 /*
@@ -62,14 +63,20 @@ test('an ActionButton acknowledges the click in the same frame and ignores doubl
 
 test.describe('slow navigation', () => {
   test.use(asPersona('coach'))
+  // Production build: `next dev` doesn't prefetch, so loading.tsx would arrive with the slow response.
+  // Primary nav links are fully prefetched (instant); the Account menu link gets the static shell
+  // with its loading.tsx, so delaying only the real navigation request shows the skeleton.
   test('shows a layout-shaped skeleton while the page loads', async ({ page }) => {
-    await page.goto('/pitches')
+    await page.goto(`${PROD_URL}/pitches`, { waitUntil: 'networkidle' })
     await page.route(/\/account(\?|$)/, async (route) => {
-      await new Promise((r) => setTimeout(r, 2500))
+      if (!route.request().headers()['next-router-prefetch']) await new Promise((r) => setTimeout(r, 2500))
       await route.continue()
     })
     await page.getByRole('button', { name: 'Account menu' }).click()
-    await page.getByRole('menuitem', { name: 'Account' }).click()
+    const account = page.getByRole('menuitem', { name: 'Account' })
+    await expect(account).toBeVisible()
+    await page.waitForLoadState('networkidle')
+    await account.click()
     await expect(page.getByRole('status', { name: 'Loading' })).toBeVisible()
     await page.waitForURL('**/account')
     await expect(page.getByRole('heading', { level: 1, name: 'Account' })).toBeVisible()

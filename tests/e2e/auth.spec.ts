@@ -92,10 +92,9 @@ test('an expired code offers a new one', async ({ page }) => {
 
   await page.getByLabel('Sign-in code').fill(stale)
   await expect(page.getByText('That code has expired.')).toBeVisible()
-  const since = Date.now()
   await page.getByRole('button', { name: 'Send a new code' }).click()
-  const fresh = await waitForLoginCode(email, { since })
-  expect(fresh).not.toBe('')
+  await expect(page.getByText('We sent a new code. Use the latest email.')).toBeVisible()
+  const fresh = await waitForLoginCode(email, { except: stale })
   await page.getByLabel('Sign-in code').fill(fresh)
   await page.waitForURL('**/welcome')
 })
