@@ -1,39 +1,98 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 
-import { PlaceholderPage } from '@/components/app/states'
-import { Banner } from '@/components/ui/feedback'
-import { PageContainer } from '@/components/ui/page'
+import { CompanyChecklist, CompanyStatusBanner } from '@/components/company/company-status'
+import { InboxRow } from '@/components/inbox/inbox-row'
+import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/feedback'
+import { PageContainer, PageHeader } from '@/components/ui/page'
 import { requireSponsorMember } from '@/lib/server/authz'
+import { getCompanyProfile } from '@/lib/server/data/company'
+import { listInbox, type InboxGroups } from '@/lib/server/data/inbox'
 import { guardPage } from '@/lib/server/page-guards'
-import { SUPPORT_EMAIL } from '@/lib/shared/brand'
 
 export const metadata: Metadata = { title: 'Pitches' }
 
+const GROUPS: Array<{ key: keyof InboxGroups; title: string; description: string }> = [
+  { key: 'sent', title: 'New', description: 'Waiting for your answer.' },
+  { key: 'matched', title: 'Interested', description: 'You’re connected. Contact details are on each pitch.' },
+  { key: 'declined', title: 'Not a fit', description: 'The team was told.' },
+]
+
 export default async function InboxPage() {
   const viewer = await guardPage(() => requireSponsorMember())
-  const { sponsor } = viewer
+  const [profile, inbox] = await Promise.all([getCompanyProfile(viewer), listInbox(viewer)])
+  const approved = profile.status === 'approved'
+  const total = inbox.sent.length + inbox.matched.length + inbox.declined.length
+
   return (
-    <>
-      {sponsor.status === 'pending' ? (
-        <PageContainer className="pb-0 sm:pb-0">
-          <Banner tone="warning" title={`${sponsor.name} is waiting for approval`}>
-            An FTC Pitfund admin reviews every new company, usually within a day. Teams can pitch you once you&apos;re approved. Set up your profile in the meantime.
-          </Banner>
-        </PageContainer>
-      ) : null}
-      {sponsor.status === 'rejected' ? (
-        <PageContainer className="pb-0 sm:pb-0">
-          <Banner tone="danger" title={`${sponsor.name} wasn't approved`}>
-            Teams can&apos;t see or pitch your company. Questions? Email {SUPPORT_EMAIL}.
-          </Banner>
-        </PageContainer>
-      ) : null}
-      <PlaceholderPage
+    <PageContainer>
+      <PageHeader
         title="Pitches"
-        description={`Pitches from FTC teams to ${sponsor.name}, already screened by a reviewer.`}
-        emptyTitle="New pitches will appear here"
-        emptyDescription="Each pitch answers your questions and includes the team's deck. Say you're interested and you'll both get each other's contact details."
+        description={`Pitches from FTC teams to ${profile.name}. A reviewer reads every one before it reaches you.`}
+        actions={
+          approved && total > 0 ? (
+            <Button asChild variant="secondary">
+              <Link href="/company">Company profile</Link>
+            </Button>
+          ) : null
+        }
       />
-    </>
+
+      <div className="grid gap-4 empty:hidden">
+        <CompanyStatusBanner status={profile.status} name={profile.name} note={profile.statusNote} />
+        {profile.status !== 'rejected' ? <CompanyChecklist profile={profile} /> : null}
+      </div>
+
+      <div className="mt-8 grid gap-10">
+        {!approved ? (
+          <EmptyState
+            title={profile.status === 'pending' ? 'You’ll see pitches here once approved' : 'No pitches'}
+            description={
+              profile.status === 'pending'
+                ? 'Each pitch answers your questions and includes the team’s deck. Set up your profile while you wait.'
+                : 'Teams can’t pitch your company right now.'
+            }
+            action={
+              profile.status === 'pending' ? (
+                <Button asChild>
+                  <Link href="/company">Set up your profile</Link>
+                </Button>
+              ) : null
+            }
+            className="rounded-dialog border border-border bg-surface"
+          />
+        ) : total === 0 ? (
+          <EmptyState
+            title="No pitches yet"
+            description={`Teams can now find ${profile.name} in the directory. We’ll email everyone at your company when a pitch arrives.`}
+            action={
+              <Button asChild variant="secondary">
+                <Link href="/company">Review your profile</Link>
+              </Button>
+            }
+            className="rounded-dialog border border-border bg-surface"
+          />
+        ) : (
+          GROUPS.filter((g) => inbox[g.key].length > 0).map((group) => (
+            <section key={group.key} aria-labelledby={`group-${group.key}`} className="grid gap-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <h2 id={`group-${group.key}`} className="text-lead font-semibold tracking-tight text-text">
+                  {group.title} <span className="text-text-tertiary tabular">{inbox[group.key].length}</span>
+                </h2>
+                <p className="text-small text-text-tertiary">{group.description}</p>
+              </div>
+              <ul className="divide-y divide-border overflow-hidden rounded-dialog border border-border bg-surface">
+                {inbox[group.key].map((pitch) => (
+                  <li key={pitch.id}>
+                    <InboxRow pitch={pitch} href={`/inbox/${pitch.id}`} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))
+        )}
+      </div>
+    </PageContainer>
   )
 }

@@ -1,8 +1,9 @@
-import { ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
+import { ConnectedPanel } from '@/components/pitch/connected-panel'
 import { PitchView } from '@/components/pitch/pitch-view'
 import { Banner, StatusBadge, Timeline } from '@/components/ui/feedback'
 import { OrgLogo } from '@/components/ui/identity'
@@ -86,23 +87,11 @@ export default async function PitchPage({ params }: PageProps<'/pitches/[id]'>) 
           </Banner>
         ) : null}
         {pitch.status === 'matched' && pitch.contact ? (
-          <section aria-labelledby="connected-heading" className="grid gap-4 rounded-dialog border border-success/25 bg-success-subtle p-5 sm:p-6">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 aria-hidden="true" className="mt-1 size-5 shrink-0 text-success" />
-              <div className="grid gap-1">
-                <h2 id="connected-heading" className="text-lead font-semibold tracking-tight text-text">
-                  Connected with {company.name}
-                </h2>
-                <p className="text-body text-text-secondary">We emailed you both. Reach out and take it from here.</p>
-              </div>
-            </div>
-            <dl className="grid gap-x-8 gap-y-3 pl-8 sm:grid-cols-2">
-              <Contact label="Name" value={pitch.contact.name} />
-              {pitch.contact.jobTitle ? <Contact label="Title" value={pitch.contact.jobTitle} /> : null}
-              <Contact label="Email" value={<a href={`mailto:${pitch.contact.email}`} className="font-medium text-accent hover:text-accent-hover">{pitch.contact.email}</a>} />
-              {pitch.contact.phone ? <Contact label="Phone" value={<a href={`tel:${pitch.contact.phone}`} className="font-medium text-accent hover:text-accent-hover">{pitch.contact.phone}</a>} /> : null}
-            </dl>
-          </section>
+          <ConnectedPanel
+            title={`Connected with ${company.name}`}
+            description="We emailed you both. Reach out and take it from here."
+            contact={{ name: pitch.contact.name, email: pitch.contact.email, phone: pitch.contact.phone, jobTitle: pitch.contact.jobTitle, website: pitch.contact.website }}
+          />
         ) : null}
       </div>
 
@@ -137,14 +126,5 @@ export default async function PitchPage({ params }: PageProps<'/pitches/[id]'>) 
         </aside>
       </div>
     </PageContainer>
-  )
-}
-
-function Contact({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="grid min-w-0 gap-0.5">
-      <dt className="text-small text-text-tertiary">{label}</dt>
-      <dd className="min-w-0 text-body text-text user-text">{value}</dd>
-    </div>
   )
 }
