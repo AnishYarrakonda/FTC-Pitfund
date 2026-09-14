@@ -1,11 +1,11 @@
 'use server'
 
-import { after } from 'next/server'
 
 import { requireTeamMember } from '@/lib/server/authz'
 import { deleteDraft, pitchEmailKey, saveDraft, startPitch, submitPitch, SUBMIT_CONFLICTS, withdrawPitch } from '@/lib/server/data/pitches'
 import { simulated } from '@/lib/server/dev'
-import { drainOutbox, enqueueEmail, PRIORITY } from '@/lib/server/email/outbox'
+import { scheduleDrain } from '@/lib/server/email/drain'
+import { enqueueEmail, PRIORITY } from '@/lib/server/email/outbox'
 import { absoluteUrl } from '@/lib/server/env'
 import { notifyAdmins, notifySponsor, notifyTeam } from '@/lib/server/notify'
 import { AppError, defineAction } from '@/lib/server/result'
@@ -67,7 +67,7 @@ export const submitPitchAction = defineAction(
       }
       return { pitchId: r.pitch.id }
     })
-    after(() => drainOutbox())
+    await scheduleDrain()
     return { pitchId: result.pitchId, redirectTo: `/pitches/${result.pitchId}` }
   },
   { conflict: SUBMIT_CONFLICTS },
@@ -103,7 +103,7 @@ export const withdrawPitchAction = defineAction(pitchIdSchema, async ({ pitchId 
     )
     return { ...r, emailDelayed }
   })
-  after(() => drainOutbox())
+  await scheduleDrain()
   return { pitchId: result.pitchId, companyName: result.companyName, companyNotified: result.wasSent, emailDelayed: result.emailDelayed }
 })
 

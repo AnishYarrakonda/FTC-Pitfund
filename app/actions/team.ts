@@ -24,7 +24,8 @@ import {
   updateTeamProfile,
 } from '@/lib/server/data/teams'
 import { simulated } from '@/lib/server/dev'
-import { drainOutbox, enqueueEmail, PRIORITY } from '@/lib/server/email/outbox'
+import { scheduleDrain } from '@/lib/server/email/drain'
+import { enqueueEmail, PRIORITY } from '@/lib/server/email/outbox'
 import { absoluteUrl } from '@/lib/server/env'
 import { notifyTeam, notifyUsers } from '@/lib/server/notify'
 import { defineAction } from '@/lib/server/result'
@@ -82,7 +83,7 @@ export const requestToJoin = defineAction(
       }
       return { requestId: r.requestId, team: r.team, emailDelayed: delayed }
     })
-    after(() => drainOutbox())
+    await scheduleDrain()
     return { requestId: result.requestId, teamLabel: teamLabel(result.team), emailDelayed: result.emailDelayed }
   },
   { conflict: JOIN_REQUEST_CONFLICTS },
@@ -184,7 +185,7 @@ export const decideJoin = defineAction(
       }
       return { name: r.name, approved, emailDelayed: Boolean(sent?.delayed) }
     })
-    after(() => drainOutbox())
+    await scheduleDrain()
     return result
   },
   { conflict: DECIDE_JOIN_CONFLICTS },

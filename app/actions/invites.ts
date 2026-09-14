@@ -1,11 +1,11 @@
 'use server'
 
-import { after } from 'next/server'
 import { z } from 'zod'
 
 import { requireTeamMember, requireViewer } from '@/lib/server/authz'
 import { acceptInvite, ACCEPT_INVITE_CONFLICTS, createInvite, inviteOrgFor, resendInvite, revokeInvite } from '@/lib/server/data/invites'
-import { drainOutbox, enqueueEmail, PRIORITY } from '@/lib/server/email/outbox'
+import { scheduleDrain } from '@/lib/server/email/drain'
+import { enqueueEmail, PRIORITY } from '@/lib/server/email/outbox'
 import { absoluteUrl } from '@/lib/server/env'
 import { notifySponsor, notifyTeam } from '@/lib/server/notify'
 import { defineAction } from '@/lib/server/result'
@@ -43,7 +43,7 @@ export const inviteTeamMember = defineAction(inviteSchema, async ({ email }) => 
     const sent = await sendTeamInvite(viewer, invite, token)
     return { id: invite.id, email: invite.email, expiresAt: invite.expiresAt, emailDelayed: sent.delayed }
   })
-  after(() => drainOutbox())
+  await scheduleDrain()
   return result
 })
 
@@ -54,7 +54,7 @@ export const resendTeamInvite = defineAction(z.object({ inviteId: z.uuid() }), a
     const sent = await sendTeamInvite(viewer, invite, token)
     return { id: invite.id, email: invite.email, expiresAt: invite.expiresAt, emailDelayed: sent.delayed }
   })
-  after(() => drainOutbox())
+  await scheduleDrain()
   return result
 })
 
