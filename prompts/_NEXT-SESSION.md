@@ -75,8 +75,11 @@ yet (links use `prefetch={false}`). Add every new route to `tests/qa/routes.ts`.
 
 - Sentry has no DSN yet (reporting code is wired; `reportUnexpected` falls back to a local reference id).
 - BotID only verifies on Vercel; locally `checkBotId()` passes.
-- CI has not run on GitHub yet at the time of writing this; check the first run of `rebuild` (Linux
-  `host.docker.internal` for the auth hook is the likeliest difference from macOS).
+- CI is green on GitHub (typecheck, lint, local Supabase, Vitest, build, E2E on Linux). Two things broke
+  the first runs and are fixed: `typecheck` must run `next typegen` first (route types are gitignored), and a
+  macOS-generated lockfile can miss Linux native bindings (npm/cli#4828) — if you ever regenerate
+  `package-lock.json`, delete `node_modules` and the lockfile first, then check it lists
+  `@rolldown/binding-linux-x64-gnu`.
 - `npm audit`: 4 moderate advisories in dev-only tooling (esbuild inside drizzle-kit); the fix is a breaking
   downgrade.
 
