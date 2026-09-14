@@ -17,7 +17,7 @@
     "db:backup": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/db-backup.ts",
     "seed": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/seed/index.ts",
     "admin:grant": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/admin-grant.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "lint": "eslint --max-warnings 0",
     "test": "vitest run",
     "check": "npm run typecheck && npm run lint && npm run test",
