@@ -1,7 +1,8 @@
 # Next session
 
-**Updated 2026-09-14. Rebuild in progress on branch `rebuild`. Prompts 1 (foundation) and 2 (team /
-coach experience) are done.** **Run `prompts/rebuild/03-sponsor-and-admin.md` next**, in a fresh session. The plan is
+**Updated 2026-09-14. Rebuild in progress on branch `rebuild`. Prompts 1 (foundation), 2 (team / coach
+experience) and 3 (company side, admin console, emails, cron) are done.** **Run `prompts/rebuild/04-launch-polish-qa.md`
+next**, in a fresh session. The plan is
 `prompts/rebuild/00-REBUILD-PLAN.md`; `CLAUDE.md` and `.claude/rules/*` describe v2.
 Team email: **ftcexodius@gmail.com**.
 
@@ -40,10 +41,55 @@ Team email: **ftcexodius@gmail.com**.
 - Emails: `team-invite` (sensitive, token scrubbed after send), `join-request`, `join-decision`,
   `admin-new-pitch` (priority 2), `pitch-withdrawn` (priority 1). All rendered and checked in Mailpit.
 
-Still placeholders for prompt 3: `/inbox`, `/company`, `/admin`, `/admin/directory`, `/admin/system`,
-`/welcome/company`. Seed notifications link to `/inbox/[id]` and `/admin/pitches/[id]`, which don't exist yet.
+## Prompt 3: what the company side and admin console have
 
-## For prompt 3 (reuse these, don't fork them)
+- `/welcome/company`: company name, website, your name, job title, LinkedIn (optional, validated), 18+ and Terms →
+  pending company + membership + audit (no admin email; admins get an in-app notification and the daily digest) → `/inbox`.
+- `/inbox`: review banner (pending / rejected with the admin's note), setup checklist, groups New · Interested · Not a
+  fit, empty states. `/inbox/[id]`: `PitchView` + `PdfViewer`, sticky Interested (confirm) / Not a fit (optional reason
+  dialog); Connected panel with delivery note; read-only notice for a pitch withdrawn after it was sent.
+- `/company`: profile (logo via the shared `LogoUpload`, name, website, city/state, "Where we sponsor", "What we look
+  for", support types) with unsaved-changes guard and a live "What teams see" preview (the real `SponsorRow` and the new
+  `SponsorProfile` extracted from `/sponsors/[id]`); questions editor (defaults + Customize, 0–10, Move up/down buttons,
+  delete confirm, Add disabled at 10 with the reason, Reset to defaults confirm, "Use these questions"); members and
+  invites (disabled while pending, with the reason; `sponsor-invite` email is sensitive and scrubbed after sending).
+- `/admin` Review: URL tabs with counts from one query (Pitches oldest first with "waiting N h" in warning past 24 h,
+  Companies, Teams newest first, Reports with Resolve / Resolve & suspend team), cursor pagination, "You're all caught up".
+- `/admin/pitches/[id]`: full page; sticky decision panel (fixed bottom bar below `lg`), A / S / R and J / K with
+  KeyboardHints, toast with delivery state, auto-advance (wraps) or "You're all caught up", conflict banner naming the
+  admin + Refresh, approval blocked with the reason when the company isn't approved or the team is suspended.
+- `/admin/companies/[id]`, `/admin/teams/[id]`: review **pages** (see deviations): applicant, what to check, members,
+  profile as teams see it; Approve / Reject (note) / Suspend / Unsuspend; Verify (optimistic + Undo) / Unverify /
+  Suspend (withdraws in-review pitches, notifies coaches) / Re-check FIRST records; Delete by typing the name.
+- `/admin/directory`: Teams / Companies / People tabs, search in the URL, cursor pages, `DataTable`; people row menu:
+  make/remove admin (never yourself), remove from team or company, suspend/unsuspend (never yourself).
+- `/admin/system`: emails in 24 h by priority with budgets, file storage (tracked bytes) vs 1 GB, DB size vs 500 MB,
+  each with "upgrade when…" guidance; daily job per step with stale (>36 h) / failed warnings; queued email with Send now
+  (when the budget allows); failed and bounced with Retry / Dismiss; links to Supabase usage, Resend, Sentry.
+- Emails: `match-team`, `match-sponsor`, `pitch-not-a-fit`, `pitch-approved-coach`, `new-pitch-sponsor`,
+  `pitch-sent-back`, `pitch-rejected`, `sponsor-approved`, `sponsor-rejected`, `sponsor-invite`, `admin-report` (from
+  `notifyAdminsOfReport`), `admin-digest`. All rendered and checked in Mailpit, each with a plain-text part.
+- Cron: `runDailyCron()` drain (until empty or out of budget) → digest (priority 3) → clean staging → re-check ≤20
+  unchecked FIRST records → keepalive; one `cron_runs` row per job; `npm run cron:run` calls it on :3000 with the secret.
+  Ran twice: the digest dedupes and the re-check has nothing left.
+- Schema: `teams.logo_bytes`, `teams.pdf_thumb_bytes`, `sponsors.logo_bytes` (storage meter), `email_outbox.dismissed_at`.
+
+## For prompt 4
+
+- `/dev/ui` has new sections: Inbox, Connected, Company status, Questions editor, What teams see, Admin console.
+- New simulate keys: `email-429`, `email-500` (Resend failures for every action that sends email; actions call
+  `await scheduleDrain()` from `lib/server/email/drain.ts`).
+- Seeds: Vantage Promotions (suspended, with a blocked in-review pitch from Circuit Sages), Tidal → Harbor Point in
+  review 5 h ago (not late), Byte Knights → Brightline sent then withdrawn, two open reports with fixed ids, a bounced
+  email, three days of per-job cron history (a failed record check two days ago; `edge` makes the last run 50 h old).
+  `SEED` gained company, report and inbox pitch ids.
+- Local-only verification scripts live in `tests/.local/` (gitignored): `verify-flow.ts` (a new company from `/login` to a
+  match as three people, checking every email), `failures.ts` (Slow 3G, Resend 429/500, company deleted mid-review),
+  `emails.ts` + `mailshots.ts` (render every template into Mailpit and screenshot it), `shots.ts`.
+- Known gaps for prompt 4: the admin console has no rate limits beyond auth; `/inbox` shows up to 100 rows per group (no
+  pagination yet); first-load JS budget is still over (prompt 2 note); knip will flag a few helpers.
+
+## Reference from prompt 2 (still true)
 
 - **`components/pitch/pitch-view.tsx`** — `PitchView({ pitch: PitchViewData, deck?: 'card' | 'none',
   headerAside?, headingLevel? })`, no hooks. Build `PitchViewData` with `teamForView()` from
@@ -83,8 +129,6 @@ Still placeholders for prompt 3: `/inbox`, `/company`, `/admin`, `/admin/directo
   show their skeleton within ~340 ms, buttons acknowledge at once, no console errors.
 - **Query counts** — `DEBUG_QUERIES=1 npm run dev` logs every query. Measured: `/pitches` 3, `/sponsors` 3
   (4 when the directory cache is cold), `/team` 5, including the viewer query.
-
-## Things the next agent must know
 
 ## Things the next agent must know
 
@@ -159,6 +203,22 @@ Still placeholders for prompt 3: `/inbox`, `/company`, `/admin`, `/admin/directo
   invite optional), matching the prompt's list.
 - QA doesn't cover the "not found in FIRST records" lookup: in a production build it would call FTCScout
   over the network. E2E covers the unavailable path (simulate cookie) and unit tests cover not-found.
+
+### Prompt 3
+
+- **Company and team review are pages (`/admin/companies/[id]`, `/admin/teams/[id]`), not Sheets.** The prompt said
+  "a Sheet (md)", but plan §7 (and `.claude/rules/ux-contract.md`) says "Pitch review, company review and team review are
+  pages", and the plan wins. The content (applicant, checks, members, the whole profile, FIRST record, pitches) is well
+  past "a short form or a paragraph". Pages also give the digest and Review tabs deep links.
+- **Report detail is inline in the Reports tab** (reason, details with Show more, reporter, page link, Resolve / Resolve &
+  suspend) rather than a separate panel, for the same reason.
+- **Digest dedupe key is `digest:{date}:{adminId}`**, not `digest:{date}`: `dedupe_key` is unique and every admin gets a row.
+- **Unsuspending a company returns it to `approved`**; suspending is allowed from `approved` or `pending`.
+- **Suspending a team withdraws only `in_review` pitches** (as the prompt says); sent pitches stay in company inboxes.
+- **An admin can remove the last member of a team or company**; members themselves still can't leave last.
+- Admin in-app notification when a company signs up (the prompt forbids only the instant email).
+- `pitch-withdrawn` copy no longer says the pitch "stays in your inbox": the inbox lists New / Interested / Not a fit only,
+  and the email link opens the read-only withdrawn notice.
 
 ## Known gaps
 

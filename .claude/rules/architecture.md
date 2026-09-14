@@ -48,4 +48,15 @@ Browser uploads go to `staging` with a signed URL; `lib/server/uploads.ts` re-ve
 under a fresh name (never trust the browser's file). Read public objects over HTTP, not `download()`.
 
 ## Jobs
-One Vercel cron: `/api/cron/daily` → `lib/server/jobs.ts` `runDailyCron()` (records `cron_runs`). Add jobs there.
+One Vercel cron: `/api/cron/daily` → `lib/server/jobs.ts` `runDailyCron()`: drain outbox → admin digest
+(`lib/server/digest.ts`, dedupe `digest:{date}:{adminId}`) → clean staging → re-check ≤20 unchecked FIRST records →
+keepalive. One `cron_runs` row per job; System warns when a job is older than 36 h. Every job must be safe to run twice.
+Add jobs there. `npm run cron:run` invokes it locally.
+
+## Admin and email helpers
+- Actions send email with `await scheduleDrain()` (`lib/server/email/drain.ts`), not a bare `after(drainOutbox)`: in dev the
+  `pitfund-simulate` cookie `email-429` / `email-500` makes the provider fail like Resend does.
+- Correlated subqueries in `sql\`\`` must name the outer column literally (`"sponsors"."id"`): in a single-table select
+  Drizzle renders `${sponsors.id}` unqualified, which silently binds to the inner table.
+- Dates inside raw `sql\`\`` need `.toISOString()` + a cast; the postgres driver can't serialize a `Date` there.
+- Admin lists paginate with `lib/server/data/keyset.ts` (cursor on the sort key + id, 25 per page).

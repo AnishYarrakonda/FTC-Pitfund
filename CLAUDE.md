@@ -39,7 +39,7 @@ Sentry · Vercel BotID · Vitest · Playwright + axe · Vercel Hobby (`iad1`), o
 ```text
 app/(public)/      landing, login, legal            app/(app)/          shell: welcome, account
 app/(app)/(workspace)/  pitches sponsors team inbox company (org required)
-app/admin/         review, directory, system        app/dev/            /dev, /dev/ui (local only)
+app/admin/         review, pitches/[id], companies/[id], teams/[id], directory, system    app/dev/  /dev, /dev/ui
 app/actions/       server actions ('use server')    app/api/            auth/send-email, webhooks/resend, cron/daily, health, dev/sign-in
 lib/server/        server-only: db, schema, env, authz, viewer, result, audit, notify, storage,
                    ftc-records, jobs, page-guards, transaction, supabase(-admin), data/*, email/*
@@ -83,7 +83,7 @@ Client side: `useAction(action)` or `<ActionButton action pendingLabel>`; never 
 | `npm run qa` | the UX gate over `tests/qa/routes.ts`, `demo` then `edge`; writes `qa/report.md` and `qa/screens/` |
 | `npm run db:generate` / `db:migrate` / `db:reset` | Drizzle migrations (migrate refuses non-local hosts without `--remote` + `CONFIRM_REMOTE=1`) |
 | `npm run seed -- --scenario demo\|empty\|edge` | idempotent fixtures |
-| `npm run admin:grant -- email` · `email:drain` · `db:backup` | ops |
+| `npm run admin:grant -- email` · `email:drain` · `cron:run` · `db:backup` | ops (`cron:run` calls `/api/cron/daily` on :3000 with `CRON_SECRET`) |
 
 ## Rules for agents
 
