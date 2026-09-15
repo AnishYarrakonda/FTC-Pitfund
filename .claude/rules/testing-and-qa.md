@@ -50,6 +50,11 @@ Anish does not click through the app. Agents verify everything with these comman
   absolute links, URLs on their own lines, no overflow at 600/375 px; screenshots in `qa/emails/`.
 - `tests/unit/authz-coverage.test.ts`: every server action and route handler calls a guard first or is on the public
   allowlist with its replacement check. `tests/e2e/acceptance.spec.ts`: the plan §12 screen counts, times and clicks.
+- `tests/e2e/keyboard-journeys.spec.ts`: sign-in, composer and company response with Tab/Enter/Space/arrows/Esc only
+  (focus trap and focus return in every dialog). `tests/e2e/mobile.spec.ts`: taps at 375 px on the production build; every
+  control used must be ≥ 32 px tall, on screen and not covered where a finger lands.
+- Running a second checkout's `npm run setup` restarts the shared local Supabase stack with that checkout's hook secret, so
+  auth emails fail here ("signInWithOtp failed 500"). Re-run `npm run setup` in this checkout to take it back.
 - `npm run screenshots:marketing` regenerates `public/marketing/*.webp` from the seeded production build.
 
 ## CI — `.github/workflows/ci.yml`

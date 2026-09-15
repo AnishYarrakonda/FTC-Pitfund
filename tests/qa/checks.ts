@@ -36,6 +36,12 @@ export const HIDE_DEV_OVERLAY = `
  */
 export async function settle(page: Page) {
   await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {})
+  // Wait for React to hydrate every form control. A screenshot hides the caret by writing an inline
+  // `caret-color` onto inputs; if that lands before hydration (a big page on a slow CI runner), React
+  // reports a hydration mismatch that the page itself never had.
+  await page
+    .waitForFunction(() => Array.from(document.querySelectorAll('input, textarea, select')).every((el) => Object.keys(el).some((k) => k.startsWith('__reactProps$'))), null, { timeout: 15_000 })
+    .catch(() => {})
   await page.evaluate(async () => {
     await document.fonts.ready
     const finite = document.getAnimations().filter((a) => a.effect?.getTiming().iterations !== Infinity)

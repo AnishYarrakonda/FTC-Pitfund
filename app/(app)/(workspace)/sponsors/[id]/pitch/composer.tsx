@@ -384,19 +384,20 @@ export function Composer({
         {blockers.length ? (
           <div className="grid gap-2" aria-live="polite">
             <p className="text-small font-medium text-text">Before you can submit:</p>
-            <ul className="grid gap-1.5">
+            <ul className="grid">
               {blockers.map((b) => (
                 <li key={`${b.key}-${b.questionId ?? ''}-${b.message}`} className="text-small text-text-secondary">
                   {b.href ? (
-                    <Link href={b.href} className="font-medium text-accent hover:text-accent-hover">
+                    <Link href={b.href} className="inline-flex min-h-8 items-center font-medium text-accent hover:text-accent-hover">
                       {b.message}
                     </Link>
                   ) : b.questionId ? (
-                    <button type="button" onClick={() => focusQuestion(b.questionId!)} className="font-medium text-accent hover:text-accent-hover">
+                    // At least 32 px tall: these are tap targets on a phone.
+                    <button type="button" onClick={() => focusQuestion(b.questionId!)} className="inline-flex min-h-8 items-center font-medium text-accent hover:text-accent-hover">
                       {b.message}
                     </button>
                   ) : (
-                    b.message
+                    <span className="inline-flex min-h-8 items-center">{b.message}</span>
                   )}
                 </li>
               ))}

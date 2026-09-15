@@ -47,9 +47,16 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   poweredByHeader: false,
   reactStrictMode: true,
+  experimental: {
+    // The stylesheet (~13 KB gzipped, Tailwind) arrives inside the HTML instead of as a render-blocking request that
+    // competes with the page's scripts: on Slow 4G that request alone held first paint on /login to ~2 s (plan §6).
+    inlineCss: true,
+  },
   // The local stack and the QA harness use 127.0.0.1; let dev assets load from it.
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
   images: {
+    // AVIF first: the landing page's hero screenshot is its LCP element, and AVIF is ~40% smaller than WebP.
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: supabaseUrl.protocol.replace(':', '') as 'http' | 'https',

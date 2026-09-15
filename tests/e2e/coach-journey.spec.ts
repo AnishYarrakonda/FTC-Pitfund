@@ -153,6 +153,8 @@ test.describe('failure states', () => {
     await expect(page.getByText('Checking FIRST records…')).toBeVisible()
     await expect(page.getByText('FIRST records aren’t reachable right now. Enter your team name and city; we’ll check them later.')).toBeVisible({ timeout: 15_000 })
     await page.getByRole('button', { name: 'Enter details' }).click()
+    // The form moves focus to Team name on the next frame; typing before that lands in the wrong field.
+    await expect(page.getByLabel('Team name')).toBeFocused()
     await page.getByLabel('Team name').fill('Offline Robotics')
     await page.getByLabel('City').fill('Austin')
     await page.getByLabel('State or region').fill('TX')

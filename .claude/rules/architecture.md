@@ -80,5 +80,7 @@ React + Next alone is ~145 KB, so client code on any page gets ~25 KB. Keep it t
 - Turbopack bundles whole modules: one import from a big client module ships all of it. Split modules instead.
 - The landing page is static; its only island reads the session cookie. `/login` renders the form in the static shell
   and reads `?intent`, `?next`, `?error` in the browser (a Suspense fallback swap would wipe what the user typed).
+- **CSS is inlined into the HTML** (`experimental.inlineCss`): a render-blocking stylesheet request competing with the scripts
+  held `/login` first paint to ~2 s on Slow 4G. Images are served AVIF first (`images.formats`); the landing hero is the LCP.
 - Measure with `npm run perf -- --only bundles` (gzip -9 of the scripts the HTML references, as Next reports sizes).
 
