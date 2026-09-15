@@ -29,10 +29,21 @@ async function main() {
     console.error('NEXT_PUBLIC_SUPABASE_URL and DATABASE_URL must be set. Run `npm run setup`.')
     process.exit(1)
   }
-  // Seeds create fake users and wipe data: never against anything but the local stack.
+  // Seeds create fake users and wipe data: never against anything but the local stack, except the
+  // staging project when `npm run provision:supabase` asks for it by ref (never production).
   if (!isLocalHost(supabaseUrl) || !isLocalHost(databaseUrl)) {
-    console.error('Refusing to seed a non-local Supabase project or database.')
-    process.exit(1)
+    const stagingRef = process.env.PROVISION_STAGING_REF
+    const productionRef = process.env.PROVISION_PRODUCTION_REF
+    const isStaging =
+      process.argv.includes('--staging') &&
+      Boolean(stagingRef) &&
+      new URL(supabaseUrl).hostname === `${stagingRef}.supabase.co` &&
+      databaseUrl.includes(`.${stagingRef}:`) &&
+      (!productionRef || (!supabaseUrl.includes(productionRef) && !databaseUrl.includes(productionRef)))
+    if (!isStaging) {
+      console.error('Refusing to seed a non-local Supabase project or database.')
+      process.exit(1)
+    }
   }
   guardTarget(databaseUrl, 'seed')
 
