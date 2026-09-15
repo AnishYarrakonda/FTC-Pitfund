@@ -2,8 +2,6 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import type { ReactNode } from 'react'
 
-import { TooltipProvider } from '@/components/ui/menu'
-import { Toaster } from '@/components/ui/toaster'
 import { PRODUCT_NAME } from '@/lib/shared/brand'
 
 import './globals.css'
@@ -34,8 +32,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         >
           Skip to content
         </a>
-        <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
-        <Toaster />
+        {children}
       </body>
     </html>
   )

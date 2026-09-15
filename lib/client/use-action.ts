@@ -1,9 +1,10 @@
 'use client'
 
 import { useCallback, useLayoutEffect, useRef, useState, useTransition } from 'react'
-import { toast } from 'sonner'
 
 import { NETWORK_ERROR_MESSAGE, type ActionError, type Result } from '@/lib/shared/result'
+
+import { toast } from './toast'
 
 /*
  * The one way client code calls a server action (plan §3.1). It:
@@ -84,10 +85,7 @@ export function useAction<I, T>(action: (input: I) => Promise<Result<T>>, option
             if (opts.errorToast !== false && !hasField) {
               toast.error(result.error.message, {
                 id: `action-error-${result.error.code}`,
-                action:
-                  result.error.code === 'UNAVAILABLE'
-                    ? { label: 'Retry', onClick: () => void runRef.current?.(lastInput.current as I) }
-                    : undefined,
+                action: result.error.code === 'UNAVAILABLE' ? { label: 'Retry', onClick: () => void runRef.current?.(lastInput.current as I) } : undefined,
               })
             }
           }

@@ -2,7 +2,7 @@
 
 import { Bell, FileText, MoreHorizontal, Pencil, Plus, Trash2, Users } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/client/toast'
 
 import { fakeFieldFailure, fakeSlowFailure, fakeSlowSuccess, fakeUnexpectedFailure } from '@/app/actions/dev'
 import { ActionButton } from '@/components/ui/action-button'
@@ -25,7 +25,8 @@ import { FileDrop } from '@/components/ui/file-drop'
 import { IconButton } from '@/components/ui/icon-button'
 import { Avatar, OrgLogo, TeamMark } from '@/components/ui/identity'
 import { Input, SearchInput } from '@/components/ui/input'
-import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger, Popover, PopoverContent, PopoverTrigger, Tooltip } from '@/components/ui/menu'
+import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger, Popover, PopoverContent, PopoverTrigger } from '@/components/ui/menu'
+import { Tooltip } from '@/components/ui/tooltip'
 import { PageContainer, PageHeader } from '@/components/ui/page'
 import { PdfViewer } from '@/components/ui/pdf-viewer'
 import { Select } from '@/components/ui/select'

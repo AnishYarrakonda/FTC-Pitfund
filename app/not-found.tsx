@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 import { Wordmark } from '@/components/app/wordmark'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 
 export default function NotFound() {
   return (
@@ -16,9 +16,9 @@ export default function NotFound() {
           <p className="text-lead text-text-secondary">It may have moved, or you may not have access to it.</p>
         </div>
         <div>
-          <Button asChild>
-            <Link href="/">Go to FTC Pitfund</Link>
-          </Button>
+          <Link href="/" className={buttonVariants()}>
+            Go to FTC Pitfund
+          </Link>
         </div>
       </main>
     </div>

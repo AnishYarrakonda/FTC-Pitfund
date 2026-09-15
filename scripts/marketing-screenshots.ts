@@ -6,7 +6,6 @@
  * (sponsor) and the public team page (anonymous) at narrower widths, all @2x, on the local production build
  * (:3100, started if it isn't running). Each capture is re-encoded to WebP in public/marketing/.
  */
-import { spawn } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 
 import { chromium, type Page } from '@playwright/test'
@@ -16,6 +15,7 @@ import { assertLocalStack, PROD_URL } from '../tests/support/env'
 import { seed } from '../tests/support/seed'
 import { storageStateViaToken } from '../tests/support/session'
 
+import { ensureProdServer, stopServer } from './lib/prod-server'
 import { SEED } from './seed/ids'
 
 const OUT = 'public/marketing'
@@ -55,26 +55,6 @@ const SHOTS: Shot[] = [
   { file: 'team-page', path: `/t/${SEED.exodius.number}`, persona: null, selector: 'main', width: 900 },
 ]
 
-async function serverUp() {
-  try {
-    return (await fetch(`${PROD_URL}/api/health`, { signal: AbortSignal.timeout(2000) })).ok
-  } catch {
-    return false
-  }
-}
-
-async function ensureServer() {
-  if (await serverUp()) return null
-  console.log('▸ Starting the local production server (:3100)')
-  const child = spawn(process.execPath, ['--import', 'tsx', '--import', './scripts/lib/server-only-stub.mjs', 'scripts/serve-prod.ts'], { stdio: 'inherit' })
-  for (let i = 0; i < 600; i++) {
-    if (await serverUp()) return child
-    await new Promise((r) => setTimeout(r, 1000))
-  }
-  child.kill()
-  throw new Error('The production server did not start.')
-}
-
 async function toWebp(page: Page, png: Buffer): Promise<Buffer> {
   const dataUrl = await page.evaluate(async (src) => {
     const img = new Image()
@@ -93,7 +73,7 @@ async function main() {
   assertLocalStack()
   console.log('▸ Seeding demo')
   seed('demo')
-  const server = await ensureServer()
+  const server = await ensureProdServer(PROD_URL)
   mkdirSync(OUT, { recursive: true })
   const browser = await chromium.launch()
   try {
@@ -122,7 +102,7 @@ async function main() {
     }
   } finally {
     await browser.close()
-    server?.kill()
+    stopServer(server)
   }
   // The composer shot saved a draft; put the demo data back.
   seed('demo')

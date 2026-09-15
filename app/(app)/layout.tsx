@@ -2,6 +2,7 @@ import { Suspense, type ReactNode } from 'react'
 
 import { SuspendedNotice } from '@/components/app/states'
 import { TopBar, TopBarSkeleton } from '@/components/app/top-bar'
+import { Toaster } from '@/components/ui/toaster'
 import { devToolsEnabled } from '@/lib/server/env'
 import { pageViewer } from '@/lib/server/page-guards'
 import { SUPPORT_EMAIL } from '@/lib/shared/brand'
@@ -16,16 +17,19 @@ export const instant = false
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <Suspense
-      fallback={
-        <>
-          <TopBarSkeleton />
-          <main id="main" className="min-w-0" />
-        </>
-      }
-    >
-      <AppFrame>{children}</AppFrame>
-    </Suspense>
+    <>
+      <Suspense
+        fallback={
+          <>
+            <TopBarSkeleton />
+            <main id="main" className="min-w-0" />
+          </>
+        }
+      >
+        <AppFrame>{children}</AppFrame>
+      </Suspense>
+      <Toaster />
+    </>
   )
 }
 

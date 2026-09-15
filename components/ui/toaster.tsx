@@ -1,34 +1,33 @@
 'use client'
 
-import { Toaster as Sonner } from 'sonner'
+import { useEffect, useState, type ComponentType } from 'react'
 
-/** Sonner, styled to the tokens. Toasts are for off-screen effects only (plan §3.1 #3). */
+import { registerToasterHost } from '@/lib/client/toast'
+
+type SonnerToasterProps = { onReady: () => void }
+
+/*
+ * Where toasts appear (plan §3.1 #3: off-screen effects only). Renders nothing until the first
+ * toast, then loads Sonner and its styled toaster (./sonner-toaster.tsx), so pages that never
+ * toast don't ship either. Mount one per layout that has actions.
+ */
 export function Toaster() {
-  return (
-    <Sonner
-      position="bottom-right"
-      gap={8}
-      offset={16}
-      mobileOffset={16}
-      visibleToasts={3}
-      toastOptions={{
-        unstyled: true,
-        classNames: {
-          toast:
-            'group pointer-events-auto flex w-[min(380px,calc(100vw-32px))] items-start gap-3 rounded-menu border border-border bg-surface px-4 py-3 text-body text-text shadow-sm',
-          title: 'font-medium text-text',
-          description: 'text-small text-text-secondary',
-          icon: 'mt-[3px] shrink-0 [&_svg]:size-4',
-          success: '[&_[data-icon]]:text-success',
-          error: '[&_[data-icon]]:text-danger',
-          warning: '[&_[data-icon]]:text-warning',
-          info: '[&_[data-icon]]:text-info',
-          actionButton:
-            'ml-auto shrink-0 rounded-control border border-border-strong bg-surface px-2.5 py-1 text-small font-medium text-text hover:bg-muted',
-          cancelButton: 'ml-auto shrink-0 rounded-control px-2.5 py-1 text-small text-text-secondary hover:bg-muted',
-          closeButton: 'text-text-tertiary',
-        },
-      }}
-    />
+  const [Host, setHost] = useState<ComponentType<SonnerToasterProps> | null>(null)
+  const [ready, setReady] = useState<(() => void) | null>(null)
+
+  useEffect(
+    () =>
+      registerToasterHost(
+        () =>
+          new Promise<void>((resolve) => {
+            void import('./sonner-toaster').then((mod) => {
+              setReady(() => resolve)
+              setHost(() => mod.default)
+            })
+          }),
+      ),
+    [],
   )
+
+  return Host && ready ? <Host onReady={ready} /> : null
 }

@@ -6,14 +6,13 @@ import { notFound } from 'next/navigation'
 import { PublicFooter, PublicHeader } from '@/components/app/public-chrome'
 import { Button } from '@/components/ui/button'
 import { OrgLogo } from '@/components/ui/identity'
-import { Tooltip } from '@/components/ui/menu'
 import { PdfViewer } from '@/components/ui/pdf-viewer'
 import { getPublicTeam, type PublicTeam } from '@/lib/server/data/public-team'
 import { formatDate } from '@/lib/shared/format'
 import { placeLabel } from '@/lib/shared/team'
 import { displayWebsite } from '@/lib/shared/url'
 
-import { ReportDialog } from './report-dialog'
+import { ReportButton } from './report-button'
 
 /*
  * The public team page (plan §2). Cached per team (lib/server/data/public-team.ts), so it is fast
@@ -78,11 +77,10 @@ function TeamProfile({ team }: { team: PublicTeam }) {
             <h1 className="flex min-w-0 flex-wrap items-center gap-x-2 text-h1 font-semibold tracking-tighter text-text">
               <span className="min-w-0 user-text">{team.name}</span>
               {team.verified ? (
-                <Tooltip content="Verified by FTC Pitfund">
-                  <button type="button" className="inline-flex shrink-0 rounded-control text-accent" aria-label="Verified by FTC Pitfund">
-                    <BadgeCheck aria-hidden="true" className="size-6" />
-                  </button>
-                </Tooltip>
+                <span className="inline-flex shrink-0 text-accent" title="Verified by FTC Pitfund">
+                  <BadgeCheck aria-hidden="true" className="size-6" />
+                  <span className="sr-only">Verified by FTC Pitfund</span>
+                </span>
               ) : null}
             </h1>
             <p className="min-w-0 text-lead text-text-secondary user-text">
@@ -116,7 +114,7 @@ function TeamProfile({ team }: { team: PublicTeam }) {
 
       <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6 text-small text-text-tertiary">
         <p>Is something wrong with this page?</p>
-        <ReportDialog teamNumber={team.number} />
+        <ReportButton teamNumber={team.number} />
       </div>
     </div>
   )

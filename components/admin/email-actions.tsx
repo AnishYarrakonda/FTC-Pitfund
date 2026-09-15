@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
+import { toast } from '@/lib/client/toast'
 
 import { dismissEmailAction, retryEmailAction, sendEmailNowAction } from '@/app/actions/admin'
 import { ActionButton } from '@/components/ui/action-button'

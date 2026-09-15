@@ -34,7 +34,8 @@
     "provision:sentry": "node --import tsx scripts/provision/sentry.ts",
     "provision:verify": "node --import tsx scripts/provision/verify.ts",
     "screenshots:marketing": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/marketing-screenshots.ts",
-    "email:preview": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/email-preview.ts"
+    "email:preview": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/email-preview.ts",
+    "perf": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/perf.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.74.0",

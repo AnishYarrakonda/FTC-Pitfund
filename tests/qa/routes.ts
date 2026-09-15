@@ -221,4 +221,11 @@ export const BUDGETS = {
   cls: 0.05,
   actionPendingMs: 100,
   minOverlayWidthPx: 320,
+  // npm run perf
+  firstLoadJsKb: 170,
+  queriesPerPage: 5,
+  renderP95Ms: 400,
+  actionP95Ms: 500,
+  lighthousePerformance: 90,
+  lighthouseAccessibility: 95,
 }

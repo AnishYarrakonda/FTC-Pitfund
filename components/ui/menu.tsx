@@ -1,11 +1,11 @@
 'use client'
 
-import { DropdownMenu, Popover as PopoverPrimitive, Slot, Tooltip as TooltipPrimitive } from 'radix-ui'
+import { DropdownMenu, Popover as PopoverPrimitive, Slot } from 'radix-ui'
 import type { ComponentProps, ReactNode } from 'react'
 
 import { cn } from '@/lib/shared/cn'
 
-/* Menu (dropdown), Popover and Tooltip. Menus and popovers: 8 px radius, shadow-sm. */
+/* Menu (dropdown) and Popover. Menus and popovers: 8 px radius, shadow-sm. */
 
 export const Menu = DropdownMenu.Root
 export const MenuTrigger = DropdownMenu.Trigger
@@ -95,26 +95,5 @@ export function PopoverContent({ className, align = 'end', sideOffset = 6, ...pr
         {...props}
       />
     </PopoverPrimitive.Portal>
-  )
-}
-
-export const TooltipProvider = TooltipPrimitive.Provider
-
-export function Tooltip({ content, children, side = 'top' }: { content: ReactNode; children: ReactNode; side?: 'top' | 'bottom' | 'left' | 'right' }) {
-  return (
-    <TooltipPrimitive.Root>
-      <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
-      <TooltipPrimitive.Portal>
-        <TooltipPrimitive.Content
-          side={side}
-          sideOffset={6}
-          collisionPadding={16}
-          data-motion="overlay"
-          className="z-50 max-w-64 rounded-control bg-text px-2 py-1 text-caption text-white shadow-sm data-[state=delayed-open]:animate-overlay-in data-[state=closed]:animate-overlay-out"
-        >
-          {content}
-        </TooltipPrimitive.Content>
-      </TooltipPrimitive.Portal>
-    </TooltipPrimitive.Root>
   )
 }

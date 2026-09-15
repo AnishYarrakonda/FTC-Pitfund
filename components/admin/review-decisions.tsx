@@ -3,7 +3,7 @@
 import { RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/client/toast'
 
 import { approvePitchAction, rejectPitchAction, sendBackPitchAction } from '@/app/actions/admin'
 import { Button } from '@/components/ui/button'

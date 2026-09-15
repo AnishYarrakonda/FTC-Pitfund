@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/lib/client/toast'
 
 import {
   approveCompanyAction,

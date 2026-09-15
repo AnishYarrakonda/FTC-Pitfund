@@ -86,7 +86,7 @@ export default function LandingPage() {
             <a href="#companies" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'hidden sm:inline-flex')}>
               For companies
             </a>
-            <LandingSessionActions />
+            <LandingSessionActions primaryClass={buttonVariants({ size: 'sm' })} ghostClass={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'text-text')} />
           </nav>
         </div>
       </header>

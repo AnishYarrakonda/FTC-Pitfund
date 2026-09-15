@@ -1,12 +1,12 @@
 'use client'
 
-import { CheckCircle2, Flag } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import { reportTeamPage } from '@/app/actions/reports'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogClose, DialogContent, DialogTrigger } from '@/components/ui/dialog'
-import { Banner } from '@/components/ui/feedback'
+import { Banner } from '@/components/ui/banner'
+import { Dialog, DialogClose, DialogContent } from '@/components/ui/dialog'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -14,9 +14,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { useAction } from '@/lib/client/use-action'
 import { REPORT_REASONS } from '@/lib/shared/team'
 
-/** "Report this page": reason, details, optional email. Bot-checked on the server. */
-export function ReportDialog({ teamNumber }: { teamNumber: number }) {
-  const [open, setOpen] = useState(false)
+/**
+ * "Report this page": reason, details, optional email. Bot-checked on the server. Loaded on the
+ * first click by ./report-button.tsx, which owns the trigger and the open state.
+ */
+export default function ReportDialog({ teamNumber, open, setOpen }: { teamNumber: number; open: boolean; setOpen: (open: boolean) => void }) {
   const [reason, setReason] = useState('')
   const [details, setDetails] = useState('')
   const [email, setEmail] = useState('')
@@ -44,12 +46,6 @@ export function ReportDialog({ teamNumber }: { teamNumber: number }) {
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" data-qa-overlay="Report this page">
-          <Flag aria-hidden="true" />
-          Report this page
-        </Button>
-      </DialogTrigger>
       <DialogContent
         size="md"
         title="Report this page"

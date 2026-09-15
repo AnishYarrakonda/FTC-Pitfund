@@ -1,6 +1,7 @@
 import { Suspense, type ReactNode } from 'react'
 
 import { TopBar, TopBarSkeleton } from '@/components/app/top-bar'
+import { Toaster } from '@/components/ui/toaster'
 import { requireAdmin } from '@/lib/server/authz'
 import { devToolsEnabled } from '@/lib/server/env'
 import { guardPage } from '@/lib/server/page-guards'
@@ -11,16 +12,19 @@ export const instant = false
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <Suspense
-      fallback={
-        <>
-          <TopBarSkeleton area="admin" />
-          <main id="main" className="min-w-0" />
-        </>
-      }
-    >
-      <AdminFrame>{children}</AdminFrame>
-    </Suspense>
+    <>
+      <Suspense
+        fallback={
+          <>
+            <TopBarSkeleton area="admin" />
+            <main id="main" className="min-w-0" />
+          </>
+        }
+      >
+        <AdminFrame>{children}</AdminFrame>
+      </Suspense>
+      <Toaster />
+    </>
   )
 }
 

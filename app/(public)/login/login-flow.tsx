@@ -3,15 +3,13 @@
 import { ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
 
 import { requestLoginCode, verifyLoginCode } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
-import { Banner } from '@/components/ui/feedback'
+import { Banner } from '@/components/ui/banner'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
-import { createSupabaseBrowserClient } from '@/lib/client/supabase'
 import { useAction } from '@/lib/client/use-action'
 import { cn } from '@/lib/shared/cn'
 import { NETWORK_ERROR_MESSAGE } from '@/lib/shared/result'
@@ -61,10 +59,6 @@ export function LoginFlow({
   const [topError, setTopError] = useState<string | null>(initialError)
   const codeInput = useRef<HTMLInputElement>(null)
   const lastSubmitted = useRef('')
-
-  useEffect(() => {
-    toast.dismiss('sign-out')
-  }, [])
 
   // Tick once a second while the resend countdown is running.
   useEffect(() => {
@@ -131,6 +125,8 @@ export function LoginFlow({
       if (next) query.set('next', next)
       if (intent) query.set('intent', intent)
       const redirectTo = `${window.location.origin}/auth/callback${query.size ? `?${query}` : ''}`
+      // The Supabase client (~60 KB) loads only when someone chooses Google.
+      const { createSupabaseBrowserClient } = await import('@/lib/client/supabase')
       const { error } = await createSupabaseBrowserClient().auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
       if (error) throw error
     } catch {
