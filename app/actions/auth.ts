@@ -6,7 +6,8 @@ import { redirect } from 'next/navigation'
 import { AppError, defineAction } from '@/lib/server/result'
 import { createSupabaseServerClient } from '@/lib/server/supabase'
 import { ensureUserRow, loadViewer } from '@/lib/server/viewer'
-import { codeSchema, emailSchema, safeNext } from '@/lib/shared/schemas/account'
+import { codeSchema, emailSchema } from '@/lib/shared/schemas/account'
+import { safeNext } from '@/lib/shared/sign-in'
 import { signInDestination } from '@/lib/shared/viewer'
 
 /*

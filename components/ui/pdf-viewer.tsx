@@ -10,7 +10,8 @@ import { Spinner } from './spinner'
 /*
  * PdfViewer (plan §7). The viewer is excluded from first-load JS (plan §6): this shell renders the
  * figure, the toolbar and the deck's first-page thumbnail, and loads the pages (./pdf-viewer-impl.tsx,
- * then pdf.js) when the viewer comes within 300 px of the viewport or the reader presses "View deck".
+ * then pdf.js) once the page has loaded and the viewer comes within 300 px of the viewport, or the
+ * reader presses "View deck".
  * Pages are navigable with the toolbar or ←/→/PageUp/PageDown; the file is always one click away.
  */
 
@@ -65,11 +66,20 @@ export function PdfViewer({ title, pages, thumbnailSrc, downloadHref, src, eager
   useEffect(() => {
     if (!requested) return
     let cancelled = false
-    void loadImpl().then((impl) => {
-      if (!cancelled) setPages(() => impl)
-    })
+    // Never compete with the page's own first load: wait for the load event and an idle moment.
+    const start = () => {
+      const run = () =>
+        void loadImpl().then((impl) => {
+          if (!cancelled) setPages(() => impl)
+        })
+      if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 1500 })
+      else setTimeout(run, 200)
+    }
+    if (document.readyState === 'complete') start()
+    else window.addEventListener('load', start, { once: true })
     return () => {
       cancelled = true
+      window.removeEventListener('load', start)
     }
   }, [requested])
 

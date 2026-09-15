@@ -5,11 +5,11 @@
  * with the `demo` seed. Fails (exit 1) on any miss; results go to qa/perf/.
  *
  *   bundles     First-load JS per route: every QA route on the production server, as its first
- *               persona. Every script Chromium requests before the `load` event (what the page
- *               needs to hydrate), counted as its gzip -9 size. Link prefetches
+ *               persona. Every script the page's HTML references (what it needs to hydrate; lazy
+ *               chunks and link prefetches come later), counted as its gzip -9 size. Link prefetches
  *               and lazy chunks (pdf.js, dialogs opened on click) come later and don't count.
  *               Budget 170 KB.
- *   lighthouse  Lighthouse mobile (its default simulated Slow 4G) on /, /t/31579 and /login, three
+ *   lighthouse  Lighthouse mobile with applied Slow 4G throttling (150 ms RTT, 1.6 Mbit/s, 4× CPU) on /, /t/31579 and /login, three
  *               runs each, median: performance ≥ 90, accessibility ≥ 95, LCP ≤ 2 s, CLS ≤ 0.05.
  *   server      Authed pages (/pitches, /sponsors, /inbox, /admin, /admin/pitches/[id]): queries per
  *               request from a second production server on :3101 started with DEBUG_QUERIES=1
@@ -67,27 +67,19 @@ function table(rows: Array<Record<string, string | number>>) {
 // ─── First-load JS ──────────────────────────────────────────────────────────────────────
 
 async function bundles(browser: Browser) {
-  console.log('\n▸ First-load JS per route (compressed, scripts before load)')
+  console.log('\n▸ First-load JS per route (gzip -9 of the scripts the HTML references)')
   const rows: Array<{ route: string; persona: string; kb: number; scripts: number; ok: string }> = []
   for (const route of QA_ROUTES) {
     if (route.server === 'dev') continue
     const persona = route.personas[0]
     const context = await browser.newContext({ baseURL: PROD_URL, storageState: await storageState(persona) })
     const page = await context.newPage()
-    const cdp = await context.newCDPSession(page)
-    await cdp.send('Network.enable')
-    let loaded = false
-    const early = new Map<string, string>()
-    cdp.on('Network.requestWillBeSent', (e) => {
-      if (e.type === 'Script' && !loaded) early.set(e.requestId, e.request.url)
-    })
-    page.on('load', () => {
-      loaded = true
-    })
-    await page.goto(route.path, { waitUntil: 'load' })
-    await page.waitForLoadState('networkidle')
-    // gzip -9 of each script body, as Next reports sizes (the wire count adds ~1 KB of headers per file).
-    const urls = [...new Set(early.values())]
+    // The scripts the HTML itself references: what the page needs to hydrate. Counting network
+    // requests instead picks up link prefetches whenever an image delays the load event.
+    const response = await page.goto(route.path, { waitUntil: 'load' })
+    const html = (await response?.text()) ?? ''
+    const urls = [...new Set([...html.matchAll(/<script\b[^>]*>/g)].map((m) => m[0]).filter((tag) => !/\bnomodule\b/i.test(tag)).map((tag) => tag.match(/\ssrc="([^"]+)"/)?.[1]).filter((src): src is string => Boolean(src)))].map((src) => new URL(src, PROD_URL).toString())
+    // gzip -9 of each script body, as Next reports sizes.
     const sizes = await Promise.all(urls.map(async (url) => gzipSync(Buffer.from(await (await fetch(url)).arrayBuffer()), { level: 9 }).length))
     const bytes = sizes.reduce((sum, n) => sum + n, 0)
     const scripts = urls.length
@@ -104,7 +96,7 @@ async function bundles(browser: Browser) {
 // ─── Lighthouse ─────────────────────────────────────────────────────────────────────────
 
 async function lighthouseRuns() {
-  console.log('\n▸ Lighthouse (mobile, simulated Slow 4G), median of 3')
+  console.log('\n▸ Lighthouse (mobile, applied Slow 4G throttling), median of 3')
   const port = 9333
   const browser = await chromium.launch({ args: [`--remote-debugging-port=${port}`] })
   const rows: Array<Record<string, string | number>> = []
@@ -113,7 +105,10 @@ async function lighthouseRuns() {
     for (const path of ['/', `/t/${SEED.exodius.number}`, '/login']) {
       const runs: Array<{ performance: number; accessibility: number; lcpMs: number; cls: number; tbtMs: number }> = []
       for (let i = 0; i < 3; i++) {
-        const result = await lighthouse(`${PROD_URL}${path}`, { port, output: 'json', logLevel: 'error', onlyCategories: ['performance', 'accessibility'] })
+        // Applied ("devtools") throttling with Lighthouse's mobile Slow 4G profile. Its default simulated
+        // throttling extrapolates from an unthrottled trace, and on a local server that trace finishes in
+        // ~100 ms: whether the LCP paint lands before or after the scripts start swings LCP by ±500 ms.
+        const result = await lighthouse(`${PROD_URL}${path}`, { port, output: 'json', logLevel: 'error', onlyCategories: ['performance', 'accessibility'], throttlingMethod: 'devtools' })
         if (!result) throw new Error(`Lighthouse returned nothing for ${path}`)
         const { lhr } = result
         runs.push({

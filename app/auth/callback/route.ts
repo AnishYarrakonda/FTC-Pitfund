@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/server/supabase'
 import { ensureUserRow, loadViewer } from '@/lib/server/viewer'
 import { requestOrigin } from '@/lib/shared/request-origin'
-import { parseIntent, safeNext } from '@/lib/shared/schemas/account'
+import { parseIntent, safeNext } from '@/lib/shared/sign-in'
 import { signInDestination } from '@/lib/shared/viewer'
 
 /*

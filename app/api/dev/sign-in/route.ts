@@ -5,7 +5,7 @@ import { devToolsEnabled } from '@/lib/server/env'
 import { loadViewer } from '@/lib/server/viewer'
 import { isPersonaKey } from '@/lib/shared/personas'
 import { requestOrigin } from '@/lib/shared/request-origin'
-import { safeNext } from '@/lib/shared/schemas/account'
+import { safeNext } from '@/lib/shared/sign-in'
 import { homeFor } from '@/lib/shared/viewer'
 
 /*

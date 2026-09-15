@@ -13,7 +13,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { useAction } from '@/lib/client/use-action'
 import { cn } from '@/lib/shared/cn'
 import { NETWORK_ERROR_MESSAGE } from '@/lib/shared/result'
-import { parseIntent, safeNext } from '@/lib/shared/schemas/account'
+import { parseIntent, safeNext } from '@/lib/shared/sign-in'
 
 /*
  * Sign in (plan §3.2): Google, or a 6-digit email code. Every branch has its own copy:

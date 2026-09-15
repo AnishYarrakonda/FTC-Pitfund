@@ -8,7 +8,7 @@ import { getDb } from '@/lib/server/db'
 import { notifyAdmins, notifySponsor, notifyTeam, notifyUsers } from '@/lib/server/notify'
 import { notifications } from '@/lib/server/schema'
 import { loadViewer } from '@/lib/server/viewer'
-import { safeNext } from '@/lib/shared/schemas/account'
+import { safeNext } from '@/lib/shared/sign-in'
 import { requestOrigin } from '@/lib/shared/request-origin'
 
 import { addSponsorMember, addTeamMember, createSponsor, createTeam, createUser, dbTest } from './helpers/db'

@@ -77,9 +77,9 @@ Team email: **ftcexodius@gmail.com**.
 
 - **First-load JS is mostly the framework** (~145 KB of React + Next). Radix, Sonner, pdf.js and tailwind-merge each
   cost 8–25 KB; they now load on first use or were replaced. Turbopack ships whole modules, so split big client modules.
-- **Lighthouse's simulated LCP counts every request that started before the observed LCP.** On a fast local server the
-  scripts finish before the paint, so they become dependencies. Keep the LCP element in the static shell, give its image
-  `fetchPriority="high"`, and don't preload the web font.
+- **Lighthouse's default (simulated) throttling is unreliable on a local server**: it extrapolates from an unthrottled
+  ~100 ms trace, and LCP swings ±500 ms with the order of events. `npm run perf` uses applied Slow 4G throttling. Still keep
+  the LCP element in the static shell, give its image `fetchPriority="high"`, and don't preload the web font.
 - **A Suspense fallback that renders the same client form gets replaced when the stream arrives**, wiping typed input.
   Read search params in the browser (`useSyncExternalStore`) and keep one instance.
 - **A server component can't render `Button` without `asChild`**: it attaches an onClick, and the page errors with
@@ -88,4 +88,5 @@ Team email: **ftcexodius@gmail.com**.
 - **Lazily loaded toast code must be fetched before the network drops**: `<Toaster>` prefetches at idle.
 - **next/image and local Supabase:** the optimizer refuses 127.0.0.1 unless `dangerouslyAllowLocalIP`; it is on only
   when Supabase itself is local.
-- `npm run perf` measures bundles as gzip -9 of scripts requested before `load` (the wire adds ~1 KB of headers per file).
+- `npm run perf` measures bundles as gzip -9 of the scripts the HTML references; counting requests before `load` picks up
+  link prefetches whenever an image delays the load event.

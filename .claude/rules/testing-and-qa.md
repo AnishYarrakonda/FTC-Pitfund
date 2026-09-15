@@ -41,7 +41,7 @@ Anish does not click through the app. Agents verify everything with these comman
 ## More gates
 - `npm run qa:clicks` (`tests/qa/dead-clicks.ts`): every visible button on every production route must change the DOM,
   navigate, call an action, open a chooser or a dialog within 150 ms; every link must go somewhere. Reseeds `demo`.
-- `npm run perf` (`scripts/perf.ts`): first-load JS ≤170 KB per QA route, Lighthouse mobile (perf ≥90, a11y ≥95,
+- `npm run perf` (`scripts/perf.ts`): first-load JS ≤170 KB per QA route (scripts in the HTML), Lighthouse mobile with applied Slow 4G throttling (perf ≥90, a11y ≥95,
   LCP ≤2 s, CLS ≤0.05), ≤5 queries and render p95 ≤400 ms on the authed list/review pages (a second server with
   `DEBUG_QUERIES=1` on :3101), autosave action p95 ≤500 ms. Budgets live in `BUDGETS` (`tests/qa/routes.ts`).
 - `npm run security:scan`: no secret from `.env.local` in browser-reachable build output, anon REST reads/writes nothing,

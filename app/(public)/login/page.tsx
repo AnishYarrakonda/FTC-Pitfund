@@ -6,7 +6,7 @@ import { Suspense } from 'react'
 import { PublicFooter } from '@/components/app/public-chrome'
 import { Wordmark } from '@/components/app/wordmark'
 import { getViewer } from '@/lib/server/viewer'
-import { parseIntent, safeNext } from '@/lib/shared/schemas/account'
+import { parseIntent, safeNext } from '@/lib/shared/sign-in'
 import { homeFor, welcomePath } from '@/lib/shared/viewer'
 
 import { LoginFlow } from './login-flow'

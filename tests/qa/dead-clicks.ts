@@ -5,11 +5,11 @@
  * mobile menu at 375 px), on a freshly seeded `demo`:
  *   - every visible, enabled button (and [role=button], [role=tab], summary) is clicked on a fresh
  *     load, and must produce something within 150 ms: a DOM change (text, a dialog, aria-busy,
- *     data-state…), a navigation or router request, a server action request, a file chooser, or a
- *     browser dialog. Anything else is a dead click.
+ *     data-state…), focus moving or the page scrolling to something, a navigation or router request,
+ *     a server action request, a file chooser, or a browser dialog. Anything else is a dead click.
  *   - every link must go somewhere: not empty, `#` or `javascript:`, and an in-page `#id` must exist.
  * Server actions change data, so `demo` is reseeded after any route where one ran.
- * Writes qa/dead-clicks.json and qa/dead-clicks.md; exits 1 on any finding.
+ * Writes qa/dead-clicks.json and qa/dead-clicks.md; exits 1 on any finding. `-- --route /inbox` audits matching paths only.
  */
 import { mkdirSync, writeFileSync } from 'node:fs'
 
@@ -18,6 +18,7 @@ import { chromium, type Browser, type Page } from '@playwright/test'
 import { PROD_URL, assertLocalStack } from '../support/env'
 import { seed } from '../support/seed'
 import { storageStateViaToken } from '../support/session'
+import { argValue } from '../../scripts/lib/env'
 import { ensureProdServer, stopServer } from '../../scripts/lib/prod-server'
 
 import { QA_ROUTES } from './routes'
@@ -35,10 +36,13 @@ async function open(browser: Browser, path: string, persona: string, width: numb
   await context.addInitScript('globalThis.__name = (fn) => fn')
   const page = await context.newPage()
   await page.goto(path, { waitUntil: 'networkidle' })
+  // Let content that loads after the load event (the PDF viewer waits for an idle moment) arrive first.
+  await page.waitForTimeout(1200)
+  await page.waitForLoadState('networkidle')
   return { context, page }
 }
 
-/** Accessible-ish names of the clickable candidates, in document order. */
+/** Names of the clickable candidates, in document order; each is tagged with data-dc so it can be clicked by index. */
 function listButtons(page: Page) {
   return page.evaluate((selector) => {
     const visible = (el: Element) => {
@@ -46,9 +50,13 @@ function listButtons(page: Page) {
       const s = getComputedStyle(el)
       return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' && !el.closest('[inert], [aria-hidden="true"]')
     }
+    document.querySelectorAll('[data-dc]').forEach((el) => el.removeAttribute('data-dc'))
     return [...document.querySelectorAll(selector)]
       .filter((el) => visible(el) && !(el as HTMLButtonElement).disabled && el.getAttribute('aria-disabled') !== 'true')
-      .map((el) => (el.getAttribute('aria-label') || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60) || `<${el.tagName.toLowerCase()}>`)
+      .map((el, i) => {
+        el.setAttribute('data-dc', String(i))
+        return (el.getAttribute('aria-label') || el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60) || `<${el.tagName.toLowerCase()}>`
+      })
   }, CANDIDATES)
 }
 
@@ -96,17 +104,31 @@ async function clickAndObserve(page: Page, index: number): Promise<{ live: boole
     })
     w.__dcObserver.observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true })
   })
-  const target = page.locator(CANDIDATES).filter({ visible: true }).nth(index)
+  const target = page.locator(`[data-dc="${index}"]`)
+  // Center it first, so a sticky bar at the bottom of the viewport can't cover it, then take the baseline.
+  await target.evaluate((el) => el.scrollIntoView({ block: 'center' })).catch(() => {})
+  const start = await page.evaluate(() => ({ focus: document.activeElement?.outerHTML.slice(0, 200) ?? '', scroll: window.scrollY }))
   const before = page.url()
   await target.click({ timeout: 2000, noWaitAfter: true }).catch((e: Error) => events.push(`click failed: ${e.message.split('\n')[0]}`))
   await page.waitForTimeout(WINDOW_MS)
-  const mutations = await page.evaluate(() => (window as unknown as { __dcMutations: number }).__dcMutations).catch(() => 1)
-  if (mutations > 0) events.push(`${mutations} DOM changes`)
+  const after = await page
+    .evaluate(() => ({
+      mutations: (window as unknown as { __dcMutations: number }).__dcMutations,
+      focus: document.activeElement?.outerHTML.slice(0, 200) ?? '',
+      scroll: window.scrollY,
+    }))
+    .catch(() => ({ mutations: 1, focus: '', scroll: 0 }))
+  if (after.mutations > 0) events.push(`${after.mutations} DOM changes`)
+  // Moving focus to a field or scrolling to it is a visible response too (e.g. "Answer question 2").
+  if (after.focus !== start.focus) events.push('focus moved')
+  if (Math.abs(after.scroll - start.scroll) > 4) events.push('scrolled')
   if (page.url() !== before) events.push('url changed')
   page.off('request', onRequest)
   page.off('filechooser', onChooser)
   page.off('dialog', onDialog)
-  const failed = events.some((e) => e.startsWith('click failed'))
+  // Scrolling it into view can replace it (the deck's "View deck" turns into "Loading the deck…"): a response, not a dead click.
+  const replaced = (await target.count()) === 0 && after.mutations > 0
+  const failed = !replaced && events.some((e) => e.startsWith('click failed'))
   return { live: events.length > 0 && !failed, action, what: events.join(', ') || 'nothing' }
 }
 
@@ -139,7 +161,8 @@ async function main() {
   const findings: Finding[] = []
   let audited = 0
   try {
-    const routes = QA_ROUTES.filter((r) => r.server !== 'dev' && (r.expectStatus ?? 200) === 200)
+    const only = argValue('route')
+    const routes = QA_ROUTES.filter((r) => r.server !== 'dev' && (r.expectStatus ?? 200) === 200 && (!only || r.path.includes(only)))
     for (const route of routes) {
       const persona = route.personas[0]
       process.stdout.write(`▸ ${route.path} (${persona}) `)
