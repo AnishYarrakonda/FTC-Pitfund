@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, eq, isNull } from 'drizzle-orm'
+import { and, asc, eq, isNull } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 
 import { TAGS } from '../cache-tags'
@@ -33,6 +33,21 @@ export async function getPublicTeam(number: number): Promise<PublicTeam | null> 
   const team = await queryPublicTeam(number)
   cacheTag(TAGS.teams, TAGS.teamNumber(number), ...(team ? [TAGS.team(team.id)] : []))
   return team
+}
+
+/**
+ * Every team that has a public page (the same rule as queryPublicTeam: not suspended), for
+ * /sitemap.xml. Cached for hours; a new team appears on the next refresh.
+ */
+export async function listPublicTeamPages(): Promise<{ number: number; updatedAt: Date }[]> {
+  'use cache'
+  cacheLife('hours')
+  cacheTag(TAGS.teams)
+  return getDb()
+    .select({ number: teams.number, updatedAt: teams.updatedAt })
+    .from(teams)
+    .where(isNull(teams.suspendedAt))
+    .orderBy(asc(teams.number))
 }
 
 /** The uncached query behind getPublicTeam (tests call it directly). */

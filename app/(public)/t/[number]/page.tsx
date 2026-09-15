@@ -30,11 +30,11 @@ export async function generateMetadata({ params }: PageProps<'/t/[number]'>): Pr
   const team = number ? await getPublicTeam(number) : null
   if (!team) return { title: 'Team not found', robots: { index: false, follow: false } }
   const title = `Team ${team.number} · ${team.name}`
-  const image = team.deck?.thumbUrl ?? team.logoUrl
   return {
     title,
     description: team.summary ?? `FTC team ${team.number} from ${placeLabel(team) || 'the FIRST Tech Challenge'} on FTC Pitfund.`,
-    openGraph: { title, description: team.summary ?? undefined, type: 'profile', ...(image ? { images: [{ url: image }] } : {}) },
+    // The share image is ./opengraph-image.tsx: the team card with the deck's first page.
+    openGraph: { title, description: team.summary ?? undefined, type: 'profile' },
   }
 }
 
