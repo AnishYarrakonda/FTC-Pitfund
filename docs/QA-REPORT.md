@@ -205,6 +205,13 @@ dropped to ~670 ms, `/t/31579` from ~1,470 to ~1,180 ms, and `/` from ~1,720 to 
 - **Security headers and CSP** (`next.config.ts`): the OAuth redirect, the PDF worker, storage images and BotID all work
   under it (the E2E and QA runs fail on any console CSP violation).
 - `npm audit --omit=dev --audit-level=high`: 0 vulnerabilities in production dependencies.
+- **The v1 Vercel project can't receive v2.** Before merging, a check of the repository's GitHub deployments showed it is
+  still connected to the v1 personal Vercel project: pushes to `main` had made Production deployments there (35, the last
+  on 2026-08-31), and pushes to `rebuild` made Preview deployments (which failed to build). `vercel.json`'s ignored build
+  step (`scripts/vercel-ignore-build.mjs`) now skips any build whose `VERCEL_PROJECT_ID` is the v1 project or unknown.
+  Proven on the v1 project itself: the push of `1b4631b` shows **"Canceled by Ignored Build Step"**. Guarded by
+  `tests/unit/vercel-guard.test.ts`. `npm run provision:vercel` exposes system environment variables on the team project
+  so its builds proceed. Deleting the v1 project is `docs/LAUNCH.md` step 9, after v2 is live.
 
 ---
 
