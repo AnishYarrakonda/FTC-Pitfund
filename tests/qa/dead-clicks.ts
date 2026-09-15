@@ -35,10 +35,13 @@ async function open(browser: Browser, path: string, persona: string, width: numb
   const context = await browser.newContext({ baseURL: PROD_URL, viewport: { width, height: 900 }, storageState, reducedMotion: 'reduce' })
   await context.addInitScript('globalThis.__name = (fn) => fn')
   const page = await context.newPage()
-  await page.goto(path, { waitUntil: 'networkidle' })
+  // `load`, then a best-effort quiet network: a busy machine can keep a background request (an image being
+  // optimized, a prefetch) open past a hard networkidle timeout, and that isn't a finding about the page.
+  await page.goto(path, { waitUntil: 'load', timeout: 60_000 })
+  await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {})
   // Let content that loads after the load event (the PDF viewer waits for an idle moment) arrive first.
   await page.waitForTimeout(1200)
-  await page.waitForLoadState('networkidle')
+  await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {})
   return { context, page }
 }
 
