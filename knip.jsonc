@@ -6,6 +6,8 @@
     // CLIs run with `node --import tsx` from package.json scripts.
     "scripts/*.ts",
     "scripts/provision/*.ts",
+    // Vercel's ignored build step (vercel.json `ignoreCommand`).
+    "scripts/vercel-ignore-build.mjs",
     // Loaded by scripts/seed/index.ts with a dynamic `import(\`./scenarios/${scenario}.ts\`)`.
     "scripts/seed/scenarios/*.ts",
     "tests/unit/**/*.test.ts",

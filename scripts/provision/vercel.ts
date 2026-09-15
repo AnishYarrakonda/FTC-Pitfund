@@ -78,14 +78,16 @@ async function ensureProject(): Promise<VercelProject | null> {
     }
   }
 
-  if (project.serverlessFunctionRegion !== 'iad1' || project.ssoProtection?.deploymentType !== 'preview') {
-    if (dryRun) plan('set function region iad1 and protect previews with Vercel Authentication')
+  // autoExposeSystemEnvs: the ignored build step (scripts/vercel-ignore-build.mjs) skips any build that can't read
+  // VERCEL_PROJECT_ID, which is how this repository stays off the v1 project that is still connected to it.
+  if (project.serverlessFunctionRegion !== 'iad1' || project.ssoProtection?.deploymentType !== 'preview' || project.autoExposeSystemEnvs === false) {
+    if (dryRun) plan('set function region iad1, protect previews with Vercel Authentication and expose system env vars to builds')
     else {
-      await api('PATCH', `/v9/projects/${project.id}`, { serverlessFunctionRegion: 'iad1', ssoProtection: { deploymentType: 'preview' } })
-      did('function region iad1; previews require a Vercel login')
+      await api('PATCH', `/v9/projects/${project.id}`, { serverlessFunctionRegion: 'iad1', ssoProtection: { deploymentType: 'preview' }, autoExposeSystemEnvs: true })
+      did('function region iad1; previews require a Vercel login; system env vars exposed to builds')
     }
   } else {
-    skip('function region iad1; previews protected')
+    skip('function region iad1; previews protected; system env vars exposed to builds')
   }
   return project
 }

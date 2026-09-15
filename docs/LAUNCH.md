@@ -118,6 +118,8 @@ It checks the site, security headers, both sign-in methods, that `/dev` is unrea
 
 **Done when:** it exits 0 and the ftcexodius@gmail.com inbox has **"FTC Pitfund is live: test email"** (check spam; mark it "Not spam").
 
+If Vercel shows the production deployment as **Canceled** with "Ignored Build Step", the project isn't exposing system environment variables to builds: Vercel → project → Settings → Environment Variables → turn on **Automatically expose System Environment Variables** → Deployments → Redeploy. (`npm run provision:vercel` turns it on; this only happens if it was switched off.)
+
 Then sign in at `https://<your domain>/login` with ftcexodius@gmail.com. The admin console is at `/admin`. Day-to-day operation is in [RUNBOOK.md](RUNBOOK.md).
 
 ## 8. Legal review
@@ -131,7 +133,7 @@ Then sign in at `https://<your domain>/login` with ftcexodius@gmail.com. The adm
 **Do this only after Anish confirms v2 is working in production.** These steps delete the old app. Nothing in the rebuild has touched it.
 
 1. **Final backup of the v1 database.** Supabase dashboard → project `qqizqbtwigyedgskoezm` → Database → Backups (or `pg_dump` with its connection string). Save it to the team drive.
-2. **Vercel (personal account).** Project `ftc-sponsorship-portal` → Settings → Domains: remove any domains, then Settings → Advanced → **Delete Project**.
+2. **Vercel (personal account).** Project `ftc-sponsorship-portal` → Settings → Domains: remove any domains, then Settings → Advanced → **Delete Project**. (This project is still connected to the GitHub repository. Until it is deleted, `vercel.json`'s ignored build step (`scripts/vercel-ignore-build.mjs`) skips every push it receives, so v2 never deploys there.)
 3. **Clerk.** dashboard.clerk.com → the FTC Sponsorship Portal application → Settings → **Delete application**.
 4. **Supabase v1.** Project `qqizqbtwigyedgskoezm` → Settings → General → **Pause project**, and a month later **Delete project**.
 5. **Personal Resend.** Resend → Domains: delete the v1 domain. API Keys: revoke the v1 keys.

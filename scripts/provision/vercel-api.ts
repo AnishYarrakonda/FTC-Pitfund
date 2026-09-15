@@ -13,6 +13,8 @@ export type VercelProject = {
   protectionBypass?: Record<string, { scope: string }>
   ssoProtection?: { deploymentType: string } | null
   serverlessFunctionRegion?: string | null
+  /** System env vars (VERCEL_PROJECT_ID) in builds: vercel.json's ignoreCommand needs it to build (scripts/vercel-ignore-build.mjs). */
+  autoExposeSystemEnvs?: boolean
 }
 export type EnvTarget = 'production' | 'preview'
 export type EnvVar = { key: string; value: string; targets: EnvTarget[]; sensitive?: boolean; comment?: string }
