@@ -121,10 +121,21 @@ const personActionDialog: QaInteraction = {
   },
 }
 
+const openFaq: QaInteraction = {
+  name: 'faq-open',
+  run: async (page) => {
+    await page.getByText('What gets shared and when?').click()
+    await expect(page.getByText(/Names, emails and phone numbers are shared only when/)).toBeVisible()
+  },
+}
+
 export const QA_ROUTES: QaRoute[] = [
   // Public
-  { name: 'landing', path: '/', personas: ['anonymous'], budget: 'public' },
+  // coach: the landing top bar offers "Open FTC Pitfund" when a session cookie exists.
+  { name: 'landing', path: '/', personas: ['anonymous', 'coach'], budget: 'public', interactions: [openFaq] },
   { name: 'login', path: '/login', personas: ['anonymous'], budget: 'public' },
+  { name: 'login-team', path: '/login?intent=team', personas: ['anonymous'], budget: 'public' },
+  { name: 'login-company', path: '/login?intent=company', personas: ['anonymous'], budget: 'public' },
   { name: 'legal-terms', path: '/legal/terms', personas: ['anonymous'], budget: 'public' },
   { name: 'legal-privacy', path: '/legal/privacy', personas: ['anonymous'], budget: 'public' },
   { name: 'not-found', path: '/this-page-does-not-exist', personas: ['anonymous'], expectStatus: 404, budget: 'public' },
@@ -141,6 +152,8 @@ export const QA_ROUTES: QaRoute[] = [
 
   // First run
   { name: 'welcome', path: '/welcome', personas: ['coach-new', 'coach-joiner', 'sponsor-new'], budget: 'authed' },
+  { name: 'welcome-intent-team', path: '/welcome?intent=team', personas: ['coach-new'], budget: 'authed' },
+  { name: 'welcome-intent-company', path: '/welcome?intent=company', personas: ['sponsor-new'], budget: 'authed' },
   {
     name: 'welcome-team',
     path: '/welcome/team',

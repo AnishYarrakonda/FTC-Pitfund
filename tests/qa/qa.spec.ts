@@ -6,6 +6,8 @@ import { watchProblems } from '../support/fixtures'
 import { DEV_URL, PROD_URL } from '../support/env'
 
 import { checkActionButtons, checkAxe, checkOverflow, checkOverlays, HIDE_DEV_OVERLAY, measurePerf, PERF_INIT_SCRIPT, perfFailures, settle, type Perf } from './checks'
+import { SEED, SEED_INVITE_TOKENS } from '../../scripts/seed/ids'
+
 import { QA_ROUTES, QA_WIDTHS } from './routes'
 
 /*
@@ -15,12 +17,17 @@ import { QA_ROUTES, QA_WIDTHS } from './routes'
  * Results land in qa/results/*.json; the teardown writes qa/report.json and qa/report.md.
  */
 
-const test = base.extend<{ scenario: 'demo' | 'edge' }>({ scenario: ['demo', { option: true }] })
+const test = base.extend<{ scenario: 'demo' | 'edge' | 'empty' }>({ scenario: ['demo', { option: true }] })
+
+/** Seeded pitches and invites don't exist in `empty`; routes that open one are skipped there. */
+const CONTENT_IDS = [...Object.values(SEED.pitches), ...Object.values(SEED_INVITE_TOKENS)]
+const needsContent = (path: string) => CONTENT_IDS.some((id) => path.includes(id))
 
 for (const route of QA_ROUTES) {
   for (const persona of route.personas) {
     for (const width of QA_WIDTHS) {
       test(`${route.name} · ${persona} · ${width}`, async ({ browser, scenario }, testInfo) => {
+        test.skip(scenario === 'empty' && (needsContent(route.path) || route.server === 'dev'), 'needs seeded content')
         testInfo.setTimeout(route.name === 'dev-ui' ? 300_000 : 120_000)
         const baseURL = route.server === 'dev' ? DEV_URL : PROD_URL
         const context = await browser.newContext({

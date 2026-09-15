@@ -1,7 +1,7 @@
 import { Mail, UserPlus } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { FormSection } from '@/components/ui/field'
 import { Avatar } from '@/components/ui/avatar'
 import { formatDate } from '@/lib/shared/format'
@@ -101,10 +101,11 @@ export function MembersSection({
                 action={actions.invite}
               />
             ) : (
-              <Button variant="secondary" size="sm" disabled aria-describedby="invite-disabled-reason">
+              // A plain button: Button adds a click handler, which a server component can't render.
+              <button type="button" className={buttonVariants({ variant: 'secondary', size: 'sm' })} disabled aria-describedby="invite-disabled-reason">
                 <UserPlus aria-hidden="true" />
                 Invite by email
-              </Button>
+              </button>
             )}
           </div>
           {!canInvite ? (

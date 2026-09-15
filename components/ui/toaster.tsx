@@ -29,5 +29,20 @@ export function Toaster() {
     [],
   )
 
+  // Fetch the code once the page is idle (after load, so it isn't first-load JS): a toast that
+  // reports a lost connection must still be able to show.
+  useEffect(() => {
+    const prefetch = () => {
+      void import('./sonner-toaster')
+      void import('sonner')
+    }
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(prefetch, { timeout: 5000 })
+      return () => cancelIdleCallback(id)
+    }
+    const timer = setTimeout(prefetch, 3000)
+    return () => clearTimeout(timer)
+  }, [])
+
   return Host && ready ? <Host onReady={ready} /> : null
 }

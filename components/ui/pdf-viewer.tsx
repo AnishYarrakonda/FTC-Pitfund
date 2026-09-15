@@ -2,16 +2,19 @@
 
 import { ChevronDown, ChevronUp, Download, FileText } from 'lucide-react'
 import Image from 'next/image'
-import { useEffect, useRef, useState, type ComponentType, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type ComponentType, type KeyboardEvent } from 'react'
 
 import { Button } from './button'
 import { Spinner } from './spinner'
 
 /*
  * PdfViewer (plan §7). The viewer is excluded from first-load JS (plan §6): this shell renders the
- * toolbar and the deck's first-page thumbnail, and loads ./pdf-viewer-impl.tsx (and pdf.js) when
- * the viewer comes within 300 px of the viewport or the reader presses "View deck".
+ * figure, the toolbar and the deck's first-page thumbnail, and loads the pages (./pdf-viewer-impl.tsx,
+ * then pdf.js) when the viewer comes within 300 px of the viewport or the reader presses "View deck".
+ * Pages are navigable with the toolbar or ←/→/PageUp/PageDown; the file is always one click away.
  */
+
+import type { PdfPagesProps } from './pdf-viewer-impl'
 
 export const LETTER_RATIO = 792 / 612
 
@@ -28,14 +31,18 @@ export type PdfViewerProps = {
   className?: string
 }
 
-let implLoader: Promise<ComponentType<PdfViewerProps>> | null = null
+let implLoader: Promise<ComponentType<PdfPagesProps>> | null = null
 const loadImpl = () => (implLoader ??= import('./pdf-viewer-impl').then((m) => m.default))
 
-export function PdfViewer(props: PdfViewerProps) {
-  const { title, pages, thumbnailSrc, downloadHref, src, eager = false, priority = false, className } = props
+export function PdfViewer({ title, pages, thumbnailSrc, downloadHref, src, eager = false, priority = false, className }: PdfViewerProps) {
   const rootRef = useRef<HTMLElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const pageRefs = useRef<Array<HTMLDivElement | null>>([])
   const [requested, setRequested] = useState(eager)
-  const [Impl, setImpl] = useState<ComponentType<PdfViewerProps> | null>(null)
+  const [Pages, setPages] = useState<ComponentType<PdfPagesProps> | null>(null)
+  const [pageCount, setPageCount] = useState<number | null>(null)
+  const [current, setCurrent] = useState(1)
+  const ready = pageCount !== null
 
   // Start loading when the viewer comes near the viewport.
   useEffect(() => {
@@ -59,27 +66,70 @@ export function PdfViewer(props: PdfViewerProps) {
     if (!requested) return
     let cancelled = false
     void loadImpl().then((impl) => {
-      if (!cancelled) setImpl(() => impl)
+      if (!cancelled) setPages(() => impl)
     })
     return () => {
       cancelled = true
     }
   }, [requested])
 
-  if (Impl) return <Impl {...props} />
+  const onReady = useCallback((count: number) => setPageCount(count), [])
+  const total = pageCount ?? pages ?? 0
 
-  const count = pages ?? 0
+  const goTo = (n: number) => {
+    const target = Math.min(Math.max(1, n), total)
+    setCurrent(target)
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    pageRefs.current[target - 1]?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+  }
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (!ready) return
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+      e.preventDefault()
+      goTo(current + 1)
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault()
+      goTo(current - 1)
+    }
+  }
+
   return (
     <figure ref={rootRef} className={['grid min-w-0 gap-3', className].filter(Boolean).join(' ')} aria-label={title}>
-      <PdfToolbar title={title} label={count ? `${count} ${count === 1 ? 'page' : 'pages'}` : 'PDF'} ready={false} href={downloadHref ?? src} download={Boolean(downloadHref)} />
-      <div className="grid min-w-0 gap-3">
-        <PdfPlaceholderPages count={Math.max(1, count)} thumbnailSrc={thumbnailSrc} loading={requested} onRequest={() => setRequested(true)} priority={priority} />
+      <PdfToolbar
+        title={title}
+        label={ready ? `Page ${current} of ${total}` : total ? `${total} ${total === 1 ? 'page' : 'pages'}` : 'PDF'}
+        ready={ready}
+        canPrev={current > 1}
+        canNext={current < total}
+        onPrev={() => goTo(current - 1)}
+        onNext={() => goTo(current + 1)}
+        onKeyDown={onKeyDown}
+        href={downloadHref ?? src}
+        download={Boolean(downloadHref)}
+      />
+      <div ref={containerRef} className="grid min-w-0 gap-3">
+        {Pages ? (
+          <Pages
+            src={src}
+            title={title}
+            pages={pages}
+            thumbnailSrc={thumbnailSrc}
+            priority={priority}
+            containerRef={containerRef}
+            pageRefs={pageRefs}
+            onReady={onReady}
+            onVisiblePage={setCurrent}
+          />
+        ) : (
+          <PdfPlaceholderPages count={Math.max(1, pages ?? 1)} thumbnailSrc={thumbnailSrc} loading={requested} onRequest={() => setRequested(true)} priority={priority} />
+        )}
       </div>
     </figure>
   )
 }
 
-export function PdfToolbar({
+function PdfToolbar({
   title,
   label,
   ready,

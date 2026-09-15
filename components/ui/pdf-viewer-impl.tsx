@@ -1,36 +1,43 @@
 'use client'
 
 import { ExternalLink, FileText } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 
 import { openPdf, type PdfDocument } from '@/lib/client/pdf'
 import { cn } from '@/lib/shared/cn'
 
-import { LETTER_RATIO, PdfPlaceholderPages, PdfToolbar, type PdfViewerProps } from './pdf-viewer'
-
-type LoadState = 'loading' | 'ready' | 'error'
+import { LETTER_RATIO, PdfPlaceholderPages } from './pdf-viewer'
 
 /** iOS Safari refuses canvases much past ~16 M pixels; stay well under. */
 const MAX_CANVAS_PIXELS = 12_000_000
 
+export type PdfPagesProps = {
+  src: string
+  title: string
+  pages?: number | null
+  thumbnailSrc?: string | null
+  priority?: boolean
+  /** The page column, measured to fit pages to its width. */
+  containerRef: RefObject<HTMLDivElement | null>
+  /** One element per page, for scrolling to a page. */
+  pageRefs: RefObject<Array<HTMLDivElement | null>>
+  onReady: (pageCount: number) => void
+  onVisiblePage: (page: number) => void
+}
+
 /**
- * The PDF viewer itself, loaded by ./pdf-viewer.tsx when the viewer nears the viewport or the
- * reader asks for it (with pdf.js right behind it). Every page renders to a canvas (not an iframe,
- * so it works on iOS Safari), fit to the container's width, with a skeleton until it's drawn. Pages
- * are navigable with the toolbar buttons or ←/→/PageUp/PageDown, and the original file is always
- * one click away.
+ * The PDF pages, loaded by ./pdf-viewer.tsx (which keeps the figure and toolbar) when the viewer
+ * nears the viewport or the reader asks for it, with pdf.js right behind it. Every page renders to a
+ * canvas (not an iframe, so it works on iOS Safari), fit to the column's width, with a skeleton
+ * until it's drawn.
  */
-export default function PdfViewerImpl({ src, title, pages, thumbnailSrc, downloadHref, priority, className }: PdfViewerProps) {
-  const rootRef = useRef<HTMLDivElement>(null)
-  const pageRefs = useRef<Array<HTMLDivElement | null>>([])
+export default function PdfPages({ src, title, pages, thumbnailSrc, priority, containerRef, pageRefs, onReady, onVisiblePage }: PdfPagesProps) {
   const docRef = useRef<PdfDocument | null>(null)
   const [doc, setDoc] = useState<PdfDocument | null>(null)
-  const [loadState, setLoadState] = useState<LoadState>('loading')
-  const [pageCount, setPageCount] = useState(pages ?? 0)
+  const [failed, setFailed] = useState(false)
   const [ratios, setRatios] = useState<number[]>([])
   const [width, setWidth] = useState(0)
-  const [current, setCurrent] = useState(1)
-  const state = loadState
+  const pageCount = doc?.numPages ?? 0
 
   useEffect(() => {
     let cancelled = false
@@ -46,12 +53,11 @@ export default function PdfViewerImpl({ src, title, pages, thumbnailSrc, downloa
         )
         if (cancelled) return void opened.destroy()
         docRef.current = opened
-        setDoc(opened)
         setRatios(sizes)
-        setPageCount(opened.numPages)
-        setLoadState('ready')
+        setDoc(opened)
+        onReady(opened.numPages)
       } catch {
-        if (!cancelled) setLoadState('error')
+        if (!cancelled) setFailed(true)
       }
     })()
     return () => {
@@ -59,11 +65,11 @@ export default function PdfViewerImpl({ src, title, pages, thumbnailSrc, downloa
       void docRef.current?.destroy()
       docRef.current = null
     }
-  }, [src])
+  }, [src, onReady])
 
   // Fit to width: track the page column's width.
   useEffect(() => {
-    const el = rootRef.current
+    const el = containerRef.current
     if (!el || typeof ResizeObserver === 'undefined') return
     let frame = 0
     const observer = new ResizeObserver(([entry]) => {
@@ -75,91 +81,51 @@ export default function PdfViewerImpl({ src, title, pages, thumbnailSrc, downloa
       cancelAnimationFrame(frame)
       observer.disconnect()
     }
-  }, [])
+  }, [containerRef])
 
   // "Page n of N" follows scrolling.
   useEffect(() => {
-    if (state !== 'ready' || typeof IntersectionObserver === 'undefined') return
+    if (!doc || typeof IntersectionObserver === 'undefined') return
     const visible = new Map<number, number>()
     const observer = new IntersectionObserver(
       (entries) => {
         for (const e of entries) visible.set(Number((e.target as HTMLElement).dataset.page), e.intersectionRatio)
         const best = [...visible.entries()].sort((a, b) => b[1] - a[1])[0]
-        if (best && best[1] > 0) setCurrent(best[0])
+        if (best && best[1] > 0) onVisiblePage(best[0])
       },
       { threshold: [0, 0.25, 0.5, 0.75, 1] },
     )
     pageRefs.current.forEach((el) => el && observer.observe(el))
     return () => observer.disconnect()
-  }, [state, pageCount])
+  }, [doc, pageRefs, onVisiblePage])
 
-  const goTo = useCallback(
-    (n: number) => {
-      const target = Math.min(Math.max(1, n), pageCount)
-      setCurrent(target)
-      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      pageRefs.current[target - 1]?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
-    },
-    [pageCount],
-  )
-
-  const onKeyDown = (e: KeyboardEvent) => {
-    if (state !== 'ready') return
-    if (e.key === 'ArrowRight' || e.key === 'PageDown') {
-      e.preventDefault()
-      goTo(current + 1)
-    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-      e.preventDefault()
-      goTo(current - 1)
-    }
+  if (failed) {
+    return (
+      <div className="grid place-items-center gap-3 rounded-dialog border border-border bg-canvas px-6 py-12 text-center" role="status">
+        <FileText aria-hidden="true" className="size-5 text-text-tertiary" />
+        <p className="text-body text-text">Can&apos;t display the PDF here.</p>
+        <a href={src} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-body font-medium text-accent hover:text-accent-hover">
+          Open it in a new tab
+          <ExternalLink aria-hidden="true" className="size-3.5" />
+        </a>
+      </div>
+    )
   }
 
-  const placeholderCount = Math.max(1, pageCount || 1)
+  if (!doc) return <PdfPlaceholderPages count={Math.max(1, pages ?? 1)} thumbnailSrc={thumbnailSrc} loading priority={priority} />
 
-  return (
-    <figure className={cn('grid min-w-0 gap-3', className)} aria-label={title}>
-      <PdfToolbar
-        title={title}
-        label={state === 'ready' ? `Page ${current} of ${pageCount}` : pageCount ? `${pageCount} ${pageCount === 1 ? 'page' : 'pages'}` : 'PDF'}
-        ready={state === 'ready'}
-        canPrev={current > 1}
-        canNext={current < pageCount}
-        onPrev={() => goTo(current - 1)}
-        onNext={() => goTo(current + 1)}
-        onKeyDown={onKeyDown}
-        href={downloadHref ?? src}
-        download={Boolean(downloadHref)}
-      />
-
-      <div ref={rootRef} className="grid min-w-0 gap-3">
-        {state === 'error' ? (
-          <div className="grid place-items-center gap-3 rounded-dialog border border-border bg-canvas px-6 py-12 text-center" role="status">
-            <FileText aria-hidden="true" className="size-5 text-text-tertiary" />
-            <p className="text-body text-text">Can&apos;t display the PDF here.</p>
-            <a href={src} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-body font-medium text-accent hover:text-accent-hover">
-              Open it in a new tab
-              <ExternalLink aria-hidden="true" className="size-3.5" />
-            </a>
-          </div>
-        ) : state === 'ready' && doc ? (
-          Array.from({ length: pageCount }, (_, i) => (
-            <div
-              key={i}
-              ref={(el) => {
-                pageRefs.current[i] = el
-              }}
-              data-page={i + 1}
-              className="scroll-mt-20"
-            >
-              <PdfPageCanvas doc={doc} page={i + 1} width={width} ratio={ratios[i] ?? LETTER_RATIO} label={`${title}, page ${i + 1} of ${pageCount}`} />
-            </div>
-          ))
-        ) : (
-          <PdfPlaceholderPages count={placeholderCount} thumbnailSrc={thumbnailSrc} loading priority={priority} />
-        )}
-      </div>
-    </figure>
-  )
+  return Array.from({ length: pageCount }, (_, i) => (
+    <div
+      key={i}
+      ref={(el) => {
+        pageRefs.current[i] = el
+      }}
+      data-page={i + 1}
+      className="scroll-mt-20"
+    >
+      <PdfPageCanvas doc={doc} page={i + 1} width={width} ratio={ratios[i] ?? LETTER_RATIO} label={`${title}, page ${i + 1} of ${pageCount}`} />
+    </div>
+  ))
 }
 
 function PdfPageCanvas({ doc, page, width, ratio, label }: { doc: PdfDocument; page: number; width: number; ratio: number; label: string }) {

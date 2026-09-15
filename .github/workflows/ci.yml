@@ -75,7 +75,7 @@ jobs:
         id: e2e
         run: npm run e2e
 
-      # Reseeds per scenario (demo, then edge, plus any other project in the config).
+      # Reseeds per scenario: demo, then edge, then empty.
       - name: QA gate
         id: qa
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
@@ -85,6 +85,14 @@ jobs:
         id: perf
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: npm run perf
+
+      - name: Security scan (build secrets, anon REST, /dev in production, non-goals)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npm run security:scan
+
+      - name: Production dependency audit (high and critical)
+        if: ${{ !cancelled() }}
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Unused files, exports and dependencies
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}

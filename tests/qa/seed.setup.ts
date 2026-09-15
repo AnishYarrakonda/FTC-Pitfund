@@ -6,7 +6,7 @@ import { PERSONAS } from '../../lib/shared/personas'
 import { seed } from '../support/seed'
 import { storageStateViaToken } from '../support/session'
 
-const test = base.extend<{ scenario: 'demo' | 'edge' }>({ scenario: ['demo', { option: true }] })
+const test = base.extend<{ scenario: 'demo' | 'edge' | 'empty' }>({ scenario: ['demo', { option: true }] })
 
 /** Reseed the scenario for this QA pass and mint a session per persona (no UI login). */
 test('seed scenario and sign in personas', async ({ scenario }) => {

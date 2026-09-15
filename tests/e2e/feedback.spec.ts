@@ -25,7 +25,8 @@ test.describe('notifications', () => {
 })
 
 test('a network failure says "Couldn’t reach FTC Pitfund" and Retry recovers', async ({ page, context }) => {
-  await page.goto('/dev/ui#actions')
+  // networkidle: the toast code is fetched once the page is idle, so it can show while offline.
+  await page.goto('/dev/ui#actions', { waitUntil: 'networkidle' })
   const button = page.getByRole('button', { name: 'Approve & send' })
   await button.scrollIntoViewIfNeeded()
   await context.setOffline(true)

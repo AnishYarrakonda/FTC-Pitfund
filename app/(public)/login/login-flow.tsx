@@ -2,7 +2,7 @@
 
 import { ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 import { requestLoginCode, verifyLoginCode } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { useAction } from '@/lib/client/use-action'
 import { cn } from '@/lib/shared/cn'
 import { NETWORK_ERROR_MESSAGE } from '@/lib/shared/result'
-import type { SignInIntent } from '@/lib/shared/schemas/account'
+import { parseIntent, safeNext } from '@/lib/shared/schemas/account'
 
 /*
  * Sign in (plan §3.2): Google, or a 6-digit email code. Every branch has its own copy:
@@ -31,23 +31,26 @@ const SUBTITLE = {
   any: 'Coaches and company teams both sign in here. No password needed.',
 }
 
+const ERRORS: Record<string, string> = {
+  google_cancelled: 'Google sign-in was cancelled.',
+  google_failed: "Google sign-in didn't work. Try again, or use an email code.",
+  link_expired: 'That sign-in link has expired. Send yourself a new code.',
+}
+
+const noSubscription = () => () => {}
+
 type CodeError = { kind: 'invalid' | 'expired' | 'rate' | 'network' | 'other'; message: string }
 
-export function LoginFlow({
-  initialError,
-  notice,
-  next,
-  intent = null,
-  googleEnabled,
-}: {
-  initialError: string | null
-  notice: string | null
-  next?: string
-  /** Chosen on the landing page; first-timers land on /welcome with that branch preselected. */
-  intent?: SignInIntent | null
-  googleEnabled: boolean
-}) {
+export function LoginFlow({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter()
+  // Read in the browser so the page stays static: ?intent (from the landing page; preselects the
+  // /welcome branch), ?next, ?error (Google or link failures), ?signed_out and ?deleted.
+  const search = useSyncExternalStore(noSubscription, () => window.location.search, () => '')
+  const params = new URLSearchParams(search)
+  const next = safeNext(params.get('next')) ?? undefined
+  const intent = parseIntent(params.get('intent'))
+  const paramError = ERRORS[params.get('error') ?? ''] ?? null
+  const notice = params.has('signed_out') ? 'You’re signed out.' : params.has('deleted') ? 'Your account was deleted.' : null
   const [step, setStep] = useState<'email' | 'code'>('email')
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
@@ -57,7 +60,9 @@ export function LoginFlow({
   const [codeError, setCodeError] = useState<CodeError | null>(null)
   const [resent, setResent] = useState(false)
   const [googleState, setGoogleState] = useState<'idle' | 'opening'>('idle')
-  const [topError, setTopError] = useState<string | null>(initialError)
+  // undefined until something happens on this page: until then the ?error from the URL shows.
+  const [pageError, setTopError] = useState<string | null | undefined>(undefined)
+  const topError = pageError === undefined ? paramError : pageError
   const codeInput = useRef<HTMLInputElement>(null)
   const lastSubmitted = useRef('')
 
