@@ -3,17 +3,21 @@
 import { MoreHorizontal } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { toast } from '@/lib/client/toast'
 
 import { removeFromOrgAction, setAdminAction, setUserSuspendedAction } from '@/app/actions/admin'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent } from '@/components/ui/dialog'
 import { IconButton } from '@/components/ui/icon-button'
-import { Menu, MenuContent, MenuItem, MenuTrigger } from '@/components/ui/menu'
+import { useLazyComponent } from '@/lib/client/lazy'
+import { toast } from '@/lib/client/toast'
 import { useAction } from '@/lib/client/use-action'
 import type { Result } from '@/lib/shared/result'
 
 type Person = { id: string; name: string; isAdmin: boolean; suspended: boolean; org: { kind: 'team' | 'sponsor'; label: string } | null }
+
+const loadMenu = () => import('./person-actions-menu')
+
+export type PersonMenuItem = { label: string; danger: boolean }
 
 type Pending = { title: string; consequence: string; confirmLabel: string; pendingLabel: string; danger: boolean; run: () => Promise<Result<{ name: string }>>; done: (name: string) => string }
 
@@ -21,6 +25,7 @@ type Pending = { title: string; consequence: string; confirmLabel: string; pendi
 export function PersonActions({ person, isSelf }: { person: Person; isSelf: boolean }) {
   const router = useRouter()
   const [pending, setPending] = useState<Pending | null>(null)
+  const menu = useLazyComponent(loadMenu)
   const action = useAction(() => pending!.run(), {
     errorToast: false,
     onSuccess: (data) => {
@@ -93,18 +98,21 @@ export function PersonActions({ person, isSelf }: { person: Person; isSelf: bool
 
   return (
     <>
-      <Menu>
-        <MenuTrigger asChild>
-          <IconButton size="sm" label={`Actions for ${person.name}`} icon={<MoreHorizontal aria-hidden="true" />} />
-        </MenuTrigger>
-        <MenuContent>
-          {visible.map((item) => (
-            <MenuItem key={item.label} tone={item.danger ? 'danger' : 'default'} onSelect={() => setPending(item)}>
-              {item.label}
-            </MenuItem>
-          ))}
-        </MenuContent>
-      </Menu>
+      {menu.Component ? (
+        <menu.Component name={person.name} items={visible} defaultOpen={menu.openOnMount} onSelect={(label) => setPending(visible.find((i) => i.label === label) ?? null)} />
+      ) : (
+        // The Radix menu loads on first hover, focus or click (plan §6).
+        <IconButton
+          size="sm"
+          label={`Actions for ${person.name}`}
+          icon={<MoreHorizontal aria-hidden="true" />}
+          aria-haspopup="menu"
+          aria-expanded={false}
+          onPointerEnter={() => void menu.preload()}
+          onFocus={() => void menu.preload()}
+          onClick={menu.open}
+        />
+      )}
       <Dialog
         open={pending !== null}
         onOpenChange={(open) => {

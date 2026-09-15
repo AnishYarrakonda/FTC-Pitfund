@@ -4,38 +4,12 @@ import { cn } from '@/lib/shared/cn'
 import { formatDateTime, formatRelative } from '@/lib/shared/format'
 import type { Tone } from '@/lib/shared/labels'
 
-// Banner lives in its own module so client islands (sign-in) can use it without the rest of this file.
+import { dotTone } from './status-badge'
+
+/* EmptyState, Timeline, KeyboardHint, Skeletons; re-exports Banner and StatusBadge, which live in
+   their own modules so client components can import them without the rest of this file. */
 export { Banner } from './banner'
-
-/* StatusBadge, Banner, EmptyState, Timeline, KeyboardHint, Skeletons. */
-
-const dotTone: Record<Tone, string> = {
-  neutral: 'bg-text-tertiary',
-  accent: 'bg-accent',
-  info: 'bg-info',
-  success: 'bg-success',
-  warning: 'bg-warning',
-  danger: 'bg-danger',
-}
-
-const badgeTone: Record<Tone, string> = {
-  neutral: 'text-text-secondary',
-  accent: 'text-accent',
-  info: 'text-info',
-  success: 'text-success',
-  warning: 'text-warning',
-  danger: 'text-danger',
-}
-
-/** Dot + label. Small, status only. */
-export function StatusBadge({ label, tone, className }: { label: string; tone: Tone; className?: string }) {
-  return (
-    <span className={cn('inline-flex shrink-0 items-center gap-1.5 text-small font-medium whitespace-nowrap', badgeTone[tone], className)}>
-      <span aria-hidden="true" className={cn('size-1.5 rounded-full', dotTone[tone])} />
-      {label}
-    </span>
-  )
-}
+export { StatusBadge } from './status-badge'
 
 /** One sentence on what goes here plus the single next step (plan §3.1 #9). */
 export function EmptyState({

@@ -52,7 +52,8 @@ export function LoginFlow({
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [sentAt, setSentAt] = useState(0)
-  const [now, setNow] = useState(() => Date.now())
+  // Set when a code is sent; the resend countdown only runs on the code step.
+  const [now, setNow] = useState(0)
   const [codeError, setCodeError] = useState<CodeError | null>(null)
   const [resent, setResent] = useState(false)
   const [googleState, setGoogleState] = useState<'idle' | 'opening'>('idle')

@@ -3,13 +3,15 @@
 import { ArrowUpRight, CheckCircle2, FileText } from 'lucide-react'
 import { useRef, useState } from 'react'
 
-import { Checkbox } from '@/components/ui/choice'
+import { Checkbox } from '@/components/ui/checkbox'
 import { FileDrop } from '@/components/ui/file-drop'
-import { DeckCheckError, inspectDeck } from '@/lib/client/pdf'
-import { putFile, UploadError } from '@/lib/client/upload'
 import { formatBytes, formatDate } from '@/lib/shared/format'
 import { NETWORK_ERROR_MESSAGE, type Result } from '@/lib/shared/result'
 import { DECK_MESSAGES } from '@/lib/shared/team'
+
+// The pre-check (pdf.js wrapper, thumbnail encoder) and the uploader load when a file is chosen.
+const loadPdf = () => import('@/lib/client/pdf')
+const loadUpload = () => import('@/lib/client/upload')
 
 export type DeckInfo = { url: string; pages: number; bytes: number; thumbUrl: string | null; updatedAt: Date | string } | null
 
@@ -63,7 +65,11 @@ export function DeckUpload({
   const upload = async (item: Prepared) => {
     const controller = new AbortController()
     abort.current = controller
+    let UploadError: Awaited<ReturnType<typeof loadUpload>>['UploadError'] | null = null
     try {
+      const uploader = await loadUpload()
+      UploadError = uploader.UploadError
+      const { putFile } = uploader
       const total = item.file.size + item.thumbnail.size
       setStage({ kind: 'uploading', loaded: 0, total })
       const [pdfTarget, thumbTarget] = await Promise.all([
@@ -98,9 +104,9 @@ export function DeckUpload({
       setStage({ kind: 'done' })
       onSaved?.(saved.data.deck)
     } catch (e) {
-      if (e instanceof UploadError && e.kind === 'aborted') return
-      if (e instanceof UploadError && e.kind === 'rejected') return fail('The upload was refused. Try a different file.', false)
-      if (e instanceof UploadError) return fail(DECK_MESSAGES.interrupted, true)
+      if (UploadError && e instanceof UploadError && e.kind === 'aborted') return
+      if (UploadError && e instanceof UploadError && e.kind === 'rejected') return fail('The upload was refused. Try a different file.', false)
+      if (UploadError && e instanceof UploadError) return fail(DECK_MESSAGES.interrupted, true)
       fail(NETWORK_ERROR_MESSAGE, true)
     } finally {
       if (abort.current === controller) abort.current = null
@@ -111,10 +117,16 @@ export function DeckUpload({
     setPrepared(null)
     setStage({ kind: 'reading' })
     let result: { pages: number; thumbnail: Blob }
+    let pdf: Awaited<ReturnType<typeof loadPdf>>
     try {
-      result = await inspectDeck(file)
+      pdf = await loadPdf()
+    } catch {
+      return fail(NETWORK_ERROR_MESSAGE, false)
+    }
+    try {
+      result = await pdf.inspectDeck(file)
     } catch (e) {
-      return fail(e instanceof DeckCheckError ? e.message : DECK_MESSAGES.notPdf, false)
+      return fail(e instanceof pdf.DeckCheckError ? e.message : DECK_MESSAGES.notPdf, false)
     }
     const item = { file, ...result }
     setPrepared(item)

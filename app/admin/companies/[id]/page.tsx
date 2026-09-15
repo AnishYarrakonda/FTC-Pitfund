@@ -8,7 +8,7 @@ import { CompanyDecisions, DeleteOrgDialog } from '@/components/admin/org-action
 import { SponsorProfile } from '@/components/sponsors/sponsor-profile'
 import { Facts } from '@/components/ui/facts'
 import { Banner, StatusBadge } from '@/components/ui/feedback'
-import { Avatar } from '@/components/ui/identity'
+import { Avatar } from '@/components/ui/avatar'
 import { PageContainer } from '@/components/ui/page'
 import { requireAdmin } from '@/lib/server/authz'
 import { getCompanyForAdmin } from '@/lib/server/data/admin-orgs'

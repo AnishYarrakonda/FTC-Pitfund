@@ -5,7 +5,6 @@ import { Suspense } from 'react'
 
 import { PublicFooter } from '@/components/app/public-chrome'
 import { Wordmark } from '@/components/app/wordmark'
-import { Skeleton } from '@/components/ui/feedback'
 import { getViewer } from '@/lib/server/viewer'
 import { parseIntent, safeNext } from '@/lib/shared/schemas/account'
 import { homeFor, welcomePath } from '@/lib/shared/viewer'
@@ -13,6 +12,8 @@ import { homeFor, welcomePath } from '@/lib/shared/viewer'
 import { LoginFlow } from './login-flow'
 
 export const metadata: Metadata = { title: 'Sign in' }
+
+const GOOGLE_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === 'true'
 
 const ERRORS: Record<string, string> = {
   google_cancelled: 'Google sign-in was cancelled.',
@@ -26,7 +27,9 @@ export default function LoginPage({ searchParams }: PageProps<'/login'>) {
       <main id="main" className="flex flex-1 flex-col items-center px-4 pt-16 pb-16 sm:pt-24">
         <div className="w-full max-w-auth">
           <Wordmark className="mb-10" />
-          <Suspense fallback={<LoginSkeleton />}>
+          {/* The static shell already shows the sign-in form, so it paints before any request-time
+              work; the gate then redirects signed-in visitors or re-renders with ?intent, ?next and errors. */}
+          <Suspense fallback={<LoginFlow initialError={null} notice={null} googleEnabled={GOOGLE_ENABLED} />}>
             <LoginGate searchParams={searchParams} />
           </Suspense>
           <p className="mt-10 text-small text-text-tertiary">
@@ -65,25 +68,7 @@ async function LoginGate({ searchParams }: Pick<PageProps<'/login'>, 'searchPara
       notice={notice}
       next={next ?? undefined}
       intent={intent}
-      googleEnabled={process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === 'true'}
+      googleEnabled={GOOGLE_ENABLED}
     />
-  )
-}
-
-function LoginSkeleton() {
-  return (
-    <div aria-hidden="true" className="grid gap-6">
-      <div className="grid gap-2">
-        <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-4 w-64" />
-      </div>
-      <Skeleton className="h-11 w-full" />
-      <Skeleton className="h-3 w-full" />
-      <div className="grid gap-2">
-        <Skeleton className="h-3.5 w-12" />
-        <Skeleton className="h-11 w-full" />
-      </div>
-      <Skeleton className="h-11 w-full" />
-    </div>
   )
 }

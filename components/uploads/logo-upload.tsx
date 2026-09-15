@@ -6,8 +6,6 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { OrgLogo } from '@/components/ui/identity'
 import { Spinner } from '@/components/ui/spinner'
-import { ImageCheckError, squareLogo } from '@/lib/client/image'
-import { putFile, UploadError } from '@/lib/client/upload'
 import { NETWORK_ERROR_MESSAGE, type Result } from '@/lib/shared/result'
 
 type Stage = { kind: 'idle' } | { kind: 'working'; label: string } | { kind: 'done' } | { kind: 'error'; message: string; retry: File | null }
@@ -17,6 +15,8 @@ type Stage = { kind: 'idle' } | { kind: 'working'; label: string } | { kind: 'do
  * storage, then let the server verify and publish it. Shared by teams (/team) and companies
  * (/company, prompt 3): the caller passes the two actions.
  */
+const loadModules = () => Promise.all([import('@/lib/client/image'), import('@/lib/client/upload')])
+
 export function LogoUpload({
   name,
   currentUrl,
@@ -43,8 +43,12 @@ export function LogoUpload({
   }, [stage.kind])
 
   const start = async (file: File) => {
+    let modules: Awaited<ReturnType<typeof loadModules>> | null = null
     try {
       setStage({ kind: 'working', label: 'Resizing…' })
+      // The resizer and uploader load when a file is chosen.
+      modules = await loadModules()
+      const [{ squareLogo }, { putFile }] = modules
       const blob = await squareLogo(file)
       setStage({ kind: 'working', label: 'Uploading…' })
       const target = await createUpload(blob.type === 'image/jpeg' ? 'image/jpeg' : 'image/webp')
@@ -57,8 +61,8 @@ export function LogoUpload({
       setStage({ kind: 'done' })
       onSaved?.(saved.data.logoUrl)
     } catch (e) {
-      if (e instanceof ImageCheckError) return setStage({ kind: 'error', message: e.message, retry: null })
-      if (e instanceof UploadError && e.kind === 'network') return setStage({ kind: 'error', message: 'Upload interrupted.', retry: file })
+      if (modules && e instanceof modules[0].ImageCheckError) return setStage({ kind: 'error', message: e.message, retry: null })
+      if (modules && e instanceof modules[1].UploadError && e.kind === 'network') return setStage({ kind: 'error', message: 'Upload interrupted.', retry: file })
       setStage({ kind: 'error', message: NETWORK_ERROR_MESSAGE, retry: file })
     }
   }

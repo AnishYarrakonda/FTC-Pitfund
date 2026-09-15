@@ -6,7 +6,9 @@ import { PRODUCT_NAME } from '@/lib/shared/brand'
 
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-inter' })
+// Not preloaded: text paints at once in the size-matched fallback, and the 48 KB font doesn't compete with
+// the page's main image and scripts on slow connections (plan §6 LCP budget).
+const inter = Inter({ subsets: ['latin'], display: 'swap', preload: false, variable: '--font-inter' })
 
 export const metadata: Metadata = {
   title: { default: PRODUCT_NAME, template: `%s · ${PRODUCT_NAME}` },

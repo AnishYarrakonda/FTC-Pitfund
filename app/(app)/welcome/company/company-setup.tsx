@@ -6,7 +6,7 @@ import { useState, type FormEvent } from 'react'
 
 import { createCompanyAction } from '@/app/actions/company'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/choice'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { useAction } from '@/lib/client/use-action'

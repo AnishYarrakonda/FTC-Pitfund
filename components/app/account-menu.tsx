@@ -1,6 +1,6 @@
 'use client'
 
-import { Avatar } from '@/components/ui/identity'
+import { Avatar } from '@/components/ui/avatar'
 import { useLazyComponent } from '@/lib/client/lazy'
 import type { Workspace } from '@/lib/shared/viewer'
 

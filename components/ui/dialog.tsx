@@ -1,147 +1,142 @@
 'use client'
 
-import { X } from 'lucide-react'
-import { Dialog as DialogPrimitive } from 'radix-ui'
-import { useState, type ReactNode } from 'react'
+import { Slot } from 'radix-ui'
+import { createContext, use, useCallback, useRef, useState, type ComponentType, type ReactNode } from 'react'
 
 import { useAction } from '@/lib/client/use-action'
-import { cn } from '@/lib/shared/cn'
 import type { Result } from '@/lib/shared/result'
 
 import { Button } from './button'
+import type { dialogWidths, OverlayContentProps, OverlayImplProps } from './dialog-impl'
 
 /*
  * The overlay system (plan §7). Fixes the v1 thin-panel bug class:
  *   Dialog  sm 400 · md 560 · lg 720, width min(size, 100vw − 32px),
  *           max-height min(85vh, 100dvh − 32px); header and footer stay put, only the body scrolls.
  *   Sheet   right side, min(640px, 100vw); full screen below 640 px; same structure.
- * Radix provides the focus trap, Esc, focus return, scroll lock and aria-labelledby.
  * Anything bigger than a short form or a paragraph is a page, not an overlay.
+ *
+ * Same API as Radix Dialog (Root/Trigger/Close/Content), but Radix and the overlay markup live in
+ * ./dialog-impl.tsx and load when the trigger is hovered, focused or clicked, so pages with dialogs
+ * don't pay for them in first-load JS (plan §6). Focus returns to the trigger on close.
  */
 
-export const Dialog = DialogPrimitive.Root
-export const DialogTrigger = DialogPrimitive.Trigger
-export const DialogClose = DialogPrimitive.Close
+type Impl = ComponentType<OverlayImplProps>
 
-const dialogWidths = { sm: 'w-[min(400px,calc(100vw-32px))]', md: 'w-[min(560px,calc(100vw-32px))]', lg: 'w-[min(720px,calc(100vw-32px))]' }
-
-type OverlayContentProps = {
-  title: ReactNode
-  description?: ReactNode
-  children?: ReactNode
-  footer?: ReactNode
-  className?: string
-  /** Prevent closing by clicking outside or pressing Esc (e.g. while an action is pending). */
-  dismissible?: boolean
+type OverlayState = {
+  open: boolean
+  setOpen: (open: boolean) => void
+  Impl: Impl | null
+  preload: () => void
+  triggerRef: React.RefObject<HTMLElement | null>
 }
 
-function OverlayHeader({ title, description }: { title: ReactNode; description?: ReactNode }) {
-  return (
-    <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
-      <div className="grid min-w-0 gap-1">
-        <DialogPrimitive.Title className="text-lead font-semibold tracking-tight text-text">{title}</DialogPrimitive.Title>
-        {description ? (
-          <DialogPrimitive.Description className="text-body text-text-secondary">{description}</DialogPrimitive.Description>
-        ) : (
-          <DialogPrimitive.Description className="sr-only">{title}</DialogPrimitive.Description>
-        )}
-      </div>
-      <DialogPrimitive.Close asChild>
-        <button
-          type="button"
-          data-overlay-close=""
-          aria-label="Close"
-          className="-mt-1 -mr-2 grid size-8 shrink-0 place-items-center rounded-control text-text-tertiary transition-colors duration-120 hover:bg-muted hover:text-text"
-        >
-          <X aria-hidden="true" className="size-4" />
-        </button>
-      </DialogPrimitive.Close>
-    </div>
-  )
+const OverlayContext = createContext<OverlayState | null>(null)
+
+let implLoader: Promise<Impl> | null = null
+const loadImpl = () => (implLoader ??= import('./dialog-impl').then((m) => m.default))
+
+function useOverlay(component: string) {
+  const state = use(OverlayContext)
+  if (!state) throw new Error(`<${component}> must be inside <Dialog> or <Sheet>`)
+  return state
 }
 
-function OverlayFooter({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-border bg-surface px-5 py-3.5 sm:flex-row sm:justify-end sm:px-6">
-      {children}
-    </div>
-  )
-}
-
-function Overlay() {
-  return (
-    <DialogPrimitive.Overlay
-      data-motion="overlay"
-      className="fixed inset-0 z-50 bg-text/30 data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out"
-    />
-  )
-}
-
-export function DialogContent({
-  title,
-  description,
+export function Dialog({
+  open: controlledOpen,
+  defaultOpen = false,
+  onOpenChange,
   children,
-  footer,
-  className,
-  size = 'md',
-  dismissible = true,
-}: OverlayContentProps & { size?: keyof typeof dialogWidths }) {
-  const block = (e: Event) => {
-    if (!dismissible) e.preventDefault()
-  }
+}: {
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  children: ReactNode
+}) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
+  const [Impl, setImpl] = useState<Impl | null>(null)
+  const triggerRef = useRef<HTMLElement | null>(null)
+  const open = controlledOpen ?? uncontrolledOpen
+
+  const preload = useCallback(() => {
+    void loadImpl().then((impl) => setImpl(() => impl))
+  }, [])
+
+  const setOpen = useCallback(
+    (next: boolean) => {
+      if (next) preload()
+      onOpenChange?.(next)
+      if (controlledOpen === undefined) setUncontrolledOpen(next)
+    },
+    [controlledOpen, onOpenChange, preload],
+  )
+
+  // Opened from outside (controlled) before the implementation arrived.
+  if (open && !Impl) preload()
+
+  return <OverlayContext value={{ open, setOpen, Impl, preload, triggerRef }}>{children}</OverlayContext>
+}
+
+/** A Sheet has the same state and API as a Dialog; only its content differs. */
+export function Sheet(props: Parameters<typeof Dialog>[0]) {
+  return <Dialog {...props} />
+}
+
+export function DialogTrigger({ children }: { asChild?: boolean; children: ReactNode }) {
+  const { open, setOpen, preload, triggerRef } = useOverlay('DialogTrigger')
   return (
-    <DialogPrimitive.Portal>
-      <Overlay />
-      <div className="pointer-events-none fixed inset-0 z-50 grid place-items-center p-4">
-        <DialogPrimitive.Content
-          data-overlay="dialog"
-          data-size={size}
-          onEscapeKeyDown={block}
-          onPointerDownOutside={block}
-          onInteractOutside={block}
-          className={cn(
-            'pointer-events-auto flex max-h-[min(85vh,calc(100dvh-32px))] min-w-0 flex-col overflow-hidden rounded-dialog border border-border bg-surface shadow-lg',
-            'data-[state=open]:animate-content-in data-[state=closed]:animate-content-out focus:outline-none',
-            dialogWidths[size],
-            className,
-          )}
-        >
-          <OverlayHeader title={title} description={description} />
-          {children ? <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">{children}</div> : null}
-          {footer ? <OverlayFooter>{footer}</OverlayFooter> : null}
-        </DialogPrimitive.Content>
-      </div>
-    </DialogPrimitive.Portal>
+    <Slot.Root
+      ref={triggerRef as React.Ref<HTMLElement>}
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      data-state={open ? 'open' : 'closed'}
+      onPointerEnter={preload}
+      onFocus={preload}
+      onClick={(e: React.MouseEvent) => {
+        if (!e.defaultPrevented) setOpen(true)
+      }}
+    >
+      {children}
+    </Slot.Root>
   )
 }
 
-export const Sheet = DialogPrimitive.Root
-export const SheetTrigger = DialogPrimitive.Trigger
+export function SheetTrigger(props: Parameters<typeof DialogTrigger>[0]) {
+  return <DialogTrigger {...props} />
+}
 
-export function SheetContent({ title, description, children, footer, className, dismissible = true }: OverlayContentProps) {
-  const block = (e: Event) => {
-    if (!dismissible) e.preventDefault()
-  }
+export function DialogClose({ children }: { asChild?: boolean; children: ReactNode }) {
+  const { setOpen } = useOverlay('DialogClose')
   return (
-    <DialogPrimitive.Portal>
-      <Overlay />
-      <DialogPrimitive.Content
-        data-overlay="sheet"
-        onEscapeKeyDown={block}
-        onPointerDownOutside={block}
-        onInteractOutside={block}
-        className={cn(
-          'fixed inset-y-0 right-0 z-50 flex w-screen min-w-0 flex-col bg-surface shadow-lg sm:w-[min(640px,100vw)] sm:border-l sm:border-border',
-          'data-[state=open]:animate-sheet-in data-[state=closed]:animate-sheet-out focus:outline-none',
-          className,
-        )}
-      >
-        <OverlayHeader title={title} description={description} />
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
-        {footer ? <OverlayFooter>{footer}</OverlayFooter> : null}
-      </DialogPrimitive.Content>
-    </DialogPrimitive.Portal>
+    <Slot.Root
+      onClick={(e: React.MouseEvent) => {
+        if (!e.defaultPrevented) setOpen(false)
+      }}
+    >
+      {children}
+    </Slot.Root>
   )
+}
+
+function OverlayContent({ kind, ...props }: OverlayContentProps & { kind: 'dialog' | 'sheet'; size?: keyof typeof dialogWidths }) {
+  const { open, setOpen, Impl, triggerRef } = useOverlay(kind === 'sheet' ? 'SheetContent' : 'DialogContent')
+  const returnFocus = useCallback(
+    (e: Event) => {
+      e.preventDefault()
+      triggerRef.current?.focus()
+    },
+    [triggerRef],
+  )
+  if (!Impl) return null
+  return <Impl kind={kind} open={open} onOpenChange={setOpen} returnFocus={returnFocus} {...props} />
+}
+
+export function DialogContent(props: OverlayContentProps & { size?: keyof typeof dialogWidths }) {
+  return <OverlayContent kind="dialog" {...props} />
+}
+
+export function SheetContent(props: OverlayContentProps) {
+  return <OverlayContent kind="sheet" {...props} />
 }
 
 type ConfirmDialogProps<T> = {

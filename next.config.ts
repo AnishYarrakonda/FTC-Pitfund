@@ -59,8 +59,9 @@ const nextConfig: NextConfig = {
       },
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
     ],
-    // Local Supabase serves from 127.0.0.1, which the optimizer refuses by default.
-    dangerouslyAllowLocalIP: isDev,
+    // Local Supabase serves from 127.0.0.1, which the optimizer refuses by default (dev and the local
+    // production build used by QA); a hosted Supabase project never needs it.
+    dangerouslyAllowLocalIP: ['127.0.0.1', 'localhost'].includes(supabaseUrl.hostname),
   },
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]

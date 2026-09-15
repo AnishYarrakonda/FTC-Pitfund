@@ -106,7 +106,7 @@ function TeamProfile({ team }: { team: PublicTeam }) {
           Sponsorship deck
         </h2>
         {team.deck ? (
-          <PdfViewer src={team.deck.url} downloadHref={team.deck.downloadUrl} title={`Team ${team.number} sponsorship deck`} pages={team.deck.pages} thumbnailSrc={team.deck.thumbUrl} />
+          <PdfViewer src={team.deck.url} downloadHref={team.deck.downloadUrl} title={`Team ${team.number} sponsorship deck`} pages={team.deck.pages} thumbnailSrc={team.deck.thumbUrl} priority />
         ) : (
           <p className="rounded-menu bg-canvas px-5 py-10 text-center text-body text-text-secondary">This team hasn’t uploaded its sponsorship deck yet.</p>
         )}

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { startTransition } from 'react'
 
 import { signOut } from '@/app/actions/auth'
-import { Avatar } from '@/components/ui/identity'
+import { Avatar } from '@/components/ui/avatar'
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import { toast } from '@/lib/client/toast'
 

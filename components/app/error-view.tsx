@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useState, useTransition } from 'react'
 
 import { captureClientException } from '@/lib/client/sentry'
@@ -61,9 +60,10 @@ export function ErrorView({ error, retry, homeHref = '/' }: { error: Error & { d
           </svg>
           {retrying ? 'Trying again…' : 'Try again'}
         </button>
-        <Link href={homeHref} className={SECONDARY}>
+        {/* A full page load: after an error, start from a clean slate (and keep next/link out of this chunk). */}
+        <a href={homeHref} className={SECONDARY}>
           Go home
-        </Link>
+        </a>
       </div>
       {reference ? (
         <p className="text-small text-text-tertiary">

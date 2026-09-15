@@ -7,7 +7,8 @@ import { toast } from '@/lib/client/toast'
 import { fakeFieldFailure, fakeSlowFailure, fakeSlowSuccess, fakeUnexpectedFailure } from '@/app/actions/dev'
 import { ActionButton } from '@/components/ui/action-button'
 import { Button } from '@/components/ui/button'
-import { Checkbox, RadioCards, SegmentedControl } from '@/components/ui/choice'
+import { Checkbox } from '@/components/ui/checkbox'
+import { RadioCards, SegmentedControl } from '@/components/ui/choice'
 import { ConfirmDialog, Dialog, DialogClose, DialogContent, DialogTrigger, Sheet, SheetContent, SheetTrigger } from '@/components/ui/dialog'
 import {
   Banner,

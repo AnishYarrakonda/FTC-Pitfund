@@ -1,35 +1,11 @@
 import { BadgeCheck } from 'lucide-react'
-import { Avatar as AvatarPrimitive } from 'radix-ui'
 
 import { cn } from '@/lib/shared/cn'
 import { initials } from '@/lib/shared/format'
 
 /* Avatar (people), OrgLogo (teams/companies) and TeamMark (logo + name + verified check). */
 
-const avatarSizes = { xs: 'size-6 text-[10px]', sm: 'size-8 text-caption', md: 'size-10 text-small', lg: 'size-14 text-lead' }
-
-export function Avatar({
-  name,
-  src,
-  size = 'sm',
-  className,
-}: {
-  name: string
-  src?: string | null
-  size?: keyof typeof avatarSizes
-  className?: string
-}) {
-  return (
-    <AvatarPrimitive.Root
-      className={cn('inline-grid shrink-0 place-items-center overflow-hidden rounded-full bg-muted font-medium text-text-secondary select-none', avatarSizes[size], className)}
-    >
-      {src ? <AvatarPrimitive.Image src={src} alt="" className="size-full object-cover" referrerPolicy="no-referrer" /> : null}
-      <AvatarPrimitive.Fallback delayMs={src ? 400 : 0} aria-hidden="true">
-        {initials(name)}
-      </AvatarPrimitive.Fallback>
-    </AvatarPrimitive.Root>
-  )
-}
+export { Avatar } from './avatar'
 
 const logoSizes = { sm: 'size-8 rounded-control text-caption', md: 'size-10 rounded-menu text-small', lg: 'size-16 rounded-dialog text-lead', xl: 'size-20 rounded-dialog text-h3' }
 

@@ -1,13 +1,12 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useState, type ReactNode } from 'react'
 
 import { SponsorProfile } from '@/components/sponsors/sponsor-profile'
 import { SponsorRow } from '@/components/sponsors/sponsor-summary'
 import type { Question } from '@/lib/shared/questions'
 import type { SponsorStatus, SupportType } from '@/lib/shared/types'
 
-import { CompanyMembers, type CompanyInvite, type CompanyMember } from './company-members'
 import { CompanyProfileForm, draftWebsite, toCompanyDraft, type CompanyDraft, type CompanyProfileValues } from './company-profile-form'
 import { QuestionsEditor } from './questions-editor'
 
@@ -24,7 +23,7 @@ export type CompanyEditorProfile = CompanyProfileValues & {
  * /company: the profile and questions editors with a live "What teams see" preview, and members.
  * The preview renders the directory row and profile components coaches see (prompt 2).
  */
-export function CompanyEditor({ viewerId, profile, members, invites }: { viewerId: string; profile: CompanyEditorProfile; members: CompanyMember[]; invites: CompanyInvite[] }) {
+export function CompanyEditor({ profile, members }: { profile: CompanyEditorProfile; /** The members section, rendered on the server. */ members: ReactNode }) {
   const [draft, setDraft] = useState<{ values: CompanyDraft; logoUrl: string | null }>(() => ({ values: toCompanyDraft(profile), logoUrl: profile.logoUrl }))
   const [questions, setQuestions] = useState<{ list: Question[]; usesDefaults: boolean }>({ list: profile.questions, usesDefaults: profile.usesDefaultQuestions })
 
@@ -76,7 +75,7 @@ export function CompanyEditor({ viewerId, profile, members, invites }: { viewerI
           {previewPanel}
         </section>
         <QuestionsEditor companyName={draft.values.name.trim() || profile.name} customQuestions={profile.customQuestions} reviewed={profile.reviewedQuestions} onPreviewChange={onPreviewChange} />
-        <CompanyMembers viewerId={viewerId} companyName={profile.name} status={profile.status} members={members} invites={invites} />
+        {members}
       </div>
       <aside className="hidden min-w-0 lg:block" aria-label="What teams see">
         <div className="sticky top-24 max-h-[calc(100dvh-120px)] overflow-y-auto pb-4">{previewPanel}</div>

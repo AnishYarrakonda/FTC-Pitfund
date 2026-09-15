@@ -9,7 +9,7 @@ import type { Viewer } from '@/lib/shared/viewer'
 import { audit } from '../audit'
 import { getDb } from '../db'
 import { AppError } from '../result'
-import { ftcTeamCache, pitches, reports, sponsorMembers, sponsors, teamMembers, teams, users } from '../schema'
+import { pitches, reports, sponsorMembers, sponsors, teamMembers, teams, users } from '../schema'
 import { publicUrl } from '../storage'
 import { companyRecipients } from './company'
 import { keyset, type Page, type PageParams } from './keyset'
@@ -64,6 +64,8 @@ export async function listPitchQueue(params: PageParams): Promise<Page<QueuePitc
       team: { number: teams.number, name: teams.name, logoPath: teams.logoPath, verifiedAt: teams.verifiedAt },
       company: { name: sponsors.name, logoPath: sponsors.logoPath, status: sponsors.status },
       resubmission: sql<boolean>`exists (select 1 from audit_events e where e.entity_type = 'pitch' and e.entity_id = "pitches"."id" and e.action = 'pitch.sent_back')`,
+      record: sql<{ name: string; city: string | null; state: string | null } | null>`(select json_build_object('name', c.name, 'city', c.city, 'state', c.state) from ftc_team_cache c where c.number = "teams"."number")`,
+      companyMembers: sql<number>`(select count(*)::int from sponsor_members sm where sm.sponsor_id = "sponsors"."id")`,
     })
     .from(pitches)
     .innerJoin(teams, eq(teams.id, pitches.teamId))
@@ -244,6 +246,8 @@ export async function getPitchReview(_admin: Viewer, pitchId: string): Promise<P
       pitch: pitches,
       reviewer: sql<string | null>`(select coalesce(nullif(u.name, ''), u.email) from ${users} u where u.id = "pitches"."reviewed_by")`,
       resubmission: sql<boolean>`exists (select 1 from audit_events e where e.entity_type = 'pitch' and e.entity_id = "pitches"."id" and e.action = 'pitch.sent_back')`,
+      record: sql<{ name: string; city: string | null; state: string | null } | null>`(select json_build_object('name', c.name, 'city', c.city, 'state', c.state) from ftc_team_cache c where c.number = "teams"."number")`,
+      companyMembers: sql<number>`(select count(*)::int from sponsor_members sm where sm.sponsor_id = "sponsors"."id")`,
       team: teams,
       company: sponsors,
     })
@@ -255,7 +259,7 @@ export async function getPitchReview(_admin: Viewer, pitchId: string): Promise<P
   if (!row) throw new AppError('NOT_FOUND', "That pitch doesn't exist.")
   const { pitch, team, company } = row
 
-  const [members, others, [record], [companyCounts], neighbours] = await Promise.all([
+  const [members, others, neighbours] = await Promise.all([
     db
       .select({ name: users.name, email: users.email })
       .from(teamMembers)
@@ -269,8 +273,6 @@ export async function getPitchReview(_admin: Viewer, pitchId: string): Promise<P
       .where(and(eq(pitches.teamId, team.id), ne(pitches.id, pitch.id), ne(pitches.status, 'draft')))
       .orderBy(desc(pitches.updatedAt))
       .limit(20),
-    db.select({ name: ftcTeamCache.name, city: ftcTeamCache.city, state: ftcTeamCache.state }).from(ftcTeamCache).where(eq(ftcTeamCache.number, team.number)).limit(1),
-    db.select({ members: sql<number>`count(*)::int` }).from(sponsorMembers).where(eq(sponsorMembers.sponsorId, company.id)),
     queueNeighbours(pitch.id),
   ])
 
@@ -299,7 +301,7 @@ export async function getPitchReview(_admin: Viewer, pitchId: string): Promise<P
       suspended: Boolean(team.suspendedAt),
       createdAt: team.createdAt,
       recordStatus: team.recordStatus,
-      record: record ?? null,
+      record: row.record ?? null,
       members: members.map((m) => ({ name: m.name.trim() || m.email, email: m.email })),
       otherPitches: others,
     },
@@ -309,7 +311,7 @@ export async function getPitchReview(_admin: Viewer, pitchId: string): Promise<P
       website: company.website,
       logoUrl: publicUrl(company.logoPath),
       status: company.status,
-      memberCount: Number(companyCounts?.members ?? 0),
+      memberCount: Number(row.companyMembers ?? 0),
       questionCount: company.questions.length,
     },
     approvalBlocker: approvalBlocker({ number: team.number, suspended: Boolean(team.suspendedAt) }, company),

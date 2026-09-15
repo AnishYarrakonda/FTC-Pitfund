@@ -272,6 +272,7 @@ function Screenshot({
         alt={alt}
         sizes={sizes}
         preload={preload}
+        fetchPriority={preload ? 'high' : undefined}
         loading={preload ? 'eager' : 'lazy'}
         quality={80}
         className="h-auto w-full"

@@ -29,9 +29,16 @@ export async function ensureProdServer(baseUrl = 'http://127.0.0.1:3100'): Promi
     stdio: 'inherit',
     detached: true,
   })
-  if (await waitForServer(baseUrl)) return child
+  let exited: number | null = null
+  child.on('exit', (code) => {
+    exited = code ?? 1
+  })
+  for (let i = 0; i < 900 && exited === null; i++) {
+    if (await serverUp(baseUrl)) return child
+    await new Promise((r) => setTimeout(r, 1000))
+  }
   stopServer(child)
-  throw new Error('The production server did not start.')
+  throw new Error(exited === null ? 'The production server did not start.' : `The production build or server failed (exit ${exited}).`)
 }
 
 /** Stops a server started above, including the `next start` it spawned. */

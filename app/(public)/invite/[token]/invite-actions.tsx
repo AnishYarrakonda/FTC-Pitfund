@@ -7,7 +7,7 @@ import { startTransition, useState, type FormEvent } from 'react'
 import { acceptInviteAction } from '@/app/actions/invites'
 import { signOutForInvite } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/choice'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useAction } from '@/lib/client/use-action'
 
 export function AcceptInvite({ token, needsTerms }: { token: string; needsTerms: boolean }) {
