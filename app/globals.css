@@ -1,6 +1,38 @@
 @import 'tailwindcss';
 
 /*
+ * Size-matched fallbacks for Inter where Arial is missing. next/font only calibrates `local(Arial)`, so on Linux
+ * (DejaVu Sans, Liberation Sans) and Android (Roboto) text painted before Inter arrives used a wider or narrower
+ * font and reflowed when Inter swapped in: CLS 0.09 on long names (reproduced in Linux Chromium). Values are next/font's
+ * Arial overrides scaled by each font's measured average glyph width (fontkit, the same method next/font uses);
+ * Liberation Sans is metric-compatible with Arial. Each face applies only where its local font exists.
+ */
+@font-face {
+  font-family: 'Inter Fallback Liberation';
+  src: local('Liberation Sans'), local('LiberationSans');
+  ascent-override: 90.44%;
+  descent-override: 22.52%;
+  line-gap-override: 0%;
+  size-adjust: 107.12%;
+}
+@font-face {
+  font-family: 'Inter Fallback Roboto';
+  src: local('Roboto'), local('Roboto-Regular');
+  ascent-override: 90.23%;
+  descent-override: 22.47%;
+  line-gap-override: 0%;
+  size-adjust: 107.36%;
+}
+@font-face {
+  font-family: 'Inter Fallback DejaVu';
+  src: local('DejaVu Sans'), local('DejaVuSans');
+  ascent-override: 103.58%;
+  descent-override: 25.79%;
+  line-gap-override: 0%;
+  size-adjust: 93.53%;
+}
+
+/*
  * FTC Pitfund design tokens (plan §7). Light theme only. Tailwind's default palette, type
  * scale, radii and shadows are cleared so only these values exist: if a class isn't built
  * from a token below, it doesn't compile.
@@ -36,7 +68,7 @@
   --color-info: #1d4ed8;
   --color-info-subtle: #eff4ff;
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+  --font-sans: var(--font-inter), 'Inter Fallback Liberation', 'Inter Fallback Roboto', 'Inter Fallback DejaVu', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
   --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
 
