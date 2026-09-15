@@ -14,11 +14,11 @@ import { Banner } from '@/components/ui/banner'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
+import { TimeText } from '@/components/ui/time-text'
 import { Textarea } from '@/components/ui/textarea'
 import { isNetworkError } from '@/lib/client/use-action'
 import { useUnsavedChanges } from '@/lib/client/use-unsaved-changes'
 import { cn } from '@/lib/shared/cn'
-import { formatRelative } from '@/lib/shared/format'
 import { ASK_OPTIONS, formatAsk, MAX_ASK_NOTE, submitBlockers, type Ask, type AskType, type PitchViewData } from '@/lib/shared/pitch'
 import { MAX_ANSWER_LENGTH, type Question } from '@/lib/shared/questions'
 import { NETWORK_ERROR_MESSAGE, type ActionError, type Result } from '@/lib/shared/result'
@@ -478,7 +478,7 @@ function SaveStatus({ state, dirty, onRetry }: { state: SaveState; dirty: boolea
         <span className="text-text-tertiary">Unsaved changes</span>
       ) : state.kind === 'saved' ? (
         <span className="inline-flex items-center gap-1.5 text-text-tertiary">
-          <Check aria-hidden="true" className="size-3.5 text-success" /> Saved · {formatRelative(new Date(state.at))}
+          <Check aria-hidden="true" className="size-3.5 text-success" /> Saved · <TimeText date={state.at} />
         </span>
       ) : (
         <span className="text-text-tertiary">Drafts save automatically</span>

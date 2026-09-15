@@ -82,6 +82,11 @@ Fixed without an image pair (each is now guarded by a test or a gate):
   0.092 with the font delayed. `app/globals.css` now adds calibrated fallback faces for Liberation Sans, Roboto and DejaVu Sans,
   measured from the real font files with the same method next/font uses. The same Linux run now measures 0.001, with
   Liberation present and with DejaVu alone.
+- **Times rendered by client components could fail hydration** (React error #418 on the composer in CI). "Saved · 4 min ago"
+  was formatted on the server and again in the browser, and the minute can turn in between. Dates also differ by time zone
+  (server UTC, visitor local), and the answer counter's `toLocaleString()` differs by browser locale. `components/ui/time-text.tsx`
+  renders times as `<time suppressHydrationWarning>` in the composer, join requests, the deck card and the pitch view.
+  The counter is pinned to `en-US`.
 - **The QA gate flaked on `/dev/ui` in CI** with a hydration mismatch on `caret-color`: Playwright's screenshot hides the
   caret by writing an inline style onto every input, and on a slow runner that happened before React hydrated the page.
   `settle()` (`tests/qa/checks.ts`) now waits until every form control is hydrated.

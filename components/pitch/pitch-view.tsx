@@ -2,8 +2,8 @@ import { ArrowUpRight, FileText } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { TeamMark } from '@/components/ui/identity'
+import { TimeText } from '@/components/ui/time-text'
 import { cn } from '@/lib/shared/cn'
-import { formatDate } from '@/lib/shared/format'
 import type { PitchViewData } from '@/lib/shared/pitch'
 import { placeLabel } from '@/lib/shared/team'
 import { displayWebsite } from '@/lib/shared/url'
@@ -56,7 +56,7 @@ export function PitchView({
               <ArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
             </a>
           ) : null}
-          {pitch.submittedAt ? <span className="text-text-tertiary">Submitted {formatDate(pitch.submittedAt)}</span> : null}
+          {pitch.submittedAt ? <span className="text-text-tertiary">Submitted <TimeText date={pitch.submittedAt} format="date" /></span> : null}
         </div>
       </header>
 

@@ -68,7 +68,7 @@ export function Textarea({ className, minRows = 3, maxRows = 16, counter = 'near
           aria-live="polite"
           className={cn('mt-1.5 text-right text-caption tabular', over ? 'text-danger' : 'text-text-tertiary')}
         >
-          {length.toLocaleString()} / {maxLength!.toLocaleString()}
+          {length.toLocaleString('en-US')} / {maxLength!.toLocaleString('en-US')}
         </p>
       ) : null}
     </div>

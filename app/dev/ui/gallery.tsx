@@ -35,6 +35,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { DataTable, Pagination } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import { TimeText } from '@/components/ui/time-text'
 import { useAction } from '@/lib/client/use-action'
 import { EMAIL_STATUS, PITCH_STATUS, SPONSOR_STATUS } from '@/lib/shared/labels'
 import { err, type Result } from '@/lib/shared/result'
@@ -501,6 +502,11 @@ function StatusSection() {
               <StatusBadge key={`e-${s.label}`} {...s} />
             ))}
           </div>
+        </Specimen>
+        <Specimen label="Times in client components (TimeText)">
+          <p className="text-small text-text-secondary">
+            Saved · <TimeText date={now} /> · Updated <TimeText date={now} format="date" />
+          </p>
         </Specimen>
         <Specimen label="Banners" className="md:col-span-2">
           <div className="grid gap-3">
