@@ -82,5 +82,9 @@ React + Next alone is ~145 KB, so client code on any page gets ~25 KB. Keep it t
   and reads `?intent`, `?next`, `?error` in the browser (a Suspense fallback swap would wipe what the user typed).
 - **CSS is inlined into the HTML** (`experimental.inlineCss`): a render-blocking stylesheet request competing with the scripts
   held `/login` first paint to ~2 s on Slow 4G. Images are served AVIF first (`images.formats`); the landing hero is the LCP.
+- **Times inside client components use `<TimeText>`** (`components/ui/time-text.tsx`): server and browser format them at
+  different moments and in different time zones, which fails hydration (#418). Format numbers with an explicit `'en-US'`.
+- **Font fallbacks are calibrated beyond Arial** (`app/globals.css`): Liberation Sans, Roboto and DejaVu Sans faces keep text
+  from reflowing when Inter swaps in on Linux and Android (CI runs Linux). Don't remove them from `--font-sans`.
 - Measure with `npm run perf -- --only bundles` (gzip -9 of the scripts the HTML references, as Next reports sizes).
 

@@ -5,7 +5,8 @@ import { useRef, useState } from 'react'
 
 import { Checkbox } from '@/components/ui/checkbox'
 import { FileDrop } from '@/components/ui/file-drop'
-import { formatBytes, formatDate } from '@/lib/shared/format'
+import { TimeText } from '@/components/ui/time-text'
+import { formatBytes } from '@/lib/shared/format'
 import { NETWORK_ERROR_MESSAGE, type Result } from '@/lib/shared/result'
 import { DECK_MESSAGES } from '@/lib/shared/team'
 
@@ -182,7 +183,7 @@ export function DeckUpload({
               <p className="text-body font-medium text-text">Current deck</p>
             )}
             <p className="text-small text-text-tertiary tabular">
-              {current.pages} {current.pages === 1 ? 'page' : 'pages'} · {formatBytes(current.bytes)} · Updated {formatDate(current.updatedAt)}
+              {current.pages} {current.pages === 1 ? 'page' : 'pages'} · {formatBytes(current.bytes)} · Updated <TimeText date={current.updatedAt} format="date" />
             </p>
             <a href={current.url} target="_blank" rel="noreferrer" className="inline-flex w-fit items-center gap-1 text-small font-medium text-accent hover:text-accent-hover">
               Open PDF

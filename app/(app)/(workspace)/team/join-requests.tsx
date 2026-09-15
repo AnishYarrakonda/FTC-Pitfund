@@ -6,7 +6,7 @@ import { useState } from 'react'
 
 import { decideJoin } from '@/app/actions/team'
 import { ActionButton } from '@/components/ui/action-button'
-import { formatRelative } from '@/lib/shared/format'
+import { TimeText } from '@/components/ui/time-text'
 
 type Request = { id: string; name: string; email: string; createdAt: string }
 
@@ -41,7 +41,7 @@ export function JoinRequests({ requests }: { requests: Request[] }) {
                     {who} ({r.email}) wants to join
                   </p>
                   <p className="text-small text-text-secondary">
-                    Asked {formatRelative(r.createdAt)}. Approve only people you know coach or mentor this team.
+                    Asked <TimeText date={r.createdAt} />. Approve only people you know coach or mentor this team.
                   </p>
                 </div>
               </div>
