@@ -8,16 +8,16 @@ import { sql, type SQL } from 'drizzle-orm'
  * stale cursor simply starts from the beginning.
  */
 
-export const PAGE_SIZE = 25
+const PAGE_SIZE = 25
 
 export type PageParams = { after: string | null; before: string | null }
 export type Page<T> = { items: T[]; nextCursor: string | null; prevCursor: string | null }
 
-export function encodeCursor(values: Array<string | number>): string {
+function encodeCursor(values: Array<string | number>): string {
   return Buffer.from(JSON.stringify(values.map(String))).toString('base64url')
 }
 
-export function decodeCursor(value: string | null, length: number): string[] | null {
+function decodeCursor(value: string | null, length: number): string[] | null {
   if (!value || value.length > 1000) return null
   try {
     const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as unknown

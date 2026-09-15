@@ -5,7 +5,7 @@ import { normalizeWebsite } from '../url'
 
 /* Shared by the team forms (client) and the team/invite/report actions (server). */
 
-export const teamNumberSchema = z.coerce
+const teamNumberSchema = z.coerce
   .number({ message: 'Enter your FTC team number' })
   .int('Team numbers are whole numbers')
   .positive('Enter your FTC team number')
@@ -27,9 +27,8 @@ export const createTeamSchema = z.object({
   terms: z.literal(true, { message: 'Accept the Terms and Privacy Policy to continue' }),
 })
 
-export type CreateTeamInput = z.input<typeof createTeamSchema>
 
-export const websiteSchema = z
+const websiteSchema = z
   .string()
   .trim()
   .max(300, 'Keep the website under 300 characters')
@@ -55,7 +54,6 @@ export const teamProfileSchema = z.object({
   website: websiteSchema,
 })
 
-export type TeamProfileInput = z.input<typeof teamProfileSchema>
 
 export const inviteSchema = z.object({
   email: z.string().trim().toLowerCase().min(1, 'Enter an email address').email('Enter a valid email address, like name@example.com'),
@@ -78,4 +76,3 @@ export const reportSchema = z.object({
     .refine((v) => v === null || z.email().safeParse(v).success, 'Enter a valid email address, or leave it empty'),
 })
 
-export type ReportInput = z.input<typeof reportSchema>

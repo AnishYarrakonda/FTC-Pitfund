@@ -4,9 +4,8 @@ import * as Sentry from '@sentry/nextjs'
 import { unstable_rethrow } from 'next/navigation'
 import type { z } from 'zod'
 
-import { err, ok, type ActionError, type ErrorCode, type Result } from '@/lib/shared/result'
+import { type ActionError, type ErrorCode, type Result } from '@/lib/shared/result'
 
-export { err, ok }
 export type { ActionError, ErrorCode, Result }
 
 /**
@@ -24,7 +23,6 @@ export class AppError extends Error {
   }
 }
 
-export const notFound = (what = 'That page') => new AppError('NOT_FOUND', `${what} doesn't exist or you don't have access.`)
 
 type PgError = { code?: string; constraint_name?: string; constraint?: string; detail?: string }
 
@@ -76,7 +74,7 @@ export function mapDbError(
   return null
 }
 
-export function zodFieldErrors(error: z.ZodError): Record<string, string> {
+function zodFieldErrors(error: z.ZodError): Record<string, string> {
   const out: Record<string, string> = {}
   for (const issue of error.issues) {
     const key = issue.path.join('.') || '_'

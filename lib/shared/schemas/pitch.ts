@@ -5,7 +5,7 @@ import { MAX_ANSWER_LENGTH, MAX_QUESTIONS } from '../questions'
 
 /* Shared by the pitch composer (browser) and the pitch actions (server). */
 
-export const askSchema = z
+const askSchema = z
   .object({
     type: z.enum(['none', 'amount', 'in_kind', 'open']),
     amountDollars: z
@@ -27,7 +27,7 @@ export const askSchema = z
     note: ask.type === 'in_kind' || ask.type === 'open' ? ask.note : null,
   }))
 
-export const draftContentSchema = z.object({
+const draftContentSchema = z.object({
   answers: z
     .array(
       z.object({
@@ -44,7 +44,6 @@ export const saveDraftSchema = draftContentSchema.extend({
   pitchId: z.uuid().nullable(),
 })
 
-export type SaveDraftInput = z.input<typeof saveDraftSchema>
 
 export const submitPitchSchema = draftContentSchema.extend({ pitchId: z.uuid() })
 

@@ -20,7 +20,7 @@ import { BUCKETS, listStaleStagingObjects, removeObjects } from './storage'
  */
 
 const STAGING_TTL_MS = 24 * 60 * 60 * 1000
-export const RECHECK_LIMIT = 20
+const RECHECK_LIMIT = 20
 
 type JobResult = { name: string; ok: boolean; result?: unknown; error?: string; reference?: string }
 

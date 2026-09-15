@@ -21,7 +21,7 @@ import { publicUrl } from '../storage'
 
 export const DIRECTORY_PAGE_SIZE = 25
 
-export type DirectoryItem = {
+type DirectoryItem = {
   id: string
   name: string
   logoUrl: string | null

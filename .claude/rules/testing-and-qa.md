@@ -38,4 +38,9 @@ Anish does not click through the app. Agents verify everything with these comman
   Crop long pages with a Playwright element screenshot when a full-page image is too tall to read.
 
 ## CI — `.github/workflows/ci.yml`
-typecheck · lint → `npm run setup` (local Supabase, migrate, seed) → Vitest → build → E2E.
+One job, Node 24, on every PR and push to `main`/`rebuild`: typecheck · lint → `npm run setup` (local Supabase,
+migrate, seed `demo`, writes `.env.local`) → Vitest → build → E2E → `npm run qa` (every scenario project) →
+`npm run perf` → `npm run knip`. After a green build, E2E/QA/perf/knip each run even if an earlier one failed.
+Caches: npm, `~/.cache/ms-playwright` (keyed by the `@playwright/test` version), `.next/cache`.
+Artifacts: `qa-report` (`qa/report.*`, `qa/results`, `qa/perf`) always; `qa-screens` only when QA fails;
+`playwright-report` + `test-results` on any failure. No secrets: everything runs on the runner's local stack.

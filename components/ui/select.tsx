@@ -8,7 +8,7 @@ import { cn } from '@/lib/shared/cn'
 import { useFieldControl } from './field'
 import { controlClasses } from './input'
 
-export type SelectOption = { value: string; label: string; disabled?: boolean }
+type SelectOption = { value: string; label: string; disabled?: boolean }
 
 type SelectProps = {
   options: SelectOption[]

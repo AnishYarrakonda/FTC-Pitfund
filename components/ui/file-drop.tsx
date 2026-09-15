@@ -9,7 +9,7 @@ import { formatBytes } from '@/lib/shared/format'
 import { Button } from './button'
 import { Spinner } from './spinner'
 
-export type FileDropProgress = { loaded: number; total: number }
+type FileDropProgress = { loaded: number; total: number }
 
 type FileDropProps = {
   /** e.g. "Upload your sponsorship deck" */

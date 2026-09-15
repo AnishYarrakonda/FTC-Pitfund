@@ -27,7 +27,7 @@ export function declineReasonText(reason: DeclineReasonKey | null, note: string 
   return DECLINE_REASONS.find((r) => r.value === reason)!.label
 }
 
-export type CompanySetupItem = { key: 'logo' | 'about' | 'supportTypes' | 'questions'; label: string; done: boolean; href: string }
+type CompanySetupItem = { key: 'logo' | 'about' | 'supportTypes' | 'questions'; label: string; done: boolean; href: string }
 
 /** The profile checklist on /inbox and /company while a company sets itself up. */
 export function companyChecklist(company: { hasLogo: boolean; hasAbout: boolean; supportTypeCount: number; questionCount: number; reviewedQuestions: boolean }) {

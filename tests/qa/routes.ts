@@ -17,7 +17,7 @@ import { SEED, SEED_INVITE_TOKENS } from '../../scripts/seed/ids'
  *           Dialogs need no entry: every [aria-haspopup="dialog"] trigger is opened automatically.
  */
 
-export type QaPersona = PersonaKey | 'anonymous'
+type QaPersona = PersonaKey | 'anonymous'
 
 export type QaRoute = {
   name: string
@@ -30,7 +30,7 @@ export type QaRoute = {
   interactions?: QaInteraction[]
 }
 
-export type QaInteraction = {
+type QaInteraction = {
   name: string
   widths?: number[]
   run: (page: Page) => Promise<void>

@@ -77,7 +77,7 @@ const registry = {
 export type TemplateName = keyof typeof registry
 export type TemplatePayload<T extends TemplateName> = Parameters<(typeof registry)[T]['component']>[0]
 
-export function isTemplateName(name: string): name is TemplateName {
+function isTemplateName(name: string): name is TemplateName {
   return name in registry
 }
 
@@ -86,6 +86,13 @@ export function isSensitiveTemplate(name: string) {
 }
 
 export class TemplateError extends Error {}
+
+/** The text part: every link URL on its own line, so it stays tappable in any mail client. */
+function plainText(html: string) {
+  return toPlainText(html)
+    .replace(/[ \t]+(https?:\/\/\S+)/g, '\n$1')
+    .replace(/(https?:\/\/\S+)[ \t]+/g, '$1\n')
+}
 
 export async function renderEmail(template: string, payload: unknown) {
   if (!isTemplateName(template)) throw new TemplateError(`Unknown email template "${template}"`)
@@ -99,6 +106,6 @@ export async function renderEmail(template: string, payload: unknown) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subject: (entry.subject as (p: any) => string)(parsed.data),
     html,
-    text: toPlainText(html),
+    text: plainText(html),
   }
 }

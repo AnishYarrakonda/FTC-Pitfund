@@ -31,13 +31,12 @@ export const REPORT_REASONS = [
   { value: 'other', label: 'Something else' },
 ] as const
 
-export type ReportReason = (typeof REPORT_REASONS)[number]['value']
 
 export function reportReasonLabel(value: string) {
   return REPORT_REASONS.find((r) => r.value === value)?.label ?? value
 }
 
-export type SetupItem = { key: 'deck' | 'summary' | 'logo' | 'invite'; label: string; done: boolean; optional: boolean; href: string }
+type SetupItem = { key: 'deck' | 'summary' | 'logo' | 'invite'; label: string; done: boolean; optional: boolean; href: string }
 
 /** The /pitches setup checklist. It disappears once the required items are done. */
 export function setupChecklist(team: { hasDeck: boolean; hasSummary: boolean; hasLogo: boolean; memberCount: number; pendingInvites: number }) {

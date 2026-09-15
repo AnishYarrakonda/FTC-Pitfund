@@ -1,5 +1,5 @@
 import { formatMoney } from './format'
-import { MAX_ANSWER_LENGTH, type Question } from './questions'
+import type { Question } from './questions'
 import type { PitchStatus } from './types'
 
 /* Coach-side pitch rules shared by the composer (browser) and the pitch actions (server). */
@@ -152,8 +152,4 @@ export function submitBlockers(input: {
   if (input.ask.type === 'amount' && !input.ask.amountDollars) blockers.push({ key: 'ask', message: 'Enter the amount you’re asking for' })
   if (input.ask.type === 'in_kind' && !input.ask.note?.trim()) blockers.push({ key: 'ask', message: 'Describe the in-kind support you’re asking for' })
   return blockers
-}
-
-export function answerTooLong(answer: string) {
-  return answer.length > MAX_ANSWER_LENGTH
 }

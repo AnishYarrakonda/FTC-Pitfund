@@ -43,7 +43,7 @@ export type TeamFixture = {
   logo?: boolean
 }
 
-export const member = (slug: string, name: string) => ({ email: `member-${slug}@pitfund.test`, name })
+const member = (slug: string, name: string) => ({ email: `member-${slug}@pitfund.test`, name })
 
 export const TEAMS: TeamFixture[] = [
   {

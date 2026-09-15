@@ -20,7 +20,7 @@ import { ftcTeamCache } from './schema'
  * city/state/country under `location { }`; the old flat selection silently returned nothing.
  */
 
-export type FtcRecord = {
+type FtcRecord = {
   number: number
   name: string
   city: string | null
@@ -28,7 +28,7 @@ export type FtcRecord = {
   country: string | null
 }
 
-export type FtcSource = 'first' | 'ftcscout' | 'cache'
+type FtcSource = 'first' | 'ftcscout' | 'cache'
 
 export type FtcLookup =
   | { status: 'found'; record: FtcRecord; source: FtcSource }
@@ -42,8 +42,8 @@ type SourceResult =
 
 type Fetch = typeof fetch
 
-export const FIRST_API_BASE = 'https://ftc-api.firstinspires.org/v2.0'
-export const FTCSCOUT_URL = 'https://api.ftcscout.org/graphql'
+const FIRST_API_BASE = 'https://ftc-api.firstinspires.org/v2.0'
+const FTCSCOUT_URL = 'https://api.ftcscout.org/graphql'
 export const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000
 const TIMEOUT_MS = 4000
 

@@ -9,7 +9,7 @@ import { encodeImage } from './upload'
  * pre-check before any network (type, size, page count), the page-1 thumbnail, and the viewer.
  */
 
-export type PdfPage = {
+type PdfPage = {
   getViewport(opts: { scale: number }): { width: number; height: number }
   render(opts: { canvas: HTMLCanvasElement; viewport: { width: number; height: number } }): { promise: Promise<void>; cancel(): void }
   cleanup?(): void
@@ -20,7 +20,7 @@ type PdfJs = typeof import('pdfjs-dist') // eslint-disable-line @typescript-esli
 
 let loader: Promise<PdfJs> | null = null
 
-export function loadPdfjs() {
+function loadPdfjs() {
   loader ??= import('pdfjs-dist').then((pdfjs) => {
     pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString()
     return pdfjs

@@ -35,7 +35,7 @@ function chunk(type: string, data: Uint8Array) {
 }
 
 /** Encode RGB pixels (3 bytes per pixel, row-major) as a PNG. */
-export function encodePng(width: number, height: number, rgbPixels: Uint8Array, level = 9): Uint8Array {
+function encodePng(width: number, height: number, rgbPixels: Uint8Array, level = 9): Uint8Array {
   const ihdr = new Uint8Array(13)
   const v = new DataView(ihdr.buffer)
   v.setUint32(0, width)
@@ -63,7 +63,7 @@ export function encodePng(width: number, height: number, rgbPixels: Uint8Array, 
   return png
 }
 
-export function hexToRgb(hex: string): [number, number, number] {
+function hexToRgb(hex: string): [number, number, number] {
   const n = parseInt(hex.replace('#', ''), 16)
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
 }

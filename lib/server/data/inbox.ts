@@ -21,11 +21,11 @@ import { teamForView } from './pitches'
  * pitch that was sent and then withdrawn. Contact snapshots are returned only for matched pitches.
  */
 
-export const INBOX_STATUSES: PitchStatus[] = ['sent', 'matched', 'declined']
+const INBOX_STATUSES: PitchStatus[] = ['sent', 'matched', 'declined']
 const NOT_FOUND = "That pitch doesn't exist or wasn't sent to your company."
 const GROUP_LIMIT = 100
 
-export type InboxRow = {
+type InboxRow = {
   id: string
   status: PitchStatus
   team: { number: number; name: string; logoUrl: string | null; verified: boolean; city: string | null; state: string | null; summary: string | null }

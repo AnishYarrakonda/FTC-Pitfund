@@ -12,10 +12,10 @@ import { cronRuns, emailOutbox } from '../schema'
  * database size against the free tiers, and the last run of each daily job. No charts.
  */
 
-export const STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024
-export const DB_LIMIT_BYTES = 500 * 1024 * 1024
+const STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024
+const DB_LIMIT_BYTES = 500 * 1024 * 1024
 export const CRON_STALE_MS = 36 * 60 * 60 * 1000
-export const CRON_JOBS = ['drain-outbox', 'admin-digest', 'clean-staging', 'recheck-records', 'keepalive'] as const
+const CRON_JOBS = ['drain-outbox', 'admin-digest', 'clean-staging', 'recheck-records', 'keepalive'] as const
 
 export type SystemEmail = {
   id: string
@@ -32,7 +32,7 @@ export type SystemEmail = {
   canSendNow: boolean
 }
 
-export type CronJobStatus = { job: string; startedAt: Date | null; finishedAt: Date | null; ok: boolean | null; detail: Record<string, unknown>; stale: boolean }
+type CronJobStatus = { job: string; startedAt: Date | null; finishedAt: Date | null; ok: boolean | null; detail: Record<string, unknown>; stale: boolean }
 
 export type SystemStatus = {
   email: { used: number; limit: number; byPriority: Record<number, number>; queued: number; problems: number }

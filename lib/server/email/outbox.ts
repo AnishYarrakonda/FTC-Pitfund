@@ -26,7 +26,7 @@ export const WINDOW_MS = 24 * 60 * 60 * 1000
 export const MAX_ATTEMPTS = 5
 const STUCK_SENDING_MS = 10 * 60 * 1000
 
-export type EmailPriority = 0 | 1 | 2 | 3
+type EmailPriority = 0 | 1 | 2 | 3
 
 export const PRIORITY = { auth: 0, transactional: 1, adminInstant: 2, digest: 3 } as const
 
@@ -119,11 +119,6 @@ export async function quotaUsage(now = new Date(), excludeIds: string[] = []): P
     oldestSentAt: sent?.oldest ? new Date(sent.oldest) : null,
     limit: DAILY_EMAIL_LIMIT,
   }
-}
-
-/** True when an email at this priority would be delayed right now. */
-export async function isEmailDelayed(priority: EmailPriority, now = new Date()) {
-  return (await quotaUsage(now)).used >= budgetFor(priority)
 }
 
 export type DeliveryOutcome = 'sent' | 'deferred' | 'retry' | 'failed'

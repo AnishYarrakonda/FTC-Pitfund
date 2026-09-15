@@ -49,7 +49,7 @@ export async function createReport(viewer: Viewer | null, input: { teamNumber: n
  * `admin-report` email (priority 2). Call it inside the report's transaction; the action drains the
  * outbox after the response.
  */
-export async function notifyAdminsOfReport(report: ReportRecord) {
+async function notifyAdminsOfReport(report: ReportRecord) {
   const href = '/admin?tab=reports'
   const notified = await notifyAdmins({
     type: 'report.created',

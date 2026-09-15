@@ -19,7 +19,7 @@ export const emailColors = {
   accentSubtle: '#EAF3F0',
 }
 
-export const fontStack =
+const fontStack =
   "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 
 const body: CSSProperties = {

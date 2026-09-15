@@ -3,18 +3,7 @@
  * branch on `code` without importing anything server-only.
  */
 
-export const ERROR_CODES = [
-  'VALIDATION',
-  'UNAUTHORIZED',
-  'FORBIDDEN',
-  'NOT_FOUND',
-  'CONFLICT',
-  'RATE_LIMITED',
-  'UNAVAILABLE',
-  'UNKNOWN',
-] as const
-
-export type ErrorCode = (typeof ERROR_CODES)[number]
+export type ErrorCode = 'VALIDATION' | 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND' | 'CONFLICT' | 'RATE_LIMITED' | 'UNAVAILABLE' | 'UNKNOWN'
 
 export type ActionError = {
   code: ErrorCode
@@ -31,12 +20,6 @@ export type ActionError = {
 }
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: ActionError }
-
-export function ok<T>(data: T): Result<T>
-export function ok(): Result<void>
-export function ok<T>(data?: T): Result<T | void> {
-  return { ok: true, data }
-}
 
 export function err(code: ErrorCode, message: string, extra: Partial<ActionError> = {}): Result<never> {
   return { ok: false, error: { code, message, ...extra } }

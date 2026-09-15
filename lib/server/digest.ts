@@ -29,7 +29,7 @@ export type DigestContent = {
   oldestWaitingHours: number | null
 }
 
-export const digestDate = (now: Date) => now.toISOString().slice(0, 10)
+const digestDate = (now: Date) => now.toISOString().slice(0, 10)
 
 /** What the digest would say right now, or null when nothing is waiting. */
 export async function buildDigest(now = new Date()): Promise<DigestContent | null> {

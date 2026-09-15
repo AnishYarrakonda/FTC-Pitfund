@@ -91,7 +91,7 @@ export function absoluteUrl(path: string) {
   return new URL(path, env().NEXT_PUBLIC_SITE_URL).toString()
 }
 
-export function isLocalSupabase(url: string | undefined) {
+function isLocalSupabase(url: string | undefined) {
   if (!url) return true
   try {
     const host = new URL(url).hostname
@@ -104,9 +104,4 @@ export function isLocalSupabase(url: string | undefined) {
 /** `/dev/*` exists only in a development server pointed at the local Supabase stack. */
 export function devToolsEnabled() {
   return process.env.NODE_ENV !== 'production' && isLocalSupabase(process.env.NEXT_PUBLIC_SUPABASE_URL)
-}
-
-/** Test-only: forget the cached env so a test can change process.env. */
-export function resetEnvCache() {
-  cached = undefined
 }

@@ -17,7 +17,7 @@ import * as schema from './schema'
  * rollback wrapper), so data functions compose without threading a handle through every call.
  */
 
-export type Database = PostgresJsDatabase<typeof schema>
+type Database = PostgresJsDatabase<typeof schema>
 type Tx = Parameters<Parameters<Database['transaction']>[0]>[0]
 export type DbOrTx = Database | Tx
 

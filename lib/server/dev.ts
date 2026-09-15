@@ -56,7 +56,7 @@ export async function sampleDeck() {
   return { name: team.name, src: publicUrl(team.pdfPath)!, pages: team.pdfPages, thumb: publicUrl(team.thumb), logo: publicUrl(team.logo) }
 }
 
-export const SIMULATE_COOKIE = 'pitfund-simulate'
+const SIMULATE_COOKIE = 'pitfund-simulate'
 
 /**
  * Failure injection for local verification and E2E (never active in production): set the cookie

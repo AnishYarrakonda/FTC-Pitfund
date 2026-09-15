@@ -14,7 +14,7 @@ import { getViewer } from './viewer'
  *   FORBIDDEN    → the viewer's home (wrong workspace) — or notFound() for NOT_FOUND
  */
 
-export async function loginRedirect(): Promise<never> {
+async function loginRedirect(): Promise<never> {
   const path = (await headers()).get('x-pathname')
   redirect(path && path !== '/' ? `/login?next=${encodeURIComponent(path)}` : '/login')
 }

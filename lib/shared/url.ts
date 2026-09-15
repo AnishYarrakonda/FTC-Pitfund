@@ -4,7 +4,7 @@
  * hostname (a dot, no spaces) are accepted.
  */
 
-export const MAX_WEBSITE_LENGTH = 300
+const MAX_WEBSITE_LENGTH = 300
 
 export function normalizeWebsite(input: string): string | null {
   const trimmed = input.trim()

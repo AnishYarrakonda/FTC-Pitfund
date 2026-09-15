@@ -277,7 +277,7 @@ export async function unsuspendTeam(admin: Viewer, teamId: string) {
   return row
 }
 
-export type RecheckOutcome = 'matched' | 'not_found' | 'unavailable'
+type RecheckOutcome = 'matched' | 'not_found' | 'unavailable'
 
 /** Look the team up in FIRST records again and record what was found. */
 export async function recheckTeamRecord(actor: Viewer | null, teamId: string, options: Parameters<typeof lookupFtcTeam>[1] = {}) {

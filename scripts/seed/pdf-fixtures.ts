@@ -10,7 +10,7 @@ import { generateDeckPdf } from './assets'
  *   deck-corrupt.pdf   rejected: starts like a PDF but isn't one
  *   not-a-pdf.pdf      rejected: an HTML file renamed to .pdf
  */
-export const PDF_FIXTURES_DIR = path.resolve(process.cwd(), 'tests/.fixtures')
+const PDF_FIXTURES_DIR = path.resolve(process.cwd(), 'tests/.fixtures')
 
 export async function writePdfFixtures() {
   mkdirSync(PDF_FIXTURES_DIR, { recursive: true })

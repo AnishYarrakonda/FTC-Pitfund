@@ -56,7 +56,6 @@ export const createCompanySchema = z.object({
   terms: z.literal(true, { message: 'Accept the Terms and Privacy Policy to continue' }),
 })
 
-export type CreateCompanyInput = z.input<typeof createCompanySchema>
 
 export const companyProfileSchema = z.object({
   name: companyName,
@@ -68,9 +67,8 @@ export const companyProfileSchema = z.object({
   supportTypes: z.array(z.enum(SUPPORT_TYPES)).max(SUPPORT_TYPES.length).transform((v) => [...new Set(v)]),
 })
 
-export type CompanyProfileInput = z.input<typeof companyProfileSchema>
 
-export const questionSchema = z.object({
+const questionSchema = z.object({
   id: z.string().trim().min(1).max(40).regex(/^[A-Za-z0-9_-]+$/, 'Invalid question id'),
   prompt: z.string().trim().min(1, 'Write the question').max(MAX_QUESTION_PROMPT, `Keep the question under ${MAX_QUESTION_PROMPT} characters`),
   help: z

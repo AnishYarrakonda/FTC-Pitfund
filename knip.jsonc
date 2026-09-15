@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // The Next.js, Vitest, Playwright, Drizzle and Sentry plugins find app/**, proxy.ts, instrumentation*.ts,
+  // next/vitest/drizzle configs and their setup files on their own. Listed here: what they can't see.
+  "entry": [
+    // CLIs run with `node --import tsx` from package.json scripts.
+    "scripts/*.ts",
+    "scripts/provision/*.ts",
+    // Loaded by scripts/seed/index.ts with a dynamic `import(\`./scenarios/${scenario}.ts\`)`.
+    "scripts/seed/scenarios/*.ts",
+    "tests/unit/**/*.test.ts",
+    "tests/e2e/**/*.spec.ts",
+    "tests/qa/*.{spec,setup}.ts",
+    "playwright*.config.ts"
+  ],
+  // .css so Tailwind's `@import 'tailwindcss'` in app/globals.css counts as a use of the dependency.
+  "project": ["**/*.{ts,tsx,mjs,cjs,css}"],
+  // The Supabase CLI is spawned by path (scripts/lib/proc.ts → node_modules/.bin/supabase), never imported.
+  "ignoreDependencies": ["supabase"],
+  // A system binary (or the postgres Docker image) called with spawnSync by scripts/db-backup.ts; not an npm package.
+  "ignoreBinaries": ["pg_dump"]
+}

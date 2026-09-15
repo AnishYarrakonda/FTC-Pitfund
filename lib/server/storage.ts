@@ -56,11 +56,6 @@ export async function promoteFromStaging(stagingPath: string, publicPath: string
   return publicPath
 }
 
-/** A link that downloads a public object (instead of opening it) under a friendly file name. */
-export function downloadUrl(path: string, fileName: string) {
-  return `${publicUrl(path)}?download=${encodeURIComponent(fileName)}`
-}
-
 export async function removeObjects(bucket: Bucket, paths: Array<string | null | undefined>) {
   const clean = paths.filter((p): p is string => Boolean(p))
   if (clean.length === 0) return

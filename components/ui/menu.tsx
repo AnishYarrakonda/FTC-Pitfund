@@ -9,7 +9,6 @@ import { cn } from '@/lib/shared/cn'
 
 export const Menu = DropdownMenu.Root
 export const MenuTrigger = DropdownMenu.Trigger
-export const MenuGroup = DropdownMenu.Group
 
 export function MenuContent({ className, align = 'end', sideOffset = 6, ...props }: ComponentProps<typeof DropdownMenu.Content>) {
   return (
@@ -79,7 +78,6 @@ export function MenuSeparator({ className }: { className?: string }) {
 
 export const Popover = PopoverPrimitive.Root
 export const PopoverTrigger = PopoverPrimitive.Trigger
-export const PopoverClose = PopoverPrimitive.Close
 
 export function PopoverContent({ className, align = 'end', sideOffset = 6, ...props }: ComponentProps<typeof PopoverPrimitive.Content>) {
   return (

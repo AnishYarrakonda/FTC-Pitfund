@@ -28,13 +28,3 @@ export async function waitForLoginCode(
   }
   throw new Error(`No sign-in code reached ${email} within ${timeoutMs} ms`)
 }
-
-export async function deleteMessagesTo(email: string) {
-  const ids = (await messagesTo(email)).map((m) => m.ID)
-  if (ids.length === 0) return
-  await fetch(`${MAILPIT}/api/v1/messages`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ IDs: ids }),
-  })
-}

@@ -68,7 +68,7 @@ export function Checkbox({ label, description, error, className, id, onCheckedCh
   )
 }
 
-export type ChoiceOption<V extends string> = { value: V; label: ReactNode; description?: ReactNode; disabled?: boolean }
+type ChoiceOption<V extends string> = { value: V; label: ReactNode; description?: ReactNode; disabled?: boolean }
 
 type RadioCardsProps<V extends string> = {
   options: ChoiceOption<V>[]
