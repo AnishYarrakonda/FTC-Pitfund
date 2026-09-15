@@ -1,252 +1,249 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
+import { Slot } from 'radix-ui'
+import { createContext, use, useCallback, useLayoutEffect, useRef, useState, type ComponentType, type ReactNode } from 'react'
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { XIcon } from "lucide-react"
+import { useAction } from '@/lib/client/use-action'
+import type { Result } from '@/lib/shared/result'
 
-/**
- * P3 (accessibility polish). The audit noted that base-ui's `Popup` carries no
- * `aria-modal` and that nothing outside it is `inert`.
+import { Button } from './button'
+import type { dialogWidths, OverlayContentProps, OverlayImplProps } from './dialog-impl'
+
+/*
+ * The overlay system (plan §7). Fixes the v1 thin-panel bug class:
+ *   Dialog  sm 400 · md 560 · lg 720, width min(size, 100vw − 32px),
+ *           max-height min(85vh, 100dvh − 32px); header and footer stay put, only the body scrolls.
+ *   Sheet   right side, min(640px, 100vw); full screen below 640 px; same structure.
+ * Anything bigger than a short form or a paragraph is a page, not an overlay.
  *
- * The fix is NOT to hand-add `aria-modal`. That attribute is a promise that the rest of
- * the page is unreachable; adding it without making that true tells assistive tech to
- * ignore content the user can still tab into, which is worse than saying nothing.
- *
- * base-ui's own `modal` prop is the real mechanism: `true` traps focus, locks page scroll
- * and disables pointer interaction outside. It already defaults to `true`, so this is
- * explicit rather than a behaviour change — it is here so that passing `modal={false}`
- * becomes a visible, deliberate decision at the call site instead of an accident, and so
- * the reason is written down next to it.
- *
- * Containment is asserted end-to-end in tests/e2e/accessibility.spec.ts (B-04-12), for
- * both a page dialog and the command palette.
+ * Same API as Radix Dialog (Root/Trigger/Close/Content), but Radix and the overlay markup live in
+ * ./dialog-impl.tsx and load when the trigger is hovered, focused or clicked, so pages with dialogs
+ * don't pay for them in first-load JS (plan §6). Focus returns to the trigger on close.
  */
-function Dialog({ modal = true, ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" modal={modal} {...props} />
+
+type Impl = ComponentType<OverlayImplProps>
+
+type OverlayState = {
+  open: boolean
+  setOpen: (open: boolean) => void
+  Impl: Impl | null
+  preload: () => void
+  triggerRef: React.RefObject<HTMLElement | null>
+  openerRef: React.RefObject<HTMLElement | null>
 }
 
-function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
+const OverlayContext = createContext<OverlayState | null>(null)
+
+let implLoader: Promise<Impl> | null = null
+const loadImpl = () => (implLoader ??= import('./dialog-impl').then((m) => m.default))
+
+function useOverlay(component: string) {
+  const state = use(OverlayContext)
+  if (!state) throw new Error(`<${component}> must be inside <Dialog> or <Sheet>`)
+  return state
 }
 
-function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
-  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
-}
+export function Dialog({
+  open: controlledOpen,
+  defaultOpen = false,
+  onOpenChange,
+  children,
+}: {
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  children: ReactNode
+}) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
+  const [Impl, setImpl] = useState<Impl | null>(null)
+  const triggerRef = useRef<HTMLElement | null>(null)
+  const open = controlledOpen ?? uncontrolledOpen
 
-function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
-  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
-}
+  // Dialogs opened without a DialogTrigger (from a menu item, a lazily loaded button) return focus
+  // to whatever had it when they opened. Layout effects run before Radix moves focus inside.
+  const openerRef = useRef<HTMLElement | null>(null)
+  useLayoutEffect(() => {
+    if (open && !triggerRef.current && document.activeElement instanceof HTMLElement && document.activeElement !== document.body) {
+      openerRef.current = document.activeElement
+    }
+  }, [open])
 
-function DialogOverlay({
-  className,
-  ...props
-}: DialogPrimitive.Backdrop.Props) {
-  return (
-    <DialogPrimitive.Backdrop
-      data-slot="dialog-overlay"
-      className={cn(
-        "fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
-        className
-      )}
-      {...props}
-    />
-  )
-}
+  const preload = useCallback(() => {
+    void loadImpl().then((impl) => setImpl(() => impl))
+  }, [])
 
-/**
- * A real Tab/Shift+Tab wrap inside the dialog.
- *
- * WHY THIS EXISTS — found by driving a real dialog with a keyboard, not by inspection.
- *
- * base-ui 1.4.0 marks the rest of the document with `aria-hidden` and its own
- * `data-base-ui-inert` marker and relies on focus GUARD sentinels to keep Tab inside the
- * popup (floating-ui-react/utils/markOthers.js — `ariaHidden: modal`; it does NOT set the
- * native `inert` attribute, and `aria-hidden` does not remove anything from the tab order).
- * The guards leak. Measured on the coach dashboard's graduation dialog:
- *
- *   Tab 1-3   input -> Cancel -> Close        correct, inside the dialog
- *   Tab 4     focus guard                     the trap's sentinel
- *   Tab 5     <body>
- *   Tab 6     <a>Skip to main content</a>     ESCAPED into the page behind
- *   Tab 7-9   FTC Pitfund / Dashboard / Portfolio
- *
- * Shift+Tab leaked the same way, onto "View Inbox". So a keyboard user tabbing a modal
- * dialog ended up in the sidebar navigation while the dialog stayed on top and the page
- * behind was announced as hidden — the exact failure A-08-04 described.
- *
- * (It was previously judged "does not reproduce" because the component demonstrably renders
- * through a real `<Dialog>`. It does — the library's trap simply does not hold. This is why
- * the finding had to be driven rather than read; the audit's own hand-check stopped at Tab 4.)
- *
- * WHY A KEYDOWN WRAP RATHER THAN MAKING THE BACKGROUND `inert`
- *
- * Adding the native `inert` attribute to the background also fixes containment, and was
- * tried first. But `inert` has to be REMOVED before focus is restored to the trigger, and
- * base-ui's focus manager is a descendant of this component — React runs child cleanups
- * before parent cleanups, so the background was still inert at the moment of restoration
- * and the trigger silently refused focus. This wraps focus locally instead: it never
- * touches anything outside the popup, so nothing about restoration changes.
- */
-const FOCUSABLE =
-  'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
-
-function useFocusWrap(popupRef: React.RefObject<HTMLElement | null>) {
-  return React.useCallback(
-    (event: React.KeyboardEvent) => {
-      if (event.key !== 'Tab' || event.defaultPrevented) return
-      const popup = popupRef.current
-      if (!popup) return
-
-      const focusable = Array.from(popup.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-        // offsetParent is null for display:none; a zero-size element is not reachable either.
-        (el) => el.offsetParent !== null || el.getClientRects().length > 0
-      )
-      if (focusable.length === 0) {
-        // Nothing to move to — keep focus on the popup rather than letting it leave.
-        event.preventDefault()
-        return
-      }
-
-      const first = focusable[0]
-      const last = focusable[focusable.length - 1]
-      const active = document.activeElement as HTMLElement | null
-
-      if (event.shiftKey && (active === first || !popup.contains(active))) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && (active === last || !popup.contains(active))) {
-        event.preventDefault()
-        first.focus()
-      }
+  const setOpen = useCallback(
+    (next: boolean) => {
+      if (next) preload()
+      onOpenChange?.(next)
+      if (controlledOpen === undefined) setUncontrolledOpen(next)
     },
-    [popupRef]
+    [controlledOpen, onOpenChange, preload],
   )
+
+  // Opened from outside (controlled) before the implementation arrived.
+  if (open && !Impl) preload()
+
+  return <OverlayContext value={{ open, setOpen, Impl, preload, triggerRef, openerRef }}>{children}</OverlayContext>
 }
 
-function DialogContent({
-  className,
-  children,
-  showCloseButton = true,
-  ...props
-}: DialogPrimitive.Popup.Props & {
-  showCloseButton?: boolean
-}) {
-  const popupRef = React.useRef<HTMLElement | null>(null)
-  const onKeyDown = useFocusWrap(popupRef)
-
-  return (
-    <DialogPortal>
-      <DialogOverlay />
-      <DialogPrimitive.Popup
-        ref={popupRef as never}
-        onKeyDown={onKeyDown}
-        data-slot="dialog-content"
-        className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-          className
-        )}
-        {...props}
-      >
-        {children}
-        {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot="dialog-close"
-            render={
-              <Button
-                variant="ghost"
-                className="absolute top-2 right-2 h-6 w-6 rounded-md"
-                size="icon"
-              />
-            }
-          >
-            <XIcon
-            />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
-        )}
-      </DialogPrimitive.Popup>
-    </DialogPortal>
-  )
+/** A Sheet has the same state and API as a Dialog; only its content differs. */
+export function Sheet(props: Parameters<typeof Dialog>[0]) {
+  return <Dialog {...props} />
 }
 
-function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+export function DialogTrigger({ children }: { asChild?: boolean; children: ReactNode }) {
+  const { open, setOpen, preload, triggerRef } = useOverlay('DialogTrigger')
   return (
-    <div
-      data-slot="dialog-header"
-      className={cn("flex flex-col gap-2", className)}
-      {...props}
-    />
-  )
-}
-
-function DialogFooter({
-  className,
-  showCloseButton = false,
-  children,
-  ...props
-}: React.ComponentProps<"div"> & {
-  showCloseButton?: boolean
-}) {
-  return (
-    <div
-      data-slot="dialog-footer"
-      className={cn(
-        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
-        className
-      )}
-      {...props}
+    <Slot.Root
+      ref={triggerRef as React.Ref<HTMLElement>}
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      data-state={open ? 'open' : 'closed'}
+      onPointerEnter={preload}
+      onFocus={preload}
+      onClick={(e: React.MouseEvent) => {
+        if (!e.defaultPrevented) setOpen(true)
+      }}
     >
       {children}
-      {showCloseButton && (
-        <DialogPrimitive.Close render={<Button variant="outline" />}>
-          Close
-        </DialogPrimitive.Close>
-      )}
-    </div>
+    </Slot.Root>
   )
 }
 
-function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
+export function SheetTrigger(props: Parameters<typeof DialogTrigger>[0]) {
+  return <DialogTrigger {...props} />
+}
+
+export function DialogClose({ children }: { asChild?: boolean; children: ReactNode }) {
+  const { setOpen } = useOverlay('DialogClose')
   return (
-    <DialogPrimitive.Title
-      data-slot="dialog-title"
-      className={cn(
-        "font-heading text-base leading-none font-medium",
-        className
-      )}
-      {...props}
-    />
+    <Slot.Root
+      onClick={(e: React.MouseEvent) => {
+        if (!e.defaultPrevented) setOpen(false)
+      }}
+    >
+      {children}
+    </Slot.Root>
   )
 }
 
-function DialogDescription({
-  className,
-  ...props
-}: DialogPrimitive.Description.Props) {
+function OverlayContent({ kind, ...props }: OverlayContentProps & { kind: 'dialog' | 'sheet'; size?: keyof typeof dialogWidths }) {
+  const { open, setOpen, Impl, triggerRef, openerRef } = useOverlay(kind === 'sheet' ? 'SheetContent' : 'DialogContent')
+  const returnFocus = useCallback(
+    (e: Event) => {
+      e.preventDefault()
+      const target = triggerRef.current ?? openerRef.current
+      if (target?.isConnected) target.focus()
+    },
+    [triggerRef, openerRef],
+  )
+  if (!Impl) return null
+  return <Impl kind={kind} open={open} onOpenChange={setOpen} returnFocus={returnFocus} {...props} />
+}
+
+export function DialogContent(props: OverlayContentProps & { size?: keyof typeof dialogWidths }) {
+  return <OverlayContent kind="dialog" {...props} />
+}
+
+export function SheetContent(props: OverlayContentProps) {
+  return <OverlayContent kind="sheet" {...props} />
+}
+
+type ConfirmDialogProps<T> = {
+  trigger: ReactNode
+  title: ReactNode
+  /** One sentence stating the consequence (plan §3.1 #7). */
+  consequence: ReactNode
+  confirmLabel: string
+  pendingLabel: string
+  cancelLabel?: string
+  tone?: 'primary' | 'danger'
+  onConfirm: () => Promise<Result<T>>
+  onConfirmed?: (data: T) => void
+  /** Extra content between the sentence and the buttons, e.g. a reason field. */
+  children?: ReactNode
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}
+
+/**
+ * Confirmation for irreversible or outward-facing actions. Stays open while the action runs
+ * (and can't be dismissed mid-flight), shows failures inside the dialog, closes on success.
+ */
+export function ConfirmDialog<T>({
+  trigger,
+  title,
+  consequence,
+  confirmLabel,
+  pendingLabel,
+  cancelLabel = 'Cancel',
+  tone = 'primary',
+  onConfirm,
+  onConfirmed,
+  children,
+  open: controlledOpen,
+  onOpenChange,
+}: ConfirmDialogProps<T>) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const open = controlledOpen ?? uncontrolledOpen
+  const setOpen = (next: boolean) => {
+    onOpenChange?.(next)
+    if (controlledOpen === undefined) setUncontrolledOpen(next)
+  }
+  const { run, pending, error, reset } = useAction(onConfirm, {
+    errorToast: false,
+    onSuccess: (data) => {
+      setOpen(false)
+      onConfirmed?.(data)
+    },
+  })
+
   return (
-    <DialogPrimitive.Description
-      data-slot="dialog-description"
-      className={cn(
-        "text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
-        className
-      )}
-      {...props}
-    />
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (pending) return
+        if (!next) reset()
+        setOpen(next)
+      }}
+    >
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent
+        size="sm"
+        title={title}
+        description={consequence}
+        dismissible={!pending}
+        footer={
+          <>
+            <DialogClose asChild>
+              <Button variant="secondary" disabled={pending}>
+                {cancelLabel}
+              </Button>
+            </DialogClose>
+            <Button
+              variant={tone === 'danger' ? 'danger' : 'primary'}
+              data-action-button=""
+              loading={pending}
+              loadingLabel={pendingLabel}
+              onClick={() => void run(undefined)}
+            >
+              {confirmLabel}
+            </Button>
+          </>
+        }
+      >
+        {children || error ? (
+          <div className="grid gap-4">
+            {children}
+            {error ? (
+              <p role="alert" className="text-body text-danger">
+                {error.message}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </DialogContent>
+    </Dialog>
   )
-}
-
-export {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogOverlay,
-  DialogPortal,
-  DialogTitle,
-  DialogTrigger,
 }

@@ -1,205 +1,97 @@
-# Runbook
+# Running FTC Pitfund
 
-**Who this is for:** whoever is responsible for this app right now, whether or not they can
-code. If you inherited this project and have no idea what any of it is, start here and read
-top to bottom once. It is shorter than it looks.
+For whoever operates FTC Pitfund day to day. You don't need to write code. A few tasks need a terminal in this repository with `npm install` done and the team's `.env.provision` file (from the password manager) in the repository folder.
 
-**The single most useful thing in this document** is [Rollback](#rollback-when-something-just-broke).
-If the site is broken and you remember nothing else, remember that.
+- **Admin console:** `https://<your domain>/admin`. Sign in as an admin (Google or an email code).
+- **Support inbox:** ftcexodius@gmail.com. Companies and coaches write here, and the admin digest arrives here.
+- **Dashboards** (all owned by ftcexodius@gmail.com): [Vercel](https://vercel.com/dashboard) (site, logs), [Supabase](https://supabase.com/dashboard) (database, storage), [Resend](https://resend.com/emails) (email), [Sentry](https://sentry.io) (errors, if set up). The System page links to each.
 
----
+## Every day (about 10 minutes)
 
-## What this app is
+1. **Read the digest email.** "FTC Pitfund daily: …" arrives around 13:00 UTC (9 am Eastern) when something is waiting: pitches to review, companies to approve, new teams, reports.
+2. **Review pitches.** `/admin` → Pitches, oldest first. Open one and read the answers, the ask and the deck. Then:
+   - **Approve & send** if it's a real team with a finished pitch. The company gets it right away.
+   - **Send back** with a note saying exactly what to fix ("Answer question 2 with numbers").
+   - **Reject** only for spam, abuse or a team that doesn't exist. The team is told.
+   - Keyboard: `J` next, `K` previous, `A` approve, `S` send back, `R` reject.
+   - A pitch waiting more than a day is marked in orange. Try to keep the queue under that.
+3. **Approve companies.** `/admin` → Companies. Check the website is a real business that could sponsor a robotics team. Approve, or reject with a reason. Until approved, coaches can't see the company.
+4. **New teams.** `/admin` → Teams. "Found in FIRST records" means the number and name match FIRST. Verify teams that look right; the check mark shows on their public page.
+5. **Reports.** `/admin` → Reports. Open the team page. If the report is right (inappropriate photos, impersonation, spam), open the team and **Suspend**: its page disappears and its open pitches are withdrawn. Otherwise resolve the report. Reply to the reporter if they left an email.
+6. **Glance at System** (`/admin/system`). No orange banners means nothing needs you.
 
-Coaches of FIRST Tech Challenge robotics teams write sponsorship pitches. An admin reads every
-pitch before it goes anywhere. Approved pitches are emailed to a sponsor, who accepts (in full
-or for a smaller amount) or declines. When a sponsor accepts, both sides get an email with each
-other's contact details and **everything after that happens off the platform**.
+## What the System page means
 
-The app never touches money. It is an introduction service with a moderation queue.
+| You see | What it means | What to do |
+| --- | --- | --- |
+| **"The daily job hasn't run in over 36 hours"** | Vercel's cron didn't call the app: queued email, the digest, upload cleanup and the database keepalive stopped. | Vercel → project `ftc-pitfund` → Settings → Cron Jobs: make sure `/api/cron/daily` is listed and enabled. Open Logs, filter `/api/cron/daily`, look for errors. To run it by hand: `curl -H "Authorization: Bearer <CRON_SECRET from .env.provision>" https://<your domain>/api/cron/daily`. |
+| **"Some daily jobs need attention"** + a red job | One step (email, digest, cleanup, FIRST re-check, keepalive) failed last time. The detail says why. | Usually temporary (FIRST's API or Resend was down). If it's red two days in a row, send the error text to whoever maintains the code. |
+| **Emails in the last 24 h** is orange (≥70) or red (≥90) | Resend's free plan sends 100 emails a day. Sign-in codes always go first; digests and notices wait. | One busy day is fine: email is delayed, never lost. If it's **80 or more most days**, upgrade to Resend Pro ($20/month) in Resend → Billing. No code change is needed. |
+| **Queued email** has rows | Waiting to send, or retrying after a provider error (1, 2, 4, 8 minutes; 5 tries). | Nothing, unless a row is older than a day. **Send now** retries it; **Dismiss** drops it (the in-app notification was already delivered). |
+| **Failed and bounced** has rows | The email copy didn't arrive (bad address, full inbox, marked as spam). The in-app notification still did. | If it's a coach or company contact, email them from ftcexodius@gmail.com to fix the address. Dismiss when handled. |
+| **File storage** passes 800 MB of 1 GB | Decks, previews and logos. | Upgrade Supabase to Pro ($25/month), or ask a maintainer to move files to Cloudflare R2. Also watch **egress** (5 GB/month) on Supabase → Usage. |
+| **Database** passes 400 MB of 500 MB | Pitches, notifications, email log. | Upgrade Supabase to Pro ($25/month). |
 
----
+Vercel Hobby limits (1 million function calls, 4 CPU-hours a month) are far away; check Vercel → Usage once a month.
 
-## Where everything lives
+## Backups
 
-| Thing | Service | What breaks if it's down |
-|---|---|---|
-| The website | **Vercel** | Everything |
-| The database | **Supabase** | Everything |
-| Logins | **Clerk** | Nobody can sign in |
-| Email | **Resend** | Pitches stop reaching sponsors; nobody is told why |
-| Error alerts | **Sentry** | You stop finding out about problems |
-| The domain | **Vercel** (the app's own domain) | The app becomes unreachable |
-
-**The app has its own domain, bought through Vercel**, so its DNS is self-contained and there
-are no nameservers to move. `exodiusftc.com` is the team's **public website** (Netlify) and is
-unrelated to this app — changes here cannot affect it, and vice versa. That separation is
-deliberate: an earlier plan put the app on a subdomain of the team site, which coupled the two
-for no benefit.
-
-Credentials belong in the team password vault. If they are not there, fix that today.
-**`docs/LAUNCH-CHECKLIST.md` is the single launch document** — what to buy, how to cut over, and
-how to keep it running.
-
----
-
-## Rollback — when something just broke
-
-**This fixes about 90% of emergencies and takes 30 seconds.**
-
-1. Go to **Vercel → the project → Deployments**.
-2. Find the deployment from **before** things broke (they are listed newest first, with times).
-3. Click the `⋯` menu on that row → **Promote to Production**.
-4. Done. The site is back on the older version.
-
-You do not need to understand what broke to do this. Do it first, work out why afterwards.
-
-**When rollback will NOT help:** if a database change caused the problem, rolling back the
-website alone may not fix it. Symptoms: the site loads but pages are empty, or everything
-errors in the same way. See [Symptom → fix](#symptom--fix).
-
----
-
-## Deploying
-
-**Deploys are manual. Pushing to `main` does nothing.** There is no Git connection on the
-Vercel project — this surprises everyone, including people who have worked on this before.
+Supabase's free plan keeps **no backups**. Once a week (and before any risky change):
 
 ```bash
-vercel deploy --prod --yes
+npm run prod -- backup
 ```
 
-Before deploying, from the project folder:
+It writes `backups/<date>/database.dump` (everything, including accounts) and `storage-objects.json` (the list of stored files). **The dump contains personal data**: copy the folder to the team drive, then delete the local copy. To restore, give the dump to a maintainer (`pg_restore` into a new Supabase project).
+
+## Adding or removing an admin
+
+The person must sign in once first (so their account exists). Then:
 
 ```bash
-npm run typecheck && npm run lint && npm test && npm run build
+npm run prod -- admin new.person@example.com            # make admin
+npm run prod -- admin old.person@example.com --revoke   # remove admin
 ```
 
-If any of those fail, do not deploy. They take about a minute total.
+An admin can also do this in the app: `/admin/directory` → People → ⋯ → Make admin / Remove admin access. Every change is recorded. Keep at least two admins.
 
----
+## Rotating secrets
 
-## Applying a database change (a "migration")
+Rotate a secret when someone with access leaves, or if it may have leaked.
 
-Migration files live in `supabase/migrations/`, numbered in order. To apply one:
+| Secret | How |
+| --- | --- |
+| **Supabase access, Vercel, Resend or Sentry tokens** (used only by `npm run provision`) | Revoke the old token in that service's dashboard, create a new one, paste it into `.env.provision`, then `npm run provision:check`. |
+| **CRON_SECRET** | Delete the `CRON_SECRET=` line from `.env.provision`, then `npm run provision:vercel` (makes a new one, updates Vercel, redeploys). |
+| **Send Email hook secret** | Delete `SUPABASE_PRODUCTION_SEND_EMAIL_HOOK_SECRET=` (and the staging one) from `.env.provision`, then `npm run provision:supabase -- --auth-only` and `npm run provision:vercel`. Sign-in codes may fail for a minute while the two sides update. |
+| **Resend sending key** | Resend → API Keys: revoke `ftc-pitfund-app`. Delete `RESEND_SENDING_KEY=` from `.env.provision`, then `npm run provision:resend`. |
+| **Supabase secret key** | Supabase → Project Settings → API Keys: create a new secret key, delete the old one. Delete `SUPABASE_PRODUCTION_SECRET_KEY=` from `.env.provision`, then `npm run provision:supabase` and `npm run provision:vercel`. |
+| **Database password** | Supabase → Project Settings → Database → Reset password. Put it in `.env.provision` as `SUPABASE_PRODUCTION_DB_PASSWORD`, delete the two `…DATABASE_URL=` lines, then `npm run provision:supabase` and `npm run provision:vercel`. |
+| **Google OAuth client secret** | Google Cloud → Clients → FTC Pitfund → add a new secret. Paste it as `GOOGLE_CLIENT_SECRET`, run `npm run provision:supabase -- --auth-only`, then disable the old secret. |
 
-```bash
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/0111_strip_post_match_pipeline.sql
-```
+After any rotation: `npm run provision:verify`.
 
-**Use `psql -f`. Do not use the Supabase CLI for this.** The CLI splits SQL files incorrectly
-and fails on any file that defines more than one function, with a confusing error about
-"prepared statements". This has bitten this project repeatedly.
+## Handing over to a new captain
 
-Migrations are written to be safe to run twice. If you are unsure whether one was applied, just
-run it again.
+1. Change the ftcexodius@gmail.com password and 2-step verification to the new owner's phone; update the password manager.
+2. GitHub: make the new captain an **Owner** of the `ExodiusFTC` org; remove graduates.
+3. Supabase org, Resend team, Sentry: invite the new captain; remove graduates.
+4. Make them an admin (above); revoke graduates' admin access.
+5. Rotate the tokens in `.env.provision` (above) and give them the file through the password manager.
+6. Walk through this runbook together once.
 
-**`DATABASE_URL` is in `.env.local`.** `psql` is at `/opt/homebrew/opt/libpq/bin/psql` on a Mac
-with Homebrew.
+## When something goes wrong
 
-**If `psql` hangs with `timeout expired`, the network is blocking outbound port 5432** — common
-on school, corporate and some home ISP networks. It is not a Supabase outage: the website keeps
-working, because the app reaches Supabase over HTTPS, not 5432. **Use the Supabase dashboard's
-SQL editor instead**, or switch networks (a phone hotspot usually works).
+**Sign-in codes don't arrive.** Check spam. Resend → Emails: look for the address. If nothing was sent, check Supabase → Authentication → Hooks (the Send Email hook must point at `https://<your domain>/api/auth/send-email`), then run `npm run provision:supabase -- --auth-only`. Google sign-in still works meanwhile.
 
----
+**Emails stopped.** System page: if the 24-hour count is at 100, email is delayed until the window frees up (sign-in codes still go). Resend → Domains must show **Verified**; if DNS records were changed, re-add the records from `npm run provision:resend`. Resend → Emails shows provider errors.
 
-## Adding an admin
+**The site is down or says it can't reach the database.** Open `https://<your domain>/api/health`. If the database is `down`: Supabase → the `ftc-pitfund` project. A free project **pauses after a week without activity** (the daily job normally prevents this). Click **Restore project**, wait a few minutes, check `/api/health` again, then fix the daily job (System page). If Vercel itself is down, see [vercel-status.com](https://www.vercel-status.com).
 
-Admins are the people who read and approve pitches. There is no UI for promoting someone —
-deliberately, because it is the highest-privilege action in the app.
+**A deploy broke something.** Vercel → project → Deployments → pick the last good one → ⋯ → **Promote to Production**. That's instant. Then tell a maintainer.
 
-1. Have the person sign up normally on the site.
-2. Then run:
+**A report about a team or a person.** Suspend first if it involves photos of students or anything unsafe (the page disappears immediately), then investigate. For a person: `/admin/directory` → People → ⋯ → Suspend.
 
-```sql
-UPDATE profiles SET role = 'admin' WHERE email = 'their-email@example.com';
-```
+**Someone can't sign in.** Ask which email they use. `/admin/directory` → People: check they exist and aren't suspended. A 6-digit code expires in 10 minutes, and only the latest email's code works.
 
-Run it from the Supabase dashboard's SQL editor, or via `psql` as above.
-
-Confirm it worked: they should see admin navigation on the left after signing out and back in.
-
----
-
-## THE CRON JOB IS ALSO THE DATABASE KEEPALIVE — NEVER DISABLE IT
-
-`vercel.json` schedules two jobs:
-
-| Job | Time (UTC) | What it does |
-|---|---|---|
-| `/api/cron/expire-submissions` | 02:00 | Expires stale pitches, releases the capacity they were holding, purges coach ID photos past retention |
-| `/api/cron/daily-maintenance` | 04:00 | Refreshes FIRST team data and rebuilds impact stats |
-
-**The 02:00 job is load-bearing for a second, non-obvious reason.** Supabase pauses free
-projects with no database traffic for 7 days. This job's daily database hit is what keeps the
-project alive. **If it stops running, the entire site goes down a week later**, and the failure
-is completely silent — no error, no alert, just a dead site the following Tuesday.
-
-If you ever need to disable it, set up something else that touches the database daily first.
-
-**Vercel Hobby only runs 2 scheduled jobs.** Extra entries in `vercel.json` are *silently
-ignored* — this is how three jobs sat dead in production for months. That is why
-`daily-maintenance` is a wrapper that calls several jobs in sequence. **A new scheduled job goes
-inside that wrapper, not into `vercel.json`**, unless the project is on Vercel Pro.
-
----
-
-## Symptom → fix
-
-| What you see | Most likely cause | What to do |
-|---|---|---|
-| **Site is completely down** | Bad deploy | [Rollback](#rollback-when-something-just-broke) |
-| **Site down, and it had been fine for days** | Supabase paused the project | Supabase dashboard → un-pause. Then check the 02:00 cron is running |
-| **Every page loads but is empty; no errors** | Clerk is no longer registered with Supabase as an auth provider | Supabase dashboard → Authentication → third-party auth. Re-add Clerk. This looks like a data bug and is a config bug |
-| **Nobody can sign in** | Clerk keys wrong or expired | Vercel → Settings → Environment Variables. Check `CLERK_SECRET_KEY` and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` |
-| **Emails stopped sending** | Resend limit or unverified domain | Resend dashboard. Free tier is 3,000/month and **100/day** — the daily cap is the one that bites |
-| **Sponsors say pitch links are broken (404)** | `NEXT_PUBLIC_APP_URL` doesn't match the real domain | Vercel → env vars. Every emailed link is built from this |
-| **A sponsor is stuck "at capacity" but shouldn't be** | A dead match still holding their cap | `/admin/capacity` → find the match → **Void match**. Never edit the number in the database by hand |
-| **The site is slow on first load** | Cold start on an idle project | Normal. An uptime monitor pinging every 5 minutes keeps it warm |
-| **`psql` times out but the website is fine** | Your network blocks outbound port 5432 | Not an outage. Use the Supabase dashboard SQL editor, or a phone hotspot |
-
----
-
-## Monthly, five minutes
-
-- Open **Sentry**. Any new errors?
-- Open **`/admin/capacity`**. It should say zero drift. If it doesn't, that means the money
-  numbers disagree with each other — do not fix it by editing numbers; ask someone technical.
-- Check the domain hasn't drifted toward expiry and the card on file is still valid.
-
-## Yearly
-
-- `lib/site-config.ts` has a `CURRENT_SEASON` value that must be bumped each FTC season.
-- Confirm the domain auto-renewed.
-- Confirm whoever is named as the adult owner is still involved with the team.
-
----
-
-## If nobody on the team can code
-
-**Then do nothing, and that is a legitimate strategy.** A correctly configured app that nobody
-touches keeps running for years. The things that will actually kill it are, in order:
-
-1. The domain expiring. (It is shared with the team website, so this kills both at once.)
-2. Everyone losing access because the accounts were in one student's name.
-3. The 02:00 cron being disabled or its secret rotated, and Supabase pausing a week later.
-4. A dead payment card.
-
-None of those require a programmer to prevent. All four are covered in Part C of
-`docs/LAUNCH-CHECKLIST.md`.
-
-**Do not accept automated dependency-update pull requests** if nobody can evaluate them.
-Merging one can break the build. The version running today will keep serving indefinitely.
-
----
-
-## For a developer picking this up
-
-- Read `CLAUDE.md` first, then `.claude/rules/`. They cover architecture, the auth model, and
-  the conventions every server action follows.
-- `docs/GO-LIVE-AND-HANDOFF.md` has the longer operational and succession detail.
-- The one rule that has caused real incidents more than once: **when changing a Postgres
-  function, dump the live body first** (`pg_get_functiondef`) and edit that. Never rebuild it
-  from an old migration file — later fixes live only in the live body, and rebuilding silently
-  deletes them.
+**Someone wants their data deleted.** They can delete their account at `/account`. If they can't sign in, suspend them and ask a maintainer to delete the account in Supabase → Authentication → Users (their memberships and notifications go with it).

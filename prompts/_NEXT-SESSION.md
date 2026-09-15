@@ -1,179 +1,93 @@
 # Next session
 
-> **2026-09-13: SUPERSEDED. A full v2 rebuild was planned and approved.** Do not follow the
-> v1 guidance below ("don't change the stack", "don't strip features", "Vercel Pro is required";
-> all reversed). Start with **`prompts/rebuild/01-foundation.md`** in a fresh session; the plan
-> is `prompts/rebuild/00-REBUILD-PLAN.md`. Prompt 1 rewrites this file. Team email is
-> **ftcexodius@gmail.com** (exodiusftc@gmail.com is stale).
+**Updated 2026-09-15. v2 is complete: prompts 1–4 are done and `rebuild` is merged into `main`.**
+**Next: follow [`docs/LAUNCH.md`](../docs/LAUNCH.md)** (the human steps: accounts, tokens, domain, Google OAuth,
+DNS, then `npm run provision` and `npm run provision:verify`). Nothing is deployed yet, and v1 production is untouched.
+Team email: **ftcexodius@gmail.com**.
 
-**Rewritten 2026-08-26.** This file is the live handoff. Read it before anything else.
+## Where things are
 
----
+- **Launch:** `docs/LAUNCH.md` (human steps only) · `scripts/provision/*` (`npm run provision`, idempotent,
+  `--dry-run`, refuses v1 resources by id; secrets in the gitignored `.env.provision`, template `.env.provision.example`).
+- **Operate:** `docs/RUNBOOK.md` · `npm run prod -- backup|admin …` runs ops against the hosted database.
+- **Proof:** `docs/QA-REPORT.md` maps every plan §12 criterion to the command, test or screenshot that proves it.
+- **Design source of truth:** `prompts/rebuild/00-REBUILD-PLAN.md` (history: `prompts/rebuild/01–04`).
+- **Conventions:** `CLAUDE.md`, `.claude/rules/{architecture,data-and-auth,ux-contract,testing-and-qa}.md`.
 
-## Where the project stands
+## What prompt 4 added
 
-**The application is finished.** No feature work is outstanding. Verified 2026-08-26:
-typecheck **0 errors**, **591/591** unit tests passing, lint **0 errors** (194 `any` warnings),
-production build green, `knip` reporting **no dead files and no unused dependencies**, every
-production deployment `Ready`, live health `{"ok":true,"service":"up","db":"ok"}`.
+- Final landing page (static; real screenshots from `npm run screenshots:marketing`; session-aware top bar island;
+  "I coach a team" / "I represent a company" carry `?intent` through email-code and Google sign-in to preselect `/welcome`).
+- v2 Terms and Privacy (plain-language drafts, marked for legal review), sitemap, robots, share cards (`lib/server/og.tsx`),
+  apple icon. New companies land on `/company` after sign-up (profile + questions is what approval waits on).
+- Performance: every route ≤170 KB first-load JS (largest `/company` 166 KB), Lighthouse mobile 99–100 perf /
+  100 a11y, LCP ≤2 s, ≤5 queries per authed list/review page. See the "First-load JS" section of `architecture.md`.
+- Gates: `npm run perf`, `qa:clicks`, `security:scan`, `email:preview`, `knip` (zero), `tests/unit/authz-coverage.test.ts`,
+  `tests/unit/cn.test.ts`, `tests/e2e/{acceptance,intent,fault-injection,keyboard-journeys,mobile}.spec.ts`, QA `empty` scenario.
+  CI runs them all. CSS is inlined into the HTML and images are AVIF (`next.config.ts`).
 
-**The product is a matchmaker.** Coach pitches → admin moderates → sponsor accepts, in full or
-for a smaller amount → both sides get each other's contact details → everything after that
-happens off-platform. The platform never touches money and tracks nothing after acceptance.
+## Things the next agent must know
 
-Migration `0111_strip_post_match_pipeline.sql` removed the e-signature layer, the payment state
-machine, W-9/payout profiles, tax receipts and recognition tiers. **This reversed two decisions
-previously recorded as locked** ("e-sign is in-house", "pledge-and-track"). `prompts/revamp/05-*`
-and `06-*` describe removed layers and are history, not a spec.
+- **Cache Components is on.** Runtime data (`cookies`, DB) must sit under Suspense (`loading.tsx` works).
+  The `(app)` and `admin` layouts set `export const instant = false` because they redirect signed-out users.
+  Route handlers touching the DB call `connection()`. Hidden routes stay mounted (React Activity): going
+  back to a form keeps its state — tests must not assume a reset.
+- In **production**, primary nav links are fully prefetched (navigation is instant; no skeleton). In
+  `next dev` there is no prefetch. Test loading skeletons against the production server (`:3100`).
+- **`server-only` throws outside Next.** Scripts run with `--import ./scripts/lib/server-only-stub.mjs`
+  (package.json does this); Vitest aliases it; drizzle-kit runs with the stub via `NODE_OPTIONS`.
+- **Action shape:** `defineAction` → guard → `inTransaction(data + audit + notify + enqueueEmail)` →
+  `after(drainOutbox)` → revalidate → Result. `lib/server/transaction.ts` exists so actions never import the DB.
+- **Supabase says `otp_expired` for wrong and expired codes alike**; the login page decides by time since
+  sending. Local `max_frequency` is 5 s (the page's resend countdown is 30 s). A browser fake clock does not
+  move Supabase's clock; E2E waits real seconds where that matters.
+- **Local email:** SMTP to Mailpit on `127.0.0.1:54325`, UI on `:54324`. The Send Email hook calls
+  `host.docker.internal:3000`, so login emails only work with the dev server on port 3000.
+- Auth sign-in codes are sent synchronously and **fail instead of deferring** when the quota is gone (a late
+  code is useless); their payload is scrubbed from the outbox after sending.
+- `/api/dev/sign-in` and `/dev/*` are prerendered as 404 in production builds (E2E asserts it).
+- QA signs personas in without the UI by minting a magic-link token with the local secret key
+  (`tests/support/session.ts`); E2E uses `/api/dev/sign-in`. Cookies are per host, not per port, so both
+  servers share sessions.
+- Supabase CLI is a devDependency (2.117). Its config section is `[local_smtp]` (was `[inbucket]`). `setup`
+  restarts the stack if the running auth container has a different hook secret (another checkout started it).
+- The overflow check in QA measures text runs, not `scrollWidth`; a `pre-wrap` hanging space is ignored.
+  If QA flags overflow, it is real: add `min-w-0` to the grid/flex child (Tabs got this; see `components/ui/tabs.tsx`).
+- Seeded logos and thumbnails are PNG (the plan says WebP for uploads; prompt 2's upload path produces WebP).
+- **Status codes and `notFound()`.** Under a Suspense boundary (a `loading.tsx` counts) the response has
+  already streamed as 200, so workspace pages render the 404 UI with status 200. In a production build every
+  dynamic route streams its static shell first, so even `/t/[number]` (no `loading.tsx`, `instant = false`)
+  is a **soft 404 in production** (200 + 404 UI + `noindex`) and a real 404 only in `next dev`. A real
+  production 404 would need a DB lookup in `proxy.ts` (Next's documented route), which the plan keeps
+  session-only. E2E asserts both behaviors. The root layout sets no default `robots` tag, so the injected
+  `noindex` never competes with `index, follow`.
+- **Tag expiry has one-second resolution.** An entry cached in the same second as `revalidateTag(tag,
+  { expire: 0 })` can survive it; tests wait 1 s after warming a page before expiring.
+- **pdf.js 6:** `PDFDocumentProxy` has no `destroy()`; `openPdf()` in `lib/client/pdf.ts` returns a document
+  whose `destroy` calls the loading task's.
+- **Supabase Storage bucket named `public`:** `storage.from('public').download()` hits the public-object route
+  and fails ("Bucket not found"); read public objects over HTTP (`publicUrl()`). Overwriting a signed upload
+  path is a 409; cross-bucket `move` works; staging refuses `text/html`.
+- Running `npm run build` while `npm run dev` is up rewrites `.next` and can reload the dev server mid-test;
+  one E2E run failed that way (a blank page) and passed on rerun. Don't build during an E2E run.
+- E2E that uses a file input waits for hydration (`waitUntil: 'networkidle'`) — an early `setInputFiles`
+  is silently lost.
 
-**Everything remaining is accounts, DNS and dashboards**, in **`docs/LAUNCH-CHECKLIST.md`** —
-the SINGLE launch doc. `GO-LIVE-CUTOVER.md` and `PURCHASE-CHECKLIST.md` were folded into it and
-deleted on 2026-08-26, because three documents that could disagree with each other was itself
-the problem. It is structured Part A (test now) / Part B (purchase day) / Part C (ongoing) — not
-numbered sections; older references to "§3" or "§6" are stale.
 
----
+## Learned in prompt 4
 
-## The domain question — read this before saying anything about DNS
-
-**The app gets its OWN domain.** `pitfund.org` was the pick ($8.49/yr, `pitfund.com` is taken).
-
-**`exodiusftc.com` is the team's WEBSITE and is NOT the app's domain.** A previous session
-inferred the opposite from `RESEND_FROM_EMAIL=noreply@exodiusftc.com` and built an entire launch
-plan on it — subdomain, DNS records, a "$0 launch". All of it was wrong and had to be undone.
-**A config value shows what the app is wired to, not what the team intends.** Ask.
-
-**Vercel Pro is required by Vercel's terms**, not by capacity: their fair-use policy restricts
-Hobby to "non-commercial personal use" and explicitly lists **"Asking for Donations"** as
-commercial. $20/mo flat, one deploying seat, **free unlimited viewer seats**.
-
-Staying on **Supabase Free** and **Clerk Free** and **Resend Free** — deliberate, cost-driven,
-with the limits documented in Part C.
-
----
-
-## Start here — check state before doing anything
-
-The right work depends entirely on what Anish has done manually since 2026-08-26. **Do not
-assume.**
-
-```bash
-git log --oneline -1 && git branch --show-current
-git fetch origin --quiet   # ALWAYS fetch first; the count below reads a local cache
-git rev-list --count origin/main..HEAD    # 0 = main is in sync and deployable
-curl -s https://ftc-sponsorship-portal.vercel.app/api/health
-curl -s https://ftc-sponsorship-portal.vercel.app/login | grep -o 'pk_test_[A-Za-z0-9]*\|pk_live_[A-Za-z0-9]*'
-npm run verify:all
-```
-
-Once a domain exists, substitute it here (one record type per `dig` query — see the traps below):
-
-```bash
-dig +short <the-app-domain> CNAME
-dig +short _dmarc.<the-app-domain> TXT
-```
-
-| Finding | Do this |
-|---|---|
-| `git rev-list` is **non-zero** | Work diverged. Fetch first, then reconcile — `main` must stay at or ahead of `0111` to be deployable |
-| Still serving `pk_test_` | The Clerk production instance does not exist yet. It is the last real launch blocker, and it cannot be created before the domain is bought |
-| `pk_live_` is being served | Cutover happened. Run Part B7 verification and help debug whatever broke |
-| `verify:all` shows a **new** failure | Something regressed. Investigate that before anything else |
-| DB checks all SKIP | Almost certainly a network blocking outbound **port 5432**, not an outage. The skip message says so |
-
----
-
-## Testing accounts exist and deliver real email
-
-Nine seeded accounts, all aliases of **anish.yarrakonda456@gmail.com**, listed with passwords in
-Part A1 of the launch checklist. Four of them are the **same sponsor company** at different
-permission ranks (`org_admin` / `approver` / `submitter` / `viewer`) — that is the sponsor
-multi-user feature, and it is testable.
-
-Re-seed with:
-
-```bash
-I_UNDERSTAND_THIS_IS_PRODUCTION=1 \
-TEST_EMAIL_BASE=anish.yarrakonda456@gmail.com \
-node scripts/seed-test-accounts.mjs
-```
-
-Without `TEST_EMAIL_BASE` it reverts to `+clerk_test@example.com` addresses, which is what the
-automated tests need — **but `example.com` is RFC-2606 reserved and receives no mail**, so no
-email flow can be observed in that mode. That gap is why manual QA was impossible until now.
-
----
-
-## Things that will bite you
-
-Every one of these has caused a real incident here.
-
-- **Never judge a Postgres function by the migration that created it.** Dump the live body with
-  `pg_get_functiondef` first. Reading `0084` alone said `detect_capacity_drift()` was unaffected
-  by `0111`; the live body had a third term from `0095` that would have thrown on every call,
-  **silently disabling the Capacity Integrity check.** The live
-  `sponsor_decide_submission_atomic` likewise carries an `is_trusted_server_context()` branch
-  from `0101` (a P0 tenant-takeover fix) absent from `0100`.
-- **`DROP FUNCTION IF EXISTS` matches on the argument list.** Wrong arity is a silent no-op.
-  Find functions via `pg_proc`, never by name pattern.
-- **`CREATE OR REPLACE` does not preserve REVOKE/GRANT.** Re-issue them every time.
-- **Apply migrations with `psql -f`, never the Supabase CLI** — its splitter mishandles files
-  defining multiple `$$`-quoted functions.
-- **`dig` takes one record type per query.** `dig name TXT CNAME A` treats the extras as
-  hostnames and returns misleading results. On 2026-08-25 this produced a confident, wrong
-  claim that production email was broken. It was fine.
-- **A 200 is not proof a page rendered** — error boundaries return 200. Check the browser console.
-- **`git add -A` silently skips ignored paths and still exits 0.** `/docs/*` is ignored with an
-  `!` allowlist; four handoff docs sat untracked across two sessions while three commit messages
-  claimed to have shipped them. After committing a NEW file, run `git ls-files <path>` to prove
-  it landed.
-- **`git rev-list --count origin/main..HEAD` reads a local cache, not GitHub.** Straight after a
-  push it reported a 23-commit gap that did not exist. **`git fetch` first, every time.**
-- **`DATABASE_URL` in `.env.local` points at PRODUCTION.** The seeder now refuses a hosted target
-  without `I_UNDERSTAND_THIS_IS_PRODUCTION=1` and prints the rows it will delete — but the
-  variable still points at production, so think before setting it.
-- **A check that always skips is worse than no check.** Eight E2E suites sat green-by-skipping
-  for months. Gate on what the suite needs, and never trust a skip's stated reason.
-- **Vercel Hobby runs only 2 cron entries** and silently ignores extras. New jobs go inside the
-  `daily-maintenance` dispatcher, not `vercel.json`. **This cap lifts on Pro** — once Pro is
-  bought, splitting them back out is safe.
-- **Deploys are manual.** Pushing to `main` deploys nothing. `vercel deploy --prod --yes`.
-
----
-
-## What NOT to do
-
-- **Do not strip more features.** `appeals.ts` (789 lines), messaging, and sponsor organisations
-  were built against zero traffic and look like deletion candidates. Leave them. Tested code
-  nobody visits costs ~nothing; another destructive migration has real risk, and `0111` nearly
-  disabled the capacity check. Anish confirmed this scope on 2026-08-26: **provably-dead code
-  only**, which has now been done — knip reports zero unused files and zero unused dependencies.
-- **Do not change the stack.** Vercel + Supabase + Clerk + Resend is right for this scale and for
-  handing to a non-programmer. Analysed in full; do not relitigate.
-- **Do not reintroduce** MFA, rate limiting / Upstash, e-signatures, payment tracking, W-9s,
-  receipts, or recognition tiers. All deliberately removed.
-- **Do not run another audit pass.** All 102 findings from the 16-prompt Gemini pack are closed.
-  `prompts/audits/` is history, not a queue, and there is no Gemini subagent here. **The app has
-  been audited far more than it has been used** — the remaining value is in Anish walking the
-  flows by hand, not in another sweep. Run `npm run verify:all` instead.
-- **Do not delete from `transactions_ledger`.** Append-only; a reversal is a compensating
-  negative row via `void_match_atomic`. The single exception is the pre-launch fixture wipe in
-  Part B6, which is explicitly scoped.
-- **Do not refactor the landing page to be static.** It would cut a one-time ~2.3s cold start,
-  but requires moving auth redirects into middleware — the most breakage-prone area here.
-  UptimeRobot solves it for free. Warm TTFB is already 0.09–0.29s across every route.
-
----
-
-## If Anish asks "what's left?"
-
-Answer from `docs/LAUNCH-CHECKLIST.md`:
-
-1. **Part A** — walk the 13 test flows. Free, needs no card, and is the highest-value
-   verification left.
-2. **Part B** — buy Vercel Pro ($20/mo) and the domain (~$9), then the Clerk production
-   instance. Clerk is dashboard-only with no API, and **dev-instance users cannot be migrated**,
-   so it must precede the first real signup.
-3. **Part C** — UptimeRobot, FIRST API credentials, the Resend complaint webhook.
-
-The meeting where the card appears is ~2 weeks out from 2026-08-26.
+- **First-load JS is mostly the framework** (~145 KB of React + Next). Radix, Sonner, pdf.js and tailwind-merge each
+  cost 8–25 KB; they now load on first use or were replaced. Turbopack ships whole modules, so split big client modules.
+- **Lighthouse's default (simulated) throttling is unreliable on a local server**: it extrapolates from an unthrottled
+  ~100 ms trace, and LCP swings ±500 ms with the order of events. `npm run perf` uses applied Slow 4G throttling. Still keep
+  the LCP element in the static shell, give its image `fetchPriority="high"`, and don't preload the web font.
+- **A Suspense fallback that renders the same client form gets replaced when the stream arrives**, wiping typed input.
+  Read search params in the browser (`useSyncExternalStore`) and keep one instance.
+- **A server component can't render `Button` without `asChild`**: it attaches an onClick, and the page errors with
+  "Event handlers cannot be passed to Client Component props". Use `buttonVariants()` on a plain element.
+- **Dialogs opened without a trigger** return focus to whatever was focused when they opened (`openerRef` in `dialog.tsx`).
+- **Lazily loaded toast code must be fetched before the network drops**: `<Toaster>` prefetches at idle.
+- **next/image and local Supabase:** the optimizer refuses 127.0.0.1 unless `dangerouslyAllowLocalIP`; it is on only
+  when Supabase itself is local.
+- `npm run perf` measures bundles as gzip -9 of the scripts the HTML references; counting requests before `load` picks up
+  link prefetches whenever an image delays the load event.

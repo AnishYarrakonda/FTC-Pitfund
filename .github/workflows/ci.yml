@@ -1,18 +1,15 @@
 name: CI
 
-# F-14 (_AUDIT-11-18.md). Before this workflow existed, `npm run lint` and `npm run test`
-# were only ever run by hand, and a lint break sat red on main until someone measured it.
-#
-# The four checks below are the same gate .claude/rules/workflows.md already requires
-# before a push, run by a machine instead of by memory.
-#
-# NOT here on purpose: the Playwright suite. Every spec is gated behind SUPABASE_LOCAL and
-# needs the Docker Supabase stack plus Clerk test credentials; running it here would need
-# real secrets and would be flaky, which is worse than not running it.
+# typecheck · lint → local Supabase (start, migrate, seed) → unit/integration tests → build
+#   → E2E → QA gate (every scenario project in playwright.qa.config.ts) → perf budgets → knip.
+# Everything runs against the throwaway local stack inside the runner; no secrets are needed.
+# `npm run setup` writes .env.local and supabase/.env; every later step reads them from disk.
+# Once the build succeeds, E2E, QA, perf and knip each run even if an earlier one failed, so a
+# single run reports every broken gate (the job still fails).
 
 on:
   push:
-    branches: ['**']
+    branches: [main, rebuild]
   pull_request:
 
 concurrency:
@@ -20,47 +17,118 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  gate:
-    name: typecheck · lint · test · build
+  ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    # Placeholders, not secrets. lib/env.ts warns instead of throwing during
-    # NEXT_PHASE=phase-production-build, but the Clerk and Supabase SDKs parse their keys at
-    # import time during static rendering, so the shape has to be valid even though the
-    # values are inert. Nothing here reaches a network: no page rendered at build time makes
-    # an authenticated call, and these credentials authenticate nothing if one did.
+    timeout-minutes: 90
     env:
       NEXT_TELEMETRY_DISABLED: '1'
-      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
-      SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-key
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZXhhbXBsZS5jbGVyay5hY2NvdW50cy5kZXYk
-      CLERK_SECRET_KEY: sk_test_ci_placeholder
-      NEXT_PUBLIC_APP_URL: https://example.com
-      RESEND_API_KEY: re_ci_placeholder
-      RESEND_FROM_EMAIL: noreply@example.com
-      PAYOUT_ENCRYPTION_KEY: ci_placeholder_payout_encryption_key_32
-      CRON_SECRET: ci-placeholder-cron-secret
-
+      CI: 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '24'
           cache: npm
 
-      # `npm ci` and not `npm install`: the jsdom/cssstyle `overrides` in package.json fix a
-      # runtime ERR_REQUIRE_ESM in the serverless bundle, and only the lockfile pins them.
-      - run: npm ci
+      - name: Install
+        run: npm ci
 
-      - run: npm run typecheck
+      - name: Typecheck
+        run: npm run typecheck
 
-      # eslint exits non-zero on errors only; the ~340 warnings do not fail the build. Do
-      # not add --max-warnings here without first driving that number down.
-      - run: npm run lint
+      - name: Lint
+        run: npm run lint
 
-      - run: npm run test
+      - name: Local Supabase, migrations and demo seed
+        run: npm run setup
 
-      - run: npm run build
+      - name: Unit and integration tests
+        run: npm run test
+
+      - name: Cache Next build
+        uses: actions/cache@v6
+        with:
+          path: .next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('app/**', 'components/**', 'lib/**') }}
+          restore-keys: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
+      - name: Build
+        id: build
+        run: npm run build
+
+      - name: Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      # Skips the download when the cached browser matches; always installs the system libraries.
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E
+        id: e2e
+        run: npm run e2e
+
+      # Reseeds per scenario: demo, then edge, then empty.
+      - name: QA gate
+        id: qa
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npm run qa
+
+      - name: Performance budgets
+        id: perf
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npm run perf
+
+      - name: Security scan (build secrets, anon REST, /dev in production, non-goals)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npm run security:scan
+
+      - name: Production dependency audit (high and critical)
+        if: ${{ !cancelled() }}
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Unused files, exports and dependencies
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npm run knip
+
+      - name: Upload QA report and perf results
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: qa-report
+          path: |
+            qa/report.md
+            qa/report.json
+            qa/results
+            qa/perf
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # Large: only when QA fails. PNGs are already compressed, so skip re-zipping them.
+      - name: Upload QA screenshots
+        if: ${{ !cancelled() && steps.qa.outcome == 'failure' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: qa-screens
+          path: qa/screens
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 7

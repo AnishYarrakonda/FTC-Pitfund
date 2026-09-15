@@ -167,6 +167,11 @@ hard cap, so email must be queued and quota-aware and must never fail silently).
 ### F. Design system and app shell
 
 - Tokens exactly per plan §7 in `app/globals.css` (`@theme`). Inter via `next/font`. Global user-content wrapping rules (plan §3.1 #11).
+- Treat the shell and every foundation screen as a complete visual rebuild. The current v1 UI
+  is not a reference implementation: no legacy layout, color, card treatment, spacing shortcut,
+  or placeholder visual should survive unless it independently meets plan §7. The result must
+  read as light, white, calm, precise, and premium at first glance, with hierarchy driven by type
+  and spacing rather than decorative containers.
 - `components/ui`: every component listed in plan §7 "Components", built on Radix + shadcn
   patterns, including **ActionButton** (useTransition/useActionState, pending within the same
   frame, `aria-busy`, double-submit safe), **Dialog/Sheet/ConfirmDialog** following the overlay system,

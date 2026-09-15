@@ -1,19 +1,26 @@
 import Link from 'next/link'
+
+import { Wordmark } from '@/components/app/wordmark'
 import { buttonVariants } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 
 export default function NotFound() {
   return (
-    <div className="container mx-auto max-w-md py-24 text-center">
-      <p className="text-6xl font-bold text-muted-foreground">404</p>
-      <h1 className="mt-4 text-2xl font-semibold">Page not found</h1>
-      <p className="mt-2 text-muted-foreground">
-        The page you&apos;re looking for doesn&apos;t exist or you don&apos;t have access.
-      </p>
-      <div className="mt-6 flex justify-center gap-3">
-        <Link href="/" className={cn(buttonVariants())}>Go home</Link>
-        <Link href="/dashboard" className={cn(buttonVariants({ variant: 'outline' }))}>Dashboard</Link>
-      </div>
+    <div className="flex min-h-dvh flex-col">
+      <header className="mx-auto flex h-14 w-full max-w-app items-center px-4 sm:px-6 lg:px-8">
+        <Wordmark />
+      </header>
+      <main id="main" className="mx-auto flex w-full max-w-form flex-1 flex-col justify-center gap-5 px-4 pb-24 sm:px-6">
+        <p className="text-small font-medium text-text-tertiary tabular">404</p>
+        <div className="grid gap-2">
+          <h1 className="text-h1 font-semibold tracking-tighter text-text">We couldn&apos;t find that page</h1>
+          <p className="text-lead text-text-secondary">It may have moved, or you may not have access to it.</p>
+        </div>
+        <div>
+          <Link href="/" className={buttonVariants()}>
+            Go to FTC Pitfund
+          </Link>
+        </div>
+      </main>
     </div>
   )
 }

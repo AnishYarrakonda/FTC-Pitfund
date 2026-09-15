@@ -1,53 +1,86 @@
-# Architecture
+# Architecture (v2)
 
-## Stack
-- **Next.js 16.2** App Router, **React 19**, **Tailwind v4**, **shadcn/ui** (Radix + base-ui).
-  - Next 15+ has breaking changes vs older docs. When unsure of an API, consult `node_modules/next/dist/docs/`.
-- **Clerk** (`@clerk/nextjs`) — auth provider: sessions, email verification, password reset, password policy.
-- **Supabase** — Postgres + Storage (no Supabase Auth). Supabase trusts Clerk via native third-party auth; security enforced primarily by database **RLS**, which reads the Clerk user id from `auth.jwt()->>'sub'`.
-- **Backend** — Server Actions for all mutations (`app/actions/*`), validated with **Zod** (`lib/schemas/*`).
-- **Email** — Resend + React Email (`emails/*`).
-- **Errors** — Sentry (`instrumentation*.ts`).
+Source of truth: `prompts/rebuild/00-REBUILD-PLAN.md` §5. This file is the short version.
 
-## Directory map
-- `app/(account|admin|auth|coach|public|sponsor)/` — route groups by audience (the parens are not in the URL).
-- `app/actions/*.ts` — server actions: `account`, `admin`, `auth`, `moderation`, `notifications`, `sponsor-decision`, `sponsor`, `submission`, `team`.
-- `app/api/*` — route handlers (return JSON; never redirected to `/login`). Current routes:
-  - `admin/export` — CSV/data export (admin-only)
-  - `admin/queue/count` — moderation queue badge count
-  - `coach/notifications/unread` — unread notification count (coach)
-  - `cron/expire-submissions` — **scheduled** daily at 02:00 UTC (`vercel.json`); marks stale submissions expired, releases their reserved sponsor capacity, and sweeps gov-ID retention. **Also the Supabase keepalive** — its daily DB hit is what stops the free project pausing after 7 days, so disabling it takes the site down a week later, silently
-  - `cron/daily-maintenance` — **scheduled** daily at 04:00 UTC (`vercel.json`); a dispatcher that runs `refresh-ftc-roster` and `impact-rollup` in sequence, each in its own try/catch
-  - `cron/refresh-ftc-roster`, `cron/impact-rollup` — **not** scheduled directly. Vercel Hobby honours only 2 cron entries and silently ignores extras, which is how three jobs sat dead in production (A-09-05). Each stays independently invocable via its own route; only the *scheduler* moved. **A new cron job goes inside the dispatcher, not into `vercel.json`**, unless the project is on Pro.
-  - `health` — public health check
-  - `webhooks/clerk` — handles `user.deleted` and email sync from Clerk
-  - `webhooks/resend` — delivery event webhooks from Resend
-- `lib/supabase/{client,server,admin,types}.ts` — Supabase clients (see auth-supabase.md). `client`/`server` forward the Clerk token via an `accessToken` callback.
-- `middleware.ts` (repo root) — `clerkMiddleware()` + `createRouteMatcher` for public routes. (The old `lib/supabase/middleware.ts` was deleted.)
-- `lib/schemas/*.ts` — Zod schemas (`auth`, `submission`, `team`, `sponsor`, `sponsor-signup`, `achievement`, `limits`).
-- `lib/actions-utils.ts` — auth/role guards (`requireAuth`, `requireAdmin`, `requireSponsor`, `requireVerifiedCoach`) + `getClientIp`.
-- `lib/notify.ts` — `createInAppNotification` + typed email senders.
-- `lib/dispatch.ts` — gated sponsor outreach (`dispatchApprovedSubmission`).
-- `lib/env.ts` — Zod-validated env (warns in dev, throws in prod).
-- `lib/ftc-roster.ts` — FTC team roster lookup helpers (used for coach verification).
-- `lib/site-config.ts` — centralised landing-page copy, theme accent colours, and static fixtures; edit here to update landing page stats/sponsors without touching components.
-- `lib/dev-bypass.ts` — dev-only admin auth bypass + mock Supabase data (`NEXT_PUBLIC_DEV_AUTH_BYPASS=true`; forced off in production).
-- `lib/dev-preview.ts` — dev-only sponsor portal preview with static fixtures (`NEXT_PUBLIC_SPONSOR_PREVIEW=1`; forced off in production).
-- `lib/dev-coach-preview.ts` — dev-only coach portal preview with static fixtures (`NEXT_PUBLIC_COACH_PREVIEW=1`; forced off in production).
-- `supabase/migrations/*.sql` — numbered, idempotent migrations (latest: `0111_strip_post_match_pipeline.sql`; note `0012` does not exist — the numbering skips it). Always confirm the real latest with `ls supabase/migrations | tail -3` before adding one — this line has been stale before.
-- `tests/` — Playwright E2E + `global-setup.ts`; `scripts/seed-test-accounts.mjs` for local data.
+## Rendering
+- `cacheComponents: true`. Anything that reads `cookies()`, `headers()`, `searchParams` or the database must
+  sit under a `<Suspense>` boundary (a `loading.tsx` counts). Signed-in shells (`app/(app)/layout.tsx`,
+  `app/admin/layout.tsx`) wrap their content in Suspense and set `export const instant = false` because they
+  redirect signed-out visitors.
+- Route handlers that touch the DB call `await connection()` first.
+- Public pages that change rarely (`/t/[number]`, sponsor directory) use `'use cache'` + `cacheTag` +
+  `cacheLife`; invalidate with `revalidateTag(tag, 'max')` or `updateTag` in actions. Tag names live in
+  `lib/server/cache-tags.ts`. `POST /api/revalidate` (Bearer `CRON_SECRET`) expires them from outside the app
+  (the seed script calls it). Authed pages are dynamic.
+- `notFound()` inside Suspense streams a 200, and production builds stream every dynamic route's static shell
+  first, so a page-level 404 is a soft 404 (200 + 404 UI + `noindex`). Only `next dev` or a check in
+  `proxy.ts` gives a real 404 status (see `/t/[number]`).
+- `DEBUG_QUERIES=1 npm run dev` logs every query; keep list pages at ≤5 queries with no sequential independent awaits.
+- React Activity keeps hidden routes mounted: navigating back preserves form state. Design for it.
 
-## Roles & key tables
-- Roles live in `profiles.role`: **`admin`** | **`coach`** | **`sponsor`**.
-- `profiles.coach_verified` (bool) — a coach must be verified before submitting pitches.
-- `profiles.sponsor_id` (uuid) — links a sponsor user to their company row (null until approved).
-- Core tables: `profiles`, `teams`, `submissions`, `sponsors`, `notifications`, `audit_log`, `transactions_ledger`, `submission_access_tokens`.
+## Layers
+- `proxy.ts`: Supabase session refresh + `x-pathname` header. No authorization.
+- `lib/server/viewer.ts` `getViewer()`: React `cache()`, one query (user, team or company, pending join
+  request, unread count). Lazily creates the `users` row on first sign-in.
+- `lib/server/authz.ts`: `requireViewer / requireAdmin / requireTeamMember / requireSponsorMember /
+  requireApprovedSponsor / requireNoOrg`. Throw `AppError`. Membership mismatch → `NOT_FOUND`.
+- `lib/server/page-guards.ts`: pages use `pageViewer()` and `guardPage(() => requireX())` (redirects).
+- `lib/server/data/*`: every query. Functions take the viewer. `getDb()` joins the current transaction.
+- `lib/server/transaction.ts` `inTransaction()`: the boundary actions use (no query handle exposed).
+- `lib/server/result.ts` `defineAction(schema, handler)`: validation → handler → `Result`; `mapDbError`.
+- `app/actions/*`: thin server actions composed from the above.
 
-## Supabase clients (which one, when)
-| Client | File | RLS | Use in |
-|--------|------|-----|--------|
-| Browser | `lib/supabase/client.ts` | respects RLS (Clerk token via `accessToken`) | Client Components |
-| Server | `lib/supabase/server.ts` | respects RLS (Clerk token via `accessToken`) | Server Components, Route Handlers, reads in actions |
-| Admin | `lib/supabase/admin.ts` | **BYPASSES ALL RLS** (unchanged) | server-only: `audit_log`, dispatch, trusted writes |
+## Import boundaries (ESLint `no-restricted-imports`)
+`@/lib/server/db`, `@/lib/server/schema`, `@/lib/server/supabase-admin`, `drizzle-orm`, `postgres` are
+importable only from `lib/server/**`, `scripts/**`, `tests/**`. Every `lib/server` file imports `server-only`.
+Scripts and Vitest stub `server-only` (`scripts/lib/server-only-stub.mjs`, vitest alias).
 
-The server/browser clients forward the Clerk session token so RLS sees `auth.jwt()->>'sub'`. The **admin client uses the service-role key and ignores RLS** — it's UNCHANGED by the Clerk migration; never import it into client code, and only use it for operations that legitimately must bypass row security (audit logging, email dispatch, admin provisioning). Edge routing lives in the root `middleware.ts` (`clerkMiddleware()`), not a Supabase client.
+## Email
+`enqueueEmail` (in the action's transaction) → `after(() => drainOutbox())`. Budgets per rolling 24 h:
+priority 0 auth 100 · 1 transactional 90 · 2 admin 90 · 3 digest 70. Resend `idempotencyKey = outbox.id`.
+Transient failures back off (1, 2, 4, 8 min; 5 attempts). Dev sends to Mailpit over SMTP unless
+`EMAIL_TRANSPORT=resend`. Auth codes come from the Supabase Send Email hook (`/api/auth/send-email`) and are
+sent synchronously; their payload is scrubbed after sending. Templates: `lib/server/email/templates/`.
+
+## Files
+`lib/server/storage.ts` only. Buckets: `public` (served), `staging` (private, signed uploads, cleaned daily).
+Browser uploads go to `staging` with a signed URL; `lib/server/uploads.ts` re-verifies the bytes and publishes
+under a fresh name (never trust the browser's file). Read public objects over HTTP, not `download()`.
+
+## Jobs
+One Vercel cron: `/api/cron/daily` → `lib/server/jobs.ts` `runDailyCron()`: drain outbox → admin digest
+(`lib/server/digest.ts`, dedupe `digest:{date}:{adminId}`) → clean staging → re-check ≤20 unchecked FIRST records →
+keepalive. One `cron_runs` row per job; System warns when a job is older than 36 h. Every job must be safe to run twice.
+Add jobs there. `npm run cron:run` invokes it locally.
+
+## Admin and email helpers
+- Actions send email with `await scheduleDrain()` (`lib/server/email/drain.ts`), not a bare `after(drainOutbox)`: in dev the
+  `pitfund-simulate` cookie `email-429` / `email-500` makes the provider fail like Resend does.
+- Correlated subqueries in `sql\`\`` must name the outer column literally (`"sponsors"."id"`): in a single-table select
+  Drizzle renders `${sponsors.id}` unqualified, which silently binds to the inner table.
+- Dates inside raw `sql\`\`` need `.toISOString()` + a cast; the postgres driver can't serialize a `Date` there.
+- Admin lists paginate with `lib/server/data/keyset.ts` (cursor on the sort key + id, 25 per page).
+
+## First-load JS (plan §6: ≤170 KB gzipped per route; `npm run perf` fails over budget)
+React + Next alone is ~145 KB, so client code on any page gets ~25 KB. Keep it there:
+- **Overlays load on first use.** `components/ui/dialog.tsx` keeps the Radix Dialog API (`Dialog`, `DialogTrigger`,
+  `DialogContent`, `DialogClose`, `Sheet*`, `ConfirmDialog`) but loads Radix and the markup (`dialog-impl.tsx`) on hover,
+  focus or open. Menus and popovers that must render Radix at once (account menu, bell, mobile nav, admin row menu) use
+  `useLazyComponent` (`lib/client/lazy.ts`): a lookalike trigger, the real component on first interaction.
+- **Toasts:** import `toast` from `@/lib/client/toast` (never `sonner`). `<Toaster>` mounts only in layouts with actions
+  and fetches Sonner at idle so offline errors can still show.
+- **pdf.js and the viewer:** `PdfViewer` is a shell (figure, toolbar, thumbnail); `pdf-viewer-impl.tsx` loads near the viewport.
+  Upload helpers (`lib/client/pdf.ts`, `upload.ts`, `image.ts`) are imported when a file is chosen.
+- **Choice controls are native inputs** (`checkbox.tsx`, `choice.tsx`); `Avatar` is plain markup. Import `Banner` and
+  `StatusBadge` from their own modules in client code, not from `feedback.tsx`.
+- **`cn` is ours** (`lib/shared/cn.ts`), checked against tailwind-merge on every class string in the repo
+  (`tests/unit/cn.test.ts`). Add a rule there when that test fails.
+- **Server components for static lists**, client components only for the controls (see `components/members/`).
+  A server component can't render `Button` without `asChild` (it attaches an onClick): use `buttonVariants()` on a plain element.
+- Turbopack bundles whole modules: one import from a big client module ships all of it. Split modules instead.
+- The landing page is static; its only island reads the session cookie. `/login` renders the form in the static shell
+  and reads `?intent`, `?next`, `?error` in the browser (a Suspense fallback swap would wipe what the user typed).
+- **CSS is inlined into the HTML** (`experimental.inlineCss`): a render-blocking stylesheet request competing with the scripts
+  held `/login` first paint to ~2 s on Slow 4G. Images are served AVIF first (`images.formats`); the landing hero is the LCP.
+- Measure with `npm run perf -- --only bundles` (gzip -9 of the scripts the HTML references, as Next reports sizes).
+

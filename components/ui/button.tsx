@@ -1,85 +1,86 @@
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
-import { Loader2 } from "lucide-react"
+import { cva, type VariantProps } from 'class-variance-authority'
+import { Slot } from 'radix-ui'
+import type { ComponentProps, ReactNode } from 'react'
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/shared/cn'
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
+import { Spinner } from './spinner'
+
+export const buttonVariants = cva(
+  [
+    'relative inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-control font-medium',
+    'transition-[background-color,border-color,color,box-shadow] duration-120 ease-out',
+    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+    'disabled:cursor-not-allowed aria-disabled:cursor-not-allowed',
+    '[&_svg]:shrink-0',
+  ],
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary-hover",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        primary:
+          'bg-accent text-white hover:bg-accent-hover active:bg-accent-hover disabled:bg-accent/45 disabled:hover:bg-accent/45 aria-disabled:hover:bg-accent',
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        premium:
-          "bg-foreground text-background shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)] hover:-translate-y-px hover:shadow-[0_14px_28px_-10px_rgba(0,0,0,0.5)]",
+          'border border-border-strong bg-surface text-text hover:bg-muted active:bg-muted disabled:text-text-tertiary disabled:hover:bg-surface',
+        ghost: 'text-text-secondary hover:bg-muted hover:text-text active:bg-muted disabled:text-text-tertiary disabled:hover:bg-transparent',
+        danger:
+          'bg-danger text-white hover:bg-danger-hover active:bg-danger-hover disabled:bg-danger/45 disabled:hover:bg-danger/45 aria-disabled:hover:bg-danger',
+        link: 'h-auto px-0 text-accent underline-offset-4 hover:text-accent-hover hover:underline',
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        touch: "h-11 px-5",
-        icon: "h-10 w-10",
+        sm: 'h-8 px-3 text-small [&_svg]:size-3.5',
+        md: 'h-9 px-4 text-body [&_svg]:size-4',
+        lg: 'h-11 px-5 text-lead [&_svg]:size-4',
       },
     },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
+    compoundVariants: [{ variant: 'link', className: 'h-auto px-0' }],
+    defaultVariants: { variant: 'primary', size: 'md' },
   },
 )
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean
-  loading?: boolean
-}
+export type ButtonProps = ComponentProps<'button'> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean
+    /** Shows a spinner, swaps the label and blocks clicks without losing focus. */
+    loading?: boolean
+    loadingLabel?: ReactNode
+  }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, loading, children, disabled, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
+export function Button({
+  className,
+  variant,
+  size,
+  asChild,
+  loading = false,
+  loadingLabel,
+  children,
+  type = 'button',
+  onClick,
+  ...props
+}: ButtonProps) {
+  if (asChild) {
     return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        disabled={disabled || loading}
-        aria-busy={loading || undefined}
-        {...props}
-      >
-        {/*
-          asChild MUST receive exactly one child. Radix's Slot calls
-          React.Children.only, and `{loading && …}{children}` is two children — an array
-          of [false, <Link/>] when not loading — so every `<Button asChild>` in the app
-          threw "React.Children.only expected to receive a single React element child"
-          and took its whole page down with it (the coach Portfolio, Funding and
-          Recognition tabs all rendered the error boundary instead of the form).
-
-          In asChild mode the caller owns the rendered element, so the spinner is theirs
-          to place; injecting a sibling was never something Slot could honour.
-        */}
-        {asChild ? (
-          children
-        ) : (
-          <>
-            {/* Decorative — `aria-busy` on the button already conveys the loading state,
-                so announcing the spinner as well is duplication, not information. */}
-            {loading && <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />}
-            {children}
-          </>
-        )}
-      </Comp>
+      <Slot.Root className={cn(buttonVariants({ variant, size }), className)} {...props}>
+        {children}
+      </Slot.Root>
     )
-  },
-)
-Button.displayName = "Button"
-
-export { Button, buttonVariants }
+  }
+  return (
+    <button
+      type={type}
+      className={cn(buttonVariants({ variant, size }), className)}
+      aria-busy={loading || undefined}
+      aria-disabled={loading || undefined}
+      onClick={(e) => {
+        if (loading) {
+          e.preventDefault()
+          return
+        }
+        onClick?.(e)
+      }}
+      {...props}
+    >
+      {loading ? <Spinner size={size === 'sm' ? 14 : 16} /> : null}
+      {loading && loadingLabel ? loadingLabel : children}
+    </button>
+  )
+}

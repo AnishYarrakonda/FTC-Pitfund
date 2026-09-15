@@ -1,22 +1,27 @@
+import { fileURLToPath } from 'node:url'
+
 import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-import path from 'path'
+
+import { loadEnv } from './scripts/lib/env.ts'
+
+loadEnv()
 
 export default defineConfig({
-  plugins: [react()],
-  test: {
-    environment: 'jsdom',
-    setupFiles: [],
-    globals: true,
-    exclude: ['**/node_modules/**', '**/.next/**', '**/tests/**', '**/*.spec.ts'],
-    include: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx'],
-  },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, '.'),
-      // See lib/__mocks__/server-only.ts — keeps `import 'server-only'` modules
-      // testable under jsdom without weakening the guard in the real build.
-      'server-only': path.resolve(__dirname, 'lib/__mocks__/server-only.ts'),
-    },
+    alias: [
+      { find: /^@\/(.*)$/, replacement: fileURLToPath(new URL('./$1', import.meta.url)) },
+      // `server-only` throws outside Next's react-server condition.
+      { find: /^server-only$/, replacement: fileURLToPath(new URL('./scripts/lib/empty.cjs', import.meta.url)) },
+    ],
+  },
+  test: {
+    include: ['tests/unit/**/*.test.ts', 'tests/unit/**/*.test.tsx'],
+    environment: 'node',
+    setupFiles: ['tests/unit/setup.ts'],
+    testTimeout: 20_000,
+    hookTimeout: 30_000,
+    // Integration tests share one local Postgres; each test runs in a rolled-back transaction.
+    fileParallelism: true,
+    pool: 'forks',
   },
 })

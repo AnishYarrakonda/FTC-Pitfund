@@ -553,6 +553,14 @@ fan-out; no scroll-reveal animations that hide content; `next/font` Inter with `
 
 Reference level of polish: Stripe/Linear-quality restraint. **Do not copy their branding.**
 
+This is a **full product UI/UX replacement**, not a restyle of the current v1 screens. Every
+user-facing route, state, form, table, empty state, dialog, email, and mobile interaction must
+be redesigned to use this system. Do not carry forward v1 layout patterns, visual shortcuts,
+placeholder styling, dense card grids, arbitrary colors, or unfinished-looking panels. The
+finished product should feel light, white, calm, precise, and premium: strong typography,
+generous whitespace, clear hierarchy, restrained borders, excellent alignment, and one obvious
+next action per view. “It works” is not a visual acceptance criterion.
+
 **Principles:** one primary action per view; hierarchy by type and spacing, not boxes; borders
 over shadows; very few cards (lists and sections with dividers instead); no gradients, no
 decorative illustrations, no background patterns; badges only for status, and small.
@@ -601,6 +609,13 @@ PdfViewer (lazy), Pagination, SearchInput, KeyboardHint.
 
 **Copy voice:** plain, specific, second person, no jargon ("dispatch", "submission", "RLS",
 "token" never appear in UI). Status labels from §3.3. Buttons are verbs.
+
+**Visual quality bar:** before a route is considered complete, inspect it at 375, 768, and
+1280 px with realistic, empty, loading, error, long-content, and populated data. Fix weak
+hierarchy, crowded or dead space, inconsistent spacing, misaligned baselines, excessive
+containers, awkward wrapping, low-information empty states, unclear actions, cheap-looking
+defaults, and any visible v1 residue. Use real product content and imagery where imagery is
+needed; never use fake decorative UI to make a page appear finished.
 
 ---
 

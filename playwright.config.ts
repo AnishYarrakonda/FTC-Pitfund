@@ -1,63 +1,47 @@
 import { defineConfig, devices } from '@playwright/test'
 
+import { DEV_URL, PROD_URL } from './tests/support/env'
+
+/*
+ * npm run e2e — journeys against the local stack.
+ *   dev server  (:3000) the app under test; the Supabase Send Email hook calls it, so login
+ *                emails really flow through the outbox into Mailpit.
+ *   prod server (:3100) a production build, used only to prove /dev is a 404 there.
+ * Tests run serially: several of them change shared state (the email quota, the seed).
+ */
 export default defineConfig({
-  testDir: './tests',
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-
-  /**
-   * The suite runs against `next dev`, which compiles each route the first time it is
-   * requested. That compile lands inside whichever assertion happens to touch the route
-   * first, so the default 30s test / 5s expect budget produced failures whose screenshots
-   * showed nothing but a loading skeleton — a slow toolchain reported as a broken page.
-   * A genuinely broken page still fails here, just later.
-   */
+  testDir: 'tests/e2e',
+  globalSetup: './tests/e2e/global-setup.ts',
+  fullyParallel: false,
+  workers: 1,
+  retries: process.env.CI ? 1 : 0,
   timeout: 60_000,
-  expect: { timeout: 20_000 },
-  /**
-   * One worker whenever the suite is pointed at a real database.
-   *
-   * scripts/seed-test-accounts.mjs creates exactly ONE coach who can sign in and own a
-   * team, and the DB enforces one team per owner — so every DB-mutating suite necessarily
-   * shares that team, plus the single "dev testing" sponsor. Run in parallel they fight:
-   * golden-path clears the submissions on the (team, sponsor) pair agreement-signing is
-   * mid-flow on, team-verification flips the same team between incubator and existing, and
-   * sponsor-approvals toggles that org's approval policy underneath everyone. Each suite
-   * passes alone and the set fails at random — the worst possible signal.
-   *
-   * The alternative is a separate signed-in Clerk user per suite: a much larger change for
-   * a suite that takes a few minutes either way.
-   */
-  workers: process.env.CI || process.env.SUPABASE_LOCAL ? 1 : undefined,
-  reporter: [['html', { open: 'never' }]],
-  globalSetup: './tests/global-setup.ts',
-
+  expect: { timeout: 15_000 },
+  reporter: process.env.CI ? [['github'], ['list'], ['html', { open: 'never' }]] : [['list']],
   use: {
-    baseURL: 'http://localhost:3000',
-    trace: 'on-first-retry',
+    baseURL: DEV_URL,
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    actionTimeout: 15_000,
+    navigationTimeout: 45_000,
   },
-
-  projects: [
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } } }],
+  webServer: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      command: 'npm run dev',
+      url: `${DEV_URL}/api/health`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+      stdout: 'ignore',
+      stderr: 'pipe',
     },
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      command: 'node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/serve-prod.ts',
+      url: `${PROD_URL}/api/health`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 600_000,
+      stdout: 'ignore',
+      stderr: 'pipe',
     },
   ],
-
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: true,
-    timeout: 120_000,
-  },
 })

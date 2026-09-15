@@ -1,46 +1,31 @@
+import type * as SentryModule from '@sentry/nextjs'
 import { initBotId } from 'botid/client/core'
-import * as Sentry from '@sentry/nextjs'
-import { scrubBreadcrumb, scrubEvent } from '@/lib/sentry-scrub'
 
-/**
- * Vercel BotID (Basic mode) — arms the invisible challenge before anything else runs.
- *
- * Server Actions are protected by the PAGE PATH they are invoked from, not by an API
- * route: a Server Action POSTs back to its own page URL. So the paths listed here are the
- * pages that host a protected action, not the action names.
- *
- * A path listed here that does not exist is harmless. A path OMITTED here that hosts a
- * protected action is not: checkBotId() then sees no challenge response and rejects every
- * human that reaches it.
- *
- * Basic mode is free on all plans (this project is on Hobby). Deep Analysis needs Pro and
- * is billed per call — if it is ever enabled, `advancedOptions.checkLevel` must be set on
- * BOTH this entry and the matching server-side checkBotId() call, or verification fails.
- */
+import { loadSentry, sentryEnabled } from './lib/client/sentry'
+import { scrubEvent } from './lib/shared/sentry-scrub'
+
+// Bot protection on the email-code request (a server action POST to /login) and, from
+// prompt 2, the public report form.
 initBotId({
   protect: [
-    { path: '/sponsors/apply', method: 'POST' },   // createSponsorApplication
-    { path: '/signup', method: 'POST' },           // createCoachProfile
-    { path: '/complete-profile', method: 'POST' }, // completeCoachProfile + stranded-sponsor recovery
+    { path: '/login', method: 'POST' },
+    { path: '/t/*', method: 'POST' },
   ],
 })
 
-// Client-side error + performance capture. Uses a PUBLIC DSN (NEXT_PUBLIC_SENTRY_DSN) since
-// this runs in the browser. Without this, client-side runtime errors were never reported.
-const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN
-
-if (dsn) {
-  Sentry.init({
-    dsn,
-    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    // A-10-03. The browser is where the token is most exposed: the sponsor lands on
-    // /sponsor-view/<token> and every subsequent navigation records it as a breadcrumb
-    // `from` value, so an error three pages later still carries the credential.
-    beforeBreadcrumb: (breadcrumb) => scrubBreadcrumb(breadcrumb),
-    beforeSend: (event) => scrubEvent(event),
-    beforeSendTransaction: (event) => scrubEvent(event),
-  })
+// Sentry loads on demand (lib/client/sentry.ts) so it stays out of first-load JS.
+if (sentryEnabled) {
+  void loadSentry().then((Sentry) =>
+    Sentry.init({
+      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV,
+      tracesSampleRate: 0,
+      sendDefaultPii: false,
+      beforeSend: scrubEvent,
+    }),
+  )
 }
 
-// Instruments client-side navigations so router transitions are traced.
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart
+export function onRouterTransitionStart(...args: Parameters<typeof SentryModule.captureRouterTransitionStart>) {
+  if (sentryEnabled) void loadSentry().then((Sentry) => Sentry.captureRouterTransitionStart(...args))
+}

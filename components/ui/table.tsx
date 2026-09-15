@@ -1,134 +1,136 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import Link from 'next/link'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import type { ReactNode } from 'react'
 
-const Table = React.forwardRef<
-  HTMLTableElement,
-  React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto">
-    <table
-      ref={ref}
-      className={cn("w-full caption-bottom", className)}
-      style={{ fontSize: "14px" }}
-      {...props}
-    />
-  </div>
-))
-Table.displayName = "Table"
+import { cn } from '@/lib/shared/cn'
 
-const TableHeader = React.forwardRef<
-  HTMLTableSectionElement,
-  React.HTMLAttributes<HTMLTableSectionElement>
->(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("", className)} {...props} />
-))
-TableHeader.displayName = "TableHeader"
+/*
+ * DataTable: a real <table> from 640 px up, a stacked list below it (plan §7 "tables become
+ * stacked lists"). Rows are dividers, not cards. Pagination is cursor-based.
+ */
 
-const TableBody = React.forwardRef<
-  HTMLTableSectionElement,
-  React.HTMLAttributes<HTMLTableSectionElement>
->(({ className, ...props }, ref) => (
-  <tbody ref={ref} className={cn("", className)} {...props} />
-))
-TableBody.displayName = "TableBody"
+export type Column<Row> = {
+  key: string
+  header: ReactNode
+  cell: (row: Row) => ReactNode
+  className?: string
+  /** Hide this column in the stacked mobile list (it is usually already in the primary cell). */
+  hideOnMobile?: boolean
+  align?: 'left' | 'right'
+}
 
-const TableRow = React.forwardRef<
-  HTMLTableRowElement,
-  React.HTMLAttributes<HTMLTableRowElement>
->(({ className, ...props }, ref) => (
-  <tr
-    ref={ref}
-    className={cn("group/row transition-[background] duration-100 linear hover:bg-[var(--bg-hover)]", className)}
-    style={{
-      height: "44px",
-      borderBottom: "1px solid var(--border-color)",
-    }}
-    {...props}
-  />
-))
-TableRow.displayName = "TableRow"
-
-const TableHead = React.forwardRef<
-  HTMLTableCellElement,
-  React.ThHTMLAttributes<HTMLTableCellElement>
->(({ className, ...props }, ref) => (
-  <th
-    ref={ref}
-    /* P3. No `scope` existed anywhere in the codebase while seven files render <th>.
-       Without it a screen reader has to guess which cells a header governs, and guesses
-       wrong on any table that is not trivially rectangular. `scope="col"` is right for
-       every current use; a row header would pass scope="row" through ...props. */
-    scope="col"
-    className={cn("px-2 text-left align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]", className)}
-    style={{
-      fontSize: "12px",
-      textTransform: "uppercase",
-      letterSpacing: "0.02em",
-      color: "var(--text-muted)",
-      fontWeight: 500,
-      borderBottom: "1px solid var(--border-color)",
-      paddingBottom: "8px",
-    }}
-    {...props}
-  />
-))
-TableHead.displayName = "TableHead"
-
-const TableCell = React.forwardRef<
-  HTMLTableCellElement,
-  React.TdHTMLAttributes<HTMLTableCellElement> & { isFirst?: boolean }
->(({ className, isFirst, ...props }, ref) => (
-  <td
-    ref={ref}
-    className={cn("p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]", className)}
-    style={{
-      color: isFirst ? "var(--text-primary)" : "var(--text-secondary)",
-      fontWeight: isFirst ? 500 : 400,
-    }}
-    {...props}
-  />
-))
-TableCell.displayName = "TableCell"
-
-const TableCaption = React.forwardRef<
-  HTMLTableCaptionElement,
-  React.HTMLAttributes<HTMLTableCaptionElement>
->(({ className, ...props }, ref) => (
-  <caption
-    ref={ref}
-    className={cn("mt-4 text-sm", className)}
-    style={{ color: "var(--text-secondary)" }}
-    {...props}
-  />
-))
-TableCaption.displayName = "TableCaption"
-
-function MonoChip({ children, className, ...props }: React.ComponentProps<"span">) {
+export function DataTable<Row>({
+  columns,
+  rows,
+  rowKey,
+  caption,
+  empty,
+  className,
+}: {
+  columns: Column<Row>[]
+  rows: Row[]
+  rowKey: (row: Row) => string
+  caption: string
+  empty?: ReactNode
+  className?: string
+}) {
+  if (rows.length === 0 && empty) return <>{empty}</>
+  const [primary, ...rest] = columns
   return (
-    <span
-      className={cn("", className)}
-      style={{
-        fontFamily: "var(--font-mono)",
-        fontSize: "12px",
-        background: "var(--bg-elevated)",
-        padding: "2px 6px",
-        borderRadius: "4px",
-        color: "var(--text-primary)",
-      }}
-      {...props}
-    >
-      {children}
-    </span>
+    <div className={cn('min-w-0 rounded-menu border border-border bg-surface', className)}>
+      <table className="hidden w-full table-fixed border-collapse text-left sm:table">
+        <caption className="sr-only">{caption}</caption>
+        <thead>
+          <tr className="border-b border-border">
+            {columns.map((column) => (
+              <th
+                key={column.key}
+                scope="col"
+                className={cn(
+                  'h-10 px-4 text-caption font-medium text-text-tertiary',
+                  column.align === 'right' && 'text-right',
+                  column.className,
+                )}
+              >
+                {column.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+          {rows.map((row) => (
+            <tr key={rowKey(row)} className="transition-colors duration-120 hover:bg-canvas">
+              {columns.map((column) => (
+                <td key={column.key} className={cn('min-w-0 px-4 py-3 align-middle text-body text-text', column.align === 'right' && 'text-right', column.className)}>
+                  {column.cell(row)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <ul className="divide-y divide-border sm:hidden" aria-label={caption}>
+        {rows.map((row) => (
+          <li key={rowKey(row)} className="grid min-w-0 gap-2 px-4 py-3.5">
+            <div className="min-w-0">{primary.cell(row)}</div>
+            <dl className="grid gap-1.5">
+              {rest
+                .filter((column) => !column.hideOnMobile)
+                .map((column) => (
+                  <div key={column.key} className="flex min-w-0 items-baseline justify-between gap-4">
+                    <dt className="shrink-0 text-small text-text-tertiary">{column.header}</dt>
+                    <dd className="min-w-0 text-right text-body text-text">{column.cell(row)}</dd>
+                  </div>
+                ))}
+            </dl>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
 
-export {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-  TableCaption,
-  MonoChip,
+export function Pagination({
+  previousHref,
+  nextHref,
+  summary,
+  className,
+}: {
+  previousHref?: string | null
+  nextHref?: string | null
+  summary?: ReactNode
+  className?: string
+}) {
+  const linkClass =
+    'inline-flex h-8 items-center gap-1 rounded-control border border-border-strong bg-surface px-3 text-small font-medium text-text transition-colors duration-120 hover:bg-muted'
+  const disabledClass = 'inline-flex h-8 items-center gap-1 rounded-control border border-border px-3 text-small font-medium text-text-tertiary'
+  return (
+    <nav aria-label="Pagination" className={cn('flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-4', className)}>
+      <p className="min-w-0 text-small text-text-tertiary">{summary}</p>
+      <div className="flex gap-2">
+        {previousHref ? (
+          <Link href={previousHref} className={linkClass} rel="prev">
+            <ChevronLeft aria-hidden="true" className="size-4" />
+            Previous
+          </Link>
+        ) : (
+          <span className={disabledClass} aria-disabled="true">
+            <ChevronLeft aria-hidden="true" className="size-4" />
+            Previous
+          </span>
+        )}
+        {nextHref ? (
+          <Link href={nextHref} className={linkClass} rel="next">
+            Next
+            <ChevronRight aria-hidden="true" className="size-4" />
+          </Link>
+        ) : (
+          <span className={disabledClass} aria-disabled="true">
+            Next
+            <ChevronRight aria-hidden="true" className="size-4" />
+          </span>
+        )}
+      </div>
+    </nav>
+  )
 }
