@@ -20,10 +20,11 @@ Team email: **ftcexodius@gmail.com**.
   "I coach a team" / "I represent a company" carry `?intent` through email-code and Google sign-in to preselect `/welcome`).
 - v2 Terms and Privacy (plain-language drafts, marked for legal review), sitemap, robots, share cards (`lib/server/og.tsx`),
   apple icon. New companies land on `/company` after sign-up (profile + questions is what approval waits on).
-- Performance: every route ≤170 KB first-load JS (largest `/company` ~167 KB), Lighthouse mobile 99–100 perf /
+- Performance: every route ≤170 KB first-load JS (largest `/company` 166 KB), Lighthouse mobile 99–100 perf /
   100 a11y, LCP ≤2 s, ≤5 queries per authed list/review page. See the "First-load JS" section of `architecture.md`.
 - Gates: `npm run perf`, `qa:clicks`, `security:scan`, `email:preview`, `knip` (zero), `tests/unit/authz-coverage.test.ts`,
-  `tests/unit/cn.test.ts`, `tests/e2e/{acceptance,intent,fault-injection}.spec.ts`, QA `empty` scenario. CI runs them all.
+  `tests/unit/cn.test.ts`, `tests/e2e/{acceptance,intent,fault-injection,keyboard-journeys,mobile}.spec.ts`, QA `empty` scenario.
+  CI runs them all. CSS is inlined into the HTML and images are AVIF (`next.config.ts`).
 
 ## Things the next agent must know
 
