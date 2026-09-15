@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/server/supabase'
 import { ensureUserRow, loadViewer } from '@/lib/server/viewer'
 import { requestOrigin } from '@/lib/shared/request-origin'
-import { safeNext } from '@/lib/shared/schemas/account'
+import { parseIntent, safeNext } from '@/lib/shared/schemas/account'
 import { signInDestination } from '@/lib/shared/viewer'
 
 /*
@@ -15,6 +15,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url)
   const origin = requestOrigin(request)
   const next = safeNext(url.searchParams.get('next'))
+  const intent = parseIntent(url.searchParams.get('intent'))
   const toLogin = (error: string) => NextResponse.redirect(new URL(`/login?error=${error}`, origin), 303)
 
   const providerError = url.searchParams.get('error')
@@ -47,6 +48,6 @@ export async function GET(request: Request) {
 
   await ensureUserRow(claims)
   const viewer = await loadViewer(userId)
-  const destination = signInDestination(viewer, next)
+  const destination = signInDestination(viewer, next, intent)
   return NextResponse.redirect(new URL(destination, origin), 303)
 }

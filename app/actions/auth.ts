@@ -51,7 +51,7 @@ export const requestLoginCode = defineAction(emailSchema, async ({ email }) => {
   return { email, sentAt: Date.now() }
 })
 
-export const verifyLoginCode = defineAction(codeSchema, async ({ email, code, next }) => {
+export const verifyLoginCode = defineAction(codeSchema, async ({ email, code, next, intent }) => {
   const supabase = await createSupabaseServerClient()
   const { data, error } = await supabase.auth.verifyOtp({ email, token: code, type: 'email' })
   if (error || !data.user) {
@@ -65,7 +65,7 @@ export const verifyLoginCode = defineAction(codeSchema, async ({ email, code, ne
 
   await ensureUserRow({ sub: data.user.id, email: data.user.email, user_metadata: data.user.user_metadata })
   const viewer = await loadViewer(data.user.id)
-  return { redirectTo: signInDestination(viewer, safeNext(next)) }
+  return { redirectTo: signInDestination(viewer, safeNext(next), intent ?? null) }
 })
 
 export async function signOut() {

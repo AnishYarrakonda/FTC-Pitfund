@@ -7,8 +7,8 @@ import { PublicFooter } from '@/components/app/public-chrome'
 import { Wordmark } from '@/components/app/wordmark'
 import { Skeleton } from '@/components/ui/feedback'
 import { getViewer } from '@/lib/server/viewer'
-import { safeNext } from '@/lib/shared/schemas/account'
-import { homeFor } from '@/lib/shared/viewer'
+import { parseIntent, safeNext } from '@/lib/shared/schemas/account'
+import { homeFor, welcomePath } from '@/lib/shared/viewer'
 
 import { LoginFlow } from './login-flow'
 
@@ -50,8 +50,12 @@ export default function LoginPage({ searchParams }: PageProps<'/login'>) {
 async function LoginGate({ searchParams }: Pick<PageProps<'/login'>, 'searchParams'>) {
   const params = await searchParams
   const next = typeof params.next === 'string' ? safeNext(params.next) : null
+  const intent = parseIntent(params.intent)
   const viewer = await getViewer()
-  if (viewer) redirect(next ?? homeFor(viewer))
+  if (viewer) {
+    const home = homeFor(viewer)
+    redirect(next ?? (home === '/welcome' && !viewer.pendingJoin ? welcomePath(intent) : home))
+  }
 
   const error = typeof params.error === 'string' ? (ERRORS[params.error] ?? null) : null
   const notice = params.signed_out ? 'You’re signed out.' : params.deleted ? 'Your account was deleted.' : null
@@ -60,6 +64,7 @@ async function LoginGate({ searchParams }: Pick<PageProps<'/login'>, 'searchPara
       initialError={error}
       notice={notice}
       next={next ?? undefined}
+      intent={intent}
       googleEnabled={process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === 'true'}
     />
   )

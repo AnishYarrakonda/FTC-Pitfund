@@ -14,9 +14,9 @@ import { useAction } from '@/lib/client/use-action'
 type Role = 'team' | 'sponsor'
 
 /** First run: who are you, plus terms and the 18+ confirmation (plan §3.2). */
-export function WelcomeForm({ defaultName, email }: { defaultName: string; email: string }) {
+export function WelcomeForm({ defaultName, email, defaultRole }: { defaultName: string; email: string; defaultRole?: Role }) {
   const router = useRouter()
-  const [role, setRole] = useState<Role | ''>('')
+  const [role, setRole] = useState<Role | ''>(defaultRole ?? '')
   const [name, setName] = useState(defaultName)
   const [adult, setAdult] = useState(false)
   const [terms, setTerms] = useState(false)

@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 
 import { Skeleton } from '@/components/ui/feedback'
-import { cn } from '@/lib/shared/cn'
 import { appWorkspace, NAV } from '@/lib/shared/nav'
 import { displayName, homeFor, type Viewer, type Workspace } from '@/lib/shared/viewer'
 
@@ -9,14 +8,15 @@ import { AccountMenu } from './account-menu'
 import { MobileNav } from './mobile-nav'
 import { NavLinks } from './nav-links'
 import { NotificationBell } from './notification-bell'
+import { TopBarFrame } from './top-bar-frame'
 import { Wordmark } from './wordmark'
 
 const WORKSPACE_LABEL: Record<Workspace, string> = { team: 'team', sponsor: 'company', admin: 'admin' }
 
-function Bar({ children, wide }: { children: ReactNode; wide?: boolean }) {
+function Bar({ children, area }: { children: ReactNode; area: 'app' | 'admin' }) {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/85">
-      <div className={cn('mx-auto flex h-14 w-full items-center gap-6 px-4 sm:px-6 lg:px-8', wide ? 'max-w-review' : 'max-w-app')}>{children}</div>
+      <TopBarFrame area={area}>{children}</TopBarFrame>
     </header>
   )
 }
@@ -37,7 +37,7 @@ export function TopBar({ viewer, area, devTools }: { viewer: Viewer; area: 'app'
   ]
 
   return (
-    <Bar wide={area === 'admin'}>
+    <Bar area={area}>
       <div className="flex min-w-0 items-center gap-6">
         <Wordmark href={home} />
         {area === 'admin' ? (
@@ -67,7 +67,7 @@ export function TopBar({ viewer, area, devTools }: { viewer: Viewer; area: 'app'
 
 export function TopBarSkeleton({ area = 'app' }: { area?: 'app' | 'admin' }) {
   return (
-    <Bar wide={area === 'admin'}>
+    <Bar area={area}>
       <div className="flex items-center gap-6">
         <Wordmark />
         <div className="hidden items-center gap-3 sm:flex" aria-hidden="true">

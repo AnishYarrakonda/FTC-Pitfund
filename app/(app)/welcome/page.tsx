@@ -10,8 +10,8 @@ import { WelcomeForm } from './welcome-form'
 
 export const metadata: Metadata = { title: 'Welcome' }
 
-export default async function WelcomePage() {
-  const viewer = await pageViewer()
+export default async function WelcomePage({ searchParams }: PageProps<'/welcome'>) {
+  const [viewer, { intent }] = await Promise.all([pageViewer(), searchParams])
   if (viewer.team || viewer.sponsor) redirect(homeFor(viewer))
 
   return (
@@ -19,7 +19,7 @@ export default async function WelcomePage() {
       {viewer.pendingJoin ? (
         <JoinRequestWaiting request={viewer.pendingJoin} />
       ) : (
-        <WelcomeForm defaultName={viewer.name} email={viewer.email} />
+        <WelcomeForm defaultName={viewer.name} email={viewer.email} defaultRole={intent === 'team' ? 'team' : intent === 'company' ? 'sponsor' : undefined} />
       )}
     </PageContainer>
   )

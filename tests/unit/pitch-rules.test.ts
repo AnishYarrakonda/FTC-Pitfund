@@ -8,7 +8,7 @@ import { saveDraftSchema } from '@/lib/shared/schemas/pitch'
 import { createTeamSchema, reportSchema, teamProfileSchema } from '@/lib/shared/schemas/team'
 import { setupChecklist } from '@/lib/shared/team'
 import { displayWebsite, normalizeWebsite } from '@/lib/shared/url'
-import { signInDestination } from '@/lib/shared/viewer'
+import { signInDestination, welcomePath } from '@/lib/shared/viewer'
 
 const NO_ASK: Ask = { type: 'none', amountDollars: null, note: null }
 
@@ -114,5 +114,11 @@ describe('pitch states for coaches', () => {
     expect(signInDestination({ team: null, sponsor: null, isAdmin: false, pendingJoin: null }, '/pitches')).toBe('/welcome')
     expect(signInDestination(coach, '/team')).toBe('/team')
     expect(signInDestination(coach, null)).toBe('/pitches')
+    // The landing page's "I coach a team" / "I represent a company" preselects the welcome branch, first run only.
+    expect(signInDestination(null, null, 'team')).toBe('/welcome?intent=team')
+    expect(signInDestination({ team: null, sponsor: null, isAdmin: false, pendingJoin: null }, null, 'company')).toBe('/welcome?intent=company')
+    expect(signInDestination(coach, null, 'company')).toBe('/pitches')
+    expect(signInDestination(null, '/invite/abc', 'team')).toBe('/invite/abc')
+    expect(welcomePath(null)).toBe('/welcome')
   })
 })

@@ -50,10 +50,19 @@ export function homeFor(viewer: Pick<Viewer, 'team' | 'sponsor' | 'isAdmin' | 'p
  * Where sign-in lands. First-timers go to /welcome, except when they came from an invite link:
  * accepting the invite is their first run.
  */
-export function signInDestination(viewer: Pick<Viewer, 'team' | 'sponsor' | 'isAdmin' | 'pendingJoin'> | null, next: string | null): string {
+export function signInDestination(
+  viewer: Pick<Viewer, 'team' | 'sponsor' | 'isAdmin' | 'pendingJoin'> | null,
+  next: string | null,
+  intent: 'team' | 'company' | null = null,
+): string {
   if (next?.startsWith('/invite/')) return next
-  if (!viewer || (!viewer.team && !viewer.sponsor && !viewer.isAdmin)) return '/welcome'
+  if (!viewer || (!viewer.team && !viewer.sponsor && !viewer.isAdmin)) return welcomePath(intent)
   return next ?? homeFor(viewer)
+}
+
+/** /welcome, preselecting the branch the visitor chose on the landing page. */
+export function welcomePath(intent: 'team' | 'company' | null) {
+  return intent ? `/welcome?intent=${intent}` : '/welcome'
 }
 
 export function displayName(viewer: Pick<Viewer, 'name' | 'email'>) {

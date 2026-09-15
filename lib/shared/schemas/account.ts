@@ -21,7 +21,6 @@ export const profileSchema = z.object({
   jobTitle: optionalText(120, 'Keep the job title under 120 characters'),
 })
 
-export type ProfileInput = z.input<typeof profileSchema>
 
 export const emailSchema = z.object({
   email: z.string().trim().toLowerCase().min(1, 'Enter your email address').email('Enter a valid email address, like name@example.com'),
@@ -34,6 +33,7 @@ export const codeSchema = z.object({
     .trim()
     .regex(/^\d{6}$/, 'Enter the 6-digit code from the email'),
   next: z.string().optional(),
+  intent: z.enum(['team', 'company']).optional(),
 })
 
 export const welcomeSchema = z.object({
@@ -42,6 +42,13 @@ export const welcomeSchema = z.object({
   adult: z.literal(true, { message: 'Confirm that you’re 18 or older' }),
   terms: z.literal(true, { message: 'Accept the Terms and Privacy Policy to continue' }),
 })
+
+/** What a visitor chose on the landing page ("I coach a team" / "I represent a company"). */
+export type SignInIntent = 'team' | 'company'
+
+export function parseIntent(value: unknown): SignInIntent | null {
+  return value === 'team' || value === 'company' ? value : null
+}
 
 /** Only same-site relative paths are allowed as a post-login destination. */
 export function safeNext(next: string | null | undefined): string | null {

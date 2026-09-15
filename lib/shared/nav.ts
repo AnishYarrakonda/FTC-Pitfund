@@ -31,3 +31,13 @@ export function appWorkspace(viewer: Pick<Viewer, 'team' | 'sponsor'>): Workspac
   if (viewer.sponsor) return 'sponsor'
   return null
 }
+
+/**
+ * App pages laid out at the 1280 px review width (the composer and a pitch's page, which have a
+ * side column). The top bar widens with them so the wordmark lines up with the page content.
+ */
+const WIDE_APP_PAGES = [/^\/sponsors\/[^/]+\/pitch$/, /^\/pitches\/[^/]+$/]
+
+export function isWideAppPage(pathname: string) {
+  return WIDE_APP_PAGES.some((re) => re.test(pathname))
+}

@@ -15,6 +15,7 @@ import { createSupabaseBrowserClient } from '@/lib/client/supabase'
 import { useAction } from '@/lib/client/use-action'
 import { cn } from '@/lib/shared/cn'
 import { NETWORK_ERROR_MESSAGE } from '@/lib/shared/result'
+import type { SignInIntent } from '@/lib/shared/schemas/account'
 
 /*
  * Sign in (plan §3.2): Google, or a 6-digit email code. Every branch has its own copy:
@@ -26,17 +27,26 @@ import { NETWORK_ERROR_MESSAGE } from '@/lib/shared/result'
 const CODE_TTL_MS = 10 * 60 * 1000
 const RESEND_AFTER_MS = 30 * 1000
 
+const SUBTITLE = {
+  team: 'Sign in to set up your team. No password needed.',
+  company: 'Sign in to set up your company. No password needed.',
+  any: 'Coaches and company teams both sign in here. No password needed.',
+}
+
 type CodeError = { kind: 'invalid' | 'expired' | 'rate' | 'network' | 'other'; message: string }
 
 export function LoginFlow({
   initialError,
   notice,
   next,
+  intent = null,
   googleEnabled,
 }: {
   initialError: string | null
   notice: string | null
   next?: string
+  /** Chosen on the landing page; first-timers land on /welcome with that branch preselected. */
+  intent?: SignInIntent | null
   googleEnabled: boolean
 }) {
   const router = useRouter()
@@ -106,7 +116,7 @@ export function LoginFlow({
     lastSubmitted.current = value
     setCodeError(null)
     setResent(false)
-    void verify.run({ email, code: value, next })
+    void verify.run({ email, code: value, next, intent: intent ?? undefined })
   }
 
   const startGoogle = async () => {
@@ -117,7 +127,10 @@ export function LoginFlow({
     }
     setGoogleState('opening')
     try {
-      const redirectTo = `${window.location.origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ''}`
+      const query = new URLSearchParams()
+      if (next) query.set('next', next)
+      if (intent) query.set('intent', intent)
+      const redirectTo = `${window.location.origin}/auth/callback${query.size ? `?${query}` : ''}`
       const { error } = await createSupabaseBrowserClient().auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
       if (error) throw error
     } catch {
@@ -243,7 +256,7 @@ export function LoginFlow({
         <h1 id="login-heading" className="text-h2 font-semibold tracking-tighter text-text">
           Sign in
         </h1>
-        <p className="text-body text-text-secondary">Coaches and company teams both sign in here. No password needed.</p>
+        <p className="text-body text-text-secondary">{SUBTITLE[intent ?? 'any']}</p>
       </div>
 
       {notice && !topError ? (
