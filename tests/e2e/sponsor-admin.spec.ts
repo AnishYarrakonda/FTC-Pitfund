@@ -156,7 +156,7 @@ test('a pending company is invisible to coaches until an admin approves it', asy
   for (const p of [coach, admin, pending]) await p.close()
 })
 
-test('a new company signs up and lands on its pending inbox', async ({ browser }) => {
+test('a new company signs up and lands on its profile, under review', async ({ browser }) => {
   const person = await as(browser, 'sponsor-new')
   await person.page.goto('/welcome/company', { waitUntil: 'networkidle' })
   await person.page.getByRole('button', { name: 'Create company' }).click()
@@ -171,7 +171,7 @@ test('a new company signs up and lands on its pending inbox', async ({ browser }
   await expect(person.page.getByText('Enter a LinkedIn link like linkedin.com/in/your-name')).toBeVisible()
   await person.page.getByLabel('Your LinkedIn profile').fill('linkedin.com/in/riley-newco')
   await person.page.getByRole('button', { name: 'Create company' }).click()
-  await person.page.waitForURL('**/inbox')
+  await person.page.waitForURL('**/company')
   await expect(person.page.getByText('Your company is under review', { exact: true })).toBeVisible()
   await expect(person.page.getByRole('heading', { name: 'Set up your company profile' })).toBeVisible()
   expect(person.problems).toEqual([])

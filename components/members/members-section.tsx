@@ -69,7 +69,7 @@ export function MembersSection({
             return (
               <li key={m.userId} className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
                 <Avatar name={label} src={m.avatarUrl} size="md" />
-                <div className="grid min-w-0 flex-1">
+                <div className="grid min-w-0 flex-1 basis-48">
                   <span className="flex min-w-0 items-center gap-2 text-body font-medium text-text">
                     <span className="min-w-0 user-text">{label}</span>
                     {you ? <span className="shrink-0 rounded-control bg-muted px-1.5 text-caption font-medium text-text-secondary">You</span> : null}
@@ -122,7 +122,7 @@ export function MembersSection({
                   <span className="grid size-10 shrink-0 place-items-center rounded-full bg-muted text-text-tertiary">
                     <Mail aria-hidden="true" className="size-4" />
                   </span>
-                  <div className="grid min-w-0 flex-1">
+                  <div className="grid min-w-0 flex-1 basis-48">
                     <span className="min-w-0 text-body font-medium text-text user-text">{invite.email}</span>
                     <span className={invite.expired ? 'text-small text-warning' : 'text-small text-text-tertiary'}>
                       {invite.expired ? `Expired ${formatDate(invite.expiresAt)}` : `Invited ${formatDate(invite.createdAt)} · Expires ${formatDate(invite.expiresAt)}`}

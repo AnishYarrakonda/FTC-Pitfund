@@ -26,6 +26,8 @@ export type QaRoute = {
   server?: 'prod' | 'dev'
   budget?: 'public' | 'authed'
   expectStatus?: number
+  /** The route deliberately renders the 404 page. */
+  expectNotFound?: boolean
   actionButtons?: boolean
   interactions?: QaInteraction[]
 }
@@ -138,11 +140,11 @@ export const QA_ROUTES: QaRoute[] = [
   { name: 'login-company', path: '/login?intent=company', personas: ['anonymous'], budget: 'public' },
   { name: 'legal-terms', path: '/legal/terms', personas: ['anonymous'], budget: 'public' },
   { name: 'legal-privacy', path: '/legal/privacy', personas: ['anonymous'], budget: 'public' },
-  { name: 'not-found', path: '/this-page-does-not-exist', personas: ['anonymous'], expectStatus: 404, budget: 'public' },
+  { name: 'not-found', path: '/this-page-does-not-exist', personas: ['anonymous'], expectStatus: 404, expectNotFound: true, budget: 'public' },
   { name: 'public-team', path: '/t/31579', personas: ['anonymous', 'coach'], budget: 'public' },
   { name: 'public-team-no-deck', path: `/t/${SEED.tidal.number}`, personas: ['anonymous'], budget: 'public' },
   // A soft 404 in production builds (status 200, 404 UI, noindex); see app/(public)/t/[number]/page.tsx.
-  { name: 'public-team-missing', path: '/t/99999', personas: ['anonymous'], budget: 'public' },
+  { name: 'public-team-missing', path: '/t/99999', personas: ['anonymous'], expectNotFound: true, budget: 'public' },
   { name: 'invite-valid', path: `/invite/${SEED_INVITE_TOKENS.valid}`, personas: ['anonymous', 'coach-new', 'coach'], budget: 'public' },
   { name: 'invite-company', path: `/invite/${SEED_INVITE_TOKENS.sponsorValid}`, personas: ['anonymous'], budget: 'public' },
   { name: 'invite-expired', path: `/invite/${SEED_INVITE_TOKENS.expired}`, personas: ['anonymous'], budget: 'public' },

@@ -11,7 +11,7 @@ import { ClampedText } from '@/components/ui/clamped-text'
 import { Facts, Meter } from '@/components/ui/facts'
 import { EmptyState, KeyboardHint, StatusBadge } from '@/components/ui/feedback'
 import { LinkTabs } from '@/components/ui/link-tabs'
-import { DEFAULT_QUESTIONS } from '@/lib/shared/questions'
+import { DEFAULT_QUESTIONS, fillCompany } from '@/lib/shared/questions'
 
 /*
  * /dev/ui specimens for the company side and admin console (prompt 3): inbox rows, the Connected
@@ -66,7 +66,7 @@ const profile = {
   region: 'Texas and the Southwest',
   about: 'We sponsor teams that document their engineering process and bring robotics to students who would not otherwise see it.',
   supportTypes: ['funding', 'mentorship'] as Array<'funding' | 'mentorship'>,
-  questions: DEFAULT_QUESTIONS.map((q) => ({ ...q, prompt: q.prompt.replaceAll('{Company}', 'Brightline Engineering') })),
+  questions: DEFAULT_QUESTIONS.map((q) => ({ ...q, prompt: fillCompany(q.prompt, 'Brightline Engineering') })),
   usesDefaultQuestions: true,
 }
 

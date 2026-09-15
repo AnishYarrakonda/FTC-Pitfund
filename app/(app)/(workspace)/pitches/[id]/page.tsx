@@ -41,7 +41,7 @@ export default async function PitchPage({ params }: PageProps<'/pitches/[id]'>) 
       </Link>
 
       <header className="mt-6 flex flex-col gap-5 border-b border-border pb-8 md:flex-row md:items-end md:justify-between">
-        <div className="flex min-w-0 items-center gap-4">
+        <div className="flex min-w-0 items-start gap-4 sm:items-center">
           <OrgLogo name={company.name} src={company.logoUrl} size="lg" />
           <div className="grid min-w-0 gap-1.5">
             <h1 className="text-h2 font-semibold tracking-tighter text-text user-text">Pitch to {company.name}</h1>

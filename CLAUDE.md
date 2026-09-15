@@ -1,9 +1,10 @@
 # FTC Pitfund (v2)
 
-**Rebuild in progress on branch `rebuild`.** The source of truth is
-**`prompts/rebuild/00-REBUILD-PLAN.md`**; work is executed by `prompts/rebuild/01` → `02` → `03` → `04`.
-Where anything disagrees with the plan, the plan wins. Read `prompts/_NEXT-SESSION.md` first.
-The v1 app (Clerk, RLS policies, capacity caps, ledger) is gone; it is preserved at git tag `legacy-v1`.
+**v2 is complete and on `main`.** It goes live by following **`docs/LAUNCH.md`** (human steps plus
+`npm run provision`). Day-to-day operation is **`docs/RUNBOOK.md`**; proof of the acceptance criteria
+is **`docs/QA-REPORT.md`**. The design source of truth is **`prompts/rebuild/00-REBUILD-PLAN.md`** (kept with
+`prompts/rebuild/01–04` as history). Read `prompts/_NEXT-SESSION.md` first. The v1 app (Clerk, RLS policies,
+capacity caps, ledger) is gone; it is preserved at git tag `legacy-v1`.
 
 ## Product
 
@@ -26,28 +27,32 @@ No money handling, no caps, no messaging. $0 budget except the domain.
   The in-app notification is always written; email is a copy.
 - Contact details are returned only for matched pitches, only to the two orgs involved.
 - Non-goals (plan §1) must not be built: messaging, caps/ledger, roles, SSO, e-sign, payments, student accounts, dark mode.
+  `npm run security:scan` greps for leftovers.
 
 ## Stack
 
 Next.js 16 App Router (`cacheComponents: true`) · React 19 · TypeScript strict · Tailwind v4 + Radix
-(`radix-ui`) · Supabase Auth (`@supabase/ssr`) · Postgres via **Drizzle** (`postgres` driver,
+(`radix-ui`, loaded on demand) · Supabase Auth (`@supabase/ssr`) · Postgres via **Drizzle** (`postgres` driver,
 `prepare: false`) · Supabase Storage · Resend + React Email (`react-email`) + `email_outbox` ·
-Sentry · Vercel BotID · Vitest · Playwright + axe · Vercel Hobby (`iad1`), one cron.
+Sentry (lazy) · Vercel BotID · Vitest · Playwright + axe + Lighthouse · Vercel Hobby (`iad1`), one cron.
 
 ## Module layout
 
 ```text
-app/(public)/      landing, login, legal            app/(app)/          shell: welcome, account
+app/(public)/      landing, login, legal, t/[number], invite   app/(app)/   shell: welcome, account
 app/(app)/(workspace)/  pitches sponsors team inbox company (org required)
 app/admin/         review, pitches/[id], companies/[id], teams/[id], directory, system    app/dev/  /dev, /dev/ui
-app/actions/       server actions ('use server')    app/api/            auth/send-email, webhooks/resend, cron/daily, health, dev/sign-in
-lib/server/        server-only: db, schema, env, authz, viewer, result, audit, notify, storage,
-                   ftc-records, jobs, page-guards, transaction, supabase(-admin), data/*, email/*
-lib/shared/        types, labels, format, season, questions, personas, result, schemas/* (client-safe)
-lib/client/        use-action, supabase (browser)   components/ui/      the design system
-components/app/    shell, top bar, bell, menus      drizzle/            generated migrations
-scripts/           setup, db-*, seed/, admin-grant, drain-outbox, serve-prod
-tests/unit         Vitest (rolled-back transactions)  tests/e2e  Playwright  tests/qa  the UX gate
+app/actions/       server actions ('use server')    app/api/     auth/send-email, webhooks/resend, cron/daily, health, revalidate, dev/sign-in
+app/sitemap.ts robots.ts apple-icon.tsx, **/opengraph-image.tsx (lib/server/og.tsx)
+lib/server/        server-only: db, schema, env, authz, viewer, result, audit, notify, storage, uploads,
+                   ftc-records, jobs, digest, page-guards, transaction, supabase(-admin), og, data/*, email/*
+lib/shared/        types, labels, format, season, questions, personas, result, cn, nav, schemas/* (client-safe)
+lib/client/        use-action, toast (lazy Sonner), lazy (useLazyComponent), pdf, upload, image, sentry, supabase
+components/ui/     the design system          components/app/  shell, top bar, bell, menus, landing island
+components/members/  members + invites section (server) with client controls
+drizzle/           generated migrations       scripts/  setup, db-*, seed/, admin-grant, provision/, prod, perf,
+                                                         security-scan, email-preview, marketing-screenshots, serve-prod
+tests/unit  Vitest   tests/e2e  Playwright   tests/qa  UX gate + dead-click audit   docs/  LAUNCH, RUNBOOK, QA-REPORT
 proxy.ts           session refresh only (plus x-pathname); no role logic
 ```
 
@@ -55,7 +60,7 @@ proxy.ts           session refresh only (plus x-pathname); no role logic
 
 ```ts
 export const doThing = defineAction(schema, async (input) => {   // 1. zod validation → Result
-  const viewer = await requireTeamMember()                         // 2. authz guard (lib/server/authz.ts)
+  const viewer = await requireTeamMember()                         // 2. authz guard first (tests/unit/authz-coverage.test.ts)
   const row = await inTransaction(async () => {                    // 3. data function(s) (lib/server/data/*)
     const r = await updateThing(viewer, input)
     await audit({ actorId: viewer.id, action: 'thing.updated', entityType: 'team', entityId: r.id })  // 4. audit
@@ -63,7 +68,7 @@ export const doThing = defineAction(schema, async (input) => {   // 1. zod valid
     await enqueueEmail({ to, template, data, priority: PRIORITY.transactional, dedupeKey })          //    email copy
     return r
   })
-  after(() => drainOutbox())                                        // 6. send email after the response
+  await scheduleDrain()                                             // 6. send email after the response
   revalidateTag(`team:${row.teamId}`, 'max')                        // 7. revalidate
   return { ...row }                                                 // 8. Result (never throw to the client)
 })
@@ -79,26 +84,35 @@ Client side: `useAction(action)` or `<ActionButton action pendingLabel>`; never 
 | `npm run dev` | `http://127.0.0.1:3000` · personas at `/dev` · gallery at `/dev/ui` · email at `http://127.0.0.1:54324` |
 | `npm run check` | typecheck + lint (0 warnings) + Vitest |
 | `npm run build` | production build |
-| `npm run e2e` | Playwright journeys (dev server :3000 + production build :3100) |
-| `npm run qa` | the UX gate over `tests/qa/routes.ts`, `demo` then `edge`; writes `qa/report.md` and `qa/screens/` |
+| `npm run e2e` | Playwright journeys, including the §12 acceptance timings (dev server :3000 + production build :3100) |
+| `npm run qa` | the UX gate over `tests/qa/routes.ts` on `demo`, `edge`, `empty`; writes `qa/report.md` and `qa/screens/` |
+| `npm run qa:clicks` | dead-click audit: every button must do something within 150 ms, every link must go somewhere |
+| `npm run perf` | first-load JS ≤170 KB per route, Lighthouse mobile on `/`, `/t/[n]`, `/login`, queries ≤5 and render p95, action p95 |
+| `npm run security:scan` | secrets in build output, anon REST, `/dev` in production, non-goal leftovers |
+| `npm run email:preview` | every email template (and long variants) into Mailpit, checked and screenshotted to `qa/emails/` |
+| `npm run knip` | zero unused files, exports and dependencies |
 | `npm run db:generate` / `db:migrate` / `db:reset` | Drizzle migrations (migrate refuses non-local hosts without `--remote` + `CONFIRM_REMOTE=1`) |
 | `npm run seed -- --scenario demo\|empty\|edge` | idempotent fixtures |
-| `npm run admin:grant -- email` · `email:drain` · `cron:run` · `db:backup` | ops (`cron:run` calls `/api/cron/daily` on :3000 with `CRON_SECRET`) |
+| `npm run admin:grant -- email` · `email:drain` · `cron:run` · `db:backup` | local ops (`cron:run` calls `/api/cron/daily` on :3000) |
+| `npm run provision` · `provision:check\|supabase\|vercel\|resend\|sentry\|verify` | build production from `.env.provision` (docs/LAUNCH.md) |
+| `npm run prod -- backup\|admin email [--revoke]` | ops against the hosted database using `.env.provision` |
+| `npm run screenshots:marketing` | recapture the landing page screenshots from the seeded production build |
 
 ## Rules for agents
 
 - **Never ask Anish to click-test, paste SQL, or create test accounts.** Use the scripts, `/dev`, Playwright and Mailpit.
 - **Never hand-write SQL against a real database.** Change `lib/server/schema.ts`, `npm run db:generate`, `npm run db:migrate`.
-- Before calling UI work done: `npm run check`, `npm run e2e`, `npm run qa`, then **open the screenshots** in `qa/screens/` and fix anything that looks unfinished (plan §7).
-- New routes go into `tests/qa/routes.ts`. New components get every state on `/dev/ui`.
+- **Never deploy to, modify or delete the v1 production resources** (personal Vercel project `ftc-sponsorship-portal`,
+  Clerk, Supabase `qqizqbtwigyedgskoezm`). Provisioning refuses them by id.
+- Before calling UI work done: `npm run check`, `npm run e2e`, `npm run qa`, `npm run perf`, then **open the screenshots**
+  in `qa/screens/` and fix anything that looks unfinished (plan §7).
+- New routes go into `tests/qa/routes.ts`. New components get every state on `/dev/ui`. New actions/handlers call a guard
+  first or join the public allowlist in `tests/unit/authz-coverage.test.ts` with the check they do instead.
+- Keep first-load JS in budget: Radix overlays, pdf.js, Sonner and upload helpers load on first use (see `architecture.md`).
 - Details: `.claude/rules/architecture.md`, `data-and-auth.md`, `ux-contract.md`, `testing-and-qa.md`.
-
-<!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->

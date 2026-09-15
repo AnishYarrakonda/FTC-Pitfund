@@ -2,14 +2,15 @@
 
 Sponsorship pitches companies actually read. FIRST® Tech Challenge teams upload their deck once,
 answer each sponsor's own questions, and a real person reviews every pitch before it reaches the
-company. Not affiliated with or endorsed by FIRST®.
+company. Companies that sponsor robotics teams get screened pitches in one inbox and connect in one
+click. Free for teams and companies. Not affiliated with or endorsed by FIRST®.
 
-> The v2 rebuild is in progress on the `rebuild` branch. The plan is
-> [`prompts/rebuild/00-REBUILD-PLAN.md`](prompts/rebuild/00-REBUILD-PLAN.md).
+Built by Anish Yarrakonda · Idea by Rishi Jhaveri (outreach lead) and Shreyas Vempati (team captain) ·
+FTC Team 31579 Exodius.
 
 ## Run it locally
 
-The only prerequisite is [Docker Desktop](https://www.docker.com/products/docker-desktop), running.
+The only prerequisite is [Docker Desktop](https://www.docker.com/products/docker-desktop), running, and Node 22+.
 
 ```bash
 npm install
@@ -24,10 +25,18 @@ npm run dev     # http://127.0.0.1:3000
 ## Check it
 
 ```bash
-npm run check   # typecheck, lint, unit and integration tests
-npm run e2e     # Playwright journeys
-npm run qa      # visual and UX sweep at 375/768/1280 → qa/report.md, qa/screens/
+npm run check          # typecheck, lint, unit and integration tests
+npm run e2e            # Playwright journeys, including the acceptance timings
+npm run qa             # visual and UX sweep at 375/768/1280 on three data sets → qa/report.md, qa/screens/
+npm run perf           # bundle, Lighthouse, query and latency budgets
+npm run security:scan  # secrets, database exposure, dev tools in production
 ```
+
+## Launch and operate
+
+- [`docs/LAUNCH.md`](docs/LAUNCH.md): the human steps to go live; everything else is `npm run provision`.
+- [`docs/RUNBOOK.md`](docs/RUNBOOK.md): daily review, System warnings, backups, admins, secrets, incidents.
+- [`docs/QA-REPORT.md`](docs/QA-REPORT.md): what was checked and the proof for every acceptance criterion.
 
 ## Stack
 

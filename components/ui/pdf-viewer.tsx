@@ -199,7 +199,10 @@ export function PdfPlaceholderPages({
         // Through the image optimizer: same origin as the page (no extra connection before it paints) and sized to the column.
         <Image src={thumbnailSrc} alt="" fill sizes="(min-width: 760px) 720px, calc(100vw - 32px)" preload={priority} fetchPriority={priority ? 'high' : undefined} className="object-cover object-top" />
       ) : (
-        <div aria-hidden="true" className="absolute inset-0 animate-pulse bg-muted" />
+        // A page-shaped skeleton: faint text lines on white, not a grey slab.
+        <div aria-hidden="true" className="absolute inset-x-[10%] top-[9%] grid animate-pulse gap-3">
+          {[40, 92, 86, 64, 0, 36, 90, 82, 58, 0, 44, 88, 72].map((w, j) => (w ? <span key={j} className="h-2 rounded-full bg-muted" style={{ width: `${w}%` }} /> : <span key={j} className="h-3" />))}
+        </div>
       )}
       {i === 0 ? (
         <div className="absolute inset-x-0 bottom-0 flex justify-center p-4">

@@ -43,7 +43,7 @@ export function PitchStateAction({ sponsorId, sponsorName, state, size = 'sm' }:
   return (
     <Link
       href={state.href}
-      className="inline-flex h-8 items-center gap-2 rounded-control px-2 text-small font-medium text-text-secondary transition-colors duration-120 hover:bg-muted hover:text-text"
+      className="-mx-2 inline-flex h-8 items-center gap-2 rounded-control px-2 text-small font-medium text-text-secondary transition-colors duration-120 hover:bg-muted hover:text-text"
       aria-label={`${state.label}: view your pitch to ${sponsorName}`}
     >
       {/* Rejected and not-a-fit pitches read "Pitched this season": the slot is used, the details are on the pitch. */}

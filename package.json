@@ -37,7 +37,8 @@
     "email:preview": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/email-preview.ts",
     "perf": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/perf.ts",
     "prod": "node --import tsx scripts/prod.ts",
-    "security:scan": "node --import tsx scripts/security-scan.ts"
+    "security:scan": "node --import tsx scripts/security-scan.ts",
+    "qa:clicks": "node --import tsx --import ./scripts/lib/server-only-stub.mjs tests/qa/dead-clicks.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.74.0",

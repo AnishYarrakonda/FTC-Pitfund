@@ -26,16 +26,31 @@ Anish does not click through the app. Agents verify everything with these comman
 - Wait for hydration (`waitUntil: 'networkidle'`) before `setInputFiles`; an early change event is lost.
 
 ## QA gate — `npm run qa`
-- Sweeps `tests/qa/routes.ts` (add every new route there) × personas × 375/768/1280 on `demo`, then `edge`.
+- Sweeps `tests/qa/routes.ts` (add every new route there) × personas × 375/768/1280 on `demo`, then `edge`, then `empty`
+  (routes that open a seeded pitch or invite, and dev routes, are skipped in `empty`).
 - Checks: HTTP status, redirects, console/network/exceptions, horizontal scroll, text overflowing its box
   (measured on text runs), axe serious/critical after animations settle, every dialog/sheet/popover
   (width ≥320 px at desktop, fits viewport, sticky close, focus trap, Esc, focus return), TTFB/LCP/CLS
   budgets on the production build, ActionButton pending ≤100 ms on `/dev/ui`.
 - States reachable only by interaction (a lookup result, a tab, an upload stage) go in the route's
   `interactions`; each gets its own screenshot `{persona}-{width}[-edge]--{name}.png`.
-- Output: `qa/screens/{route}/{persona}-{width}[-edge].png`, `qa/results/*.json`, `qa/report.md`.
+- Output: `qa/screens/{route}/{persona}-{width}[-edge|-empty].png`, `qa/results/*.json`, `qa/report.md`.
 - **Green is not done.** Open the screenshots and judge them against `.claude/rules/ux-contract.md`.
   Crop long pages with a Playwright element screenshot when a full-page image is too tall to read.
+
+## More gates
+- `npm run qa:clicks` (`tests/qa/dead-clicks.ts`): every visible button on every production route must change the DOM,
+  navigate, call an action, open a chooser or a dialog within 150 ms; every link must go somewhere. Reseeds `demo`.
+- `npm run perf` (`scripts/perf.ts`): first-load JS ≤170 KB per QA route, Lighthouse mobile (perf ≥90, a11y ≥95,
+  LCP ≤2 s, CLS ≤0.05), ≤5 queries and render p95 ≤400 ms on the authed list/review pages (a second server with
+  `DEBUG_QUERIES=1` on :3101), autosave action p95 ≤500 ms. Budgets live in `BUDGETS` (`tests/qa/routes.ts`).
+- `npm run security:scan`: no secret from `.env.local` in browser-reachable build output, anon REST reads/writes nothing,
+  `/dev/*` unreachable in production, no non-goal leftovers (allowlist for lines that deny a concept).
+- `npm run email:preview`: every template (plus long-content variants) through Mailpit: HTML + text parts, sender,
+  absolute links, URLs on their own lines, no overflow at 600/375 px; screenshots in `qa/emails/`.
+- `tests/unit/authz-coverage.test.ts`: every server action and route handler calls a guard first or is on the public
+  allowlist with its replacement check. `tests/e2e/acceptance.spec.ts`: the plan §12 screen counts, times and clicks.
+- `npm run screenshots:marketing` regenerates `public/marketing/*.webp` from the seeded production build.
 
 ## CI — `.github/workflows/ci.yml`
 One job, Node 24, on every PR and push to `main`/`rebuild`: typecheck · lint → `npm run setup` (local Supabase,

@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useAction } from '@/lib/client/use-action'
 import { useUnsavedChanges } from '@/lib/client/use-unsaved-changes'
 import { newQuestion } from '@/lib/shared/company'
-import { DEFAULT_QUESTIONS, MAX_QUESTION_HELP, MAX_QUESTION_PROMPT, MAX_QUESTIONS, questionsFor, type Question } from '@/lib/shared/questions'
+import { DEFAULT_QUESTIONS, fillCompany, MAX_QUESTION_HELP, MAX_QUESTION_PROMPT, MAX_QUESTIONS, questionsFor, type Question } from '@/lib/shared/questions'
 
 const APPLY_NOTE = 'Changes apply to new pitches; pitches already submitted keep the questions they answered.'
 
@@ -98,7 +98,7 @@ export function QuestionsEditor({
     setEditing(true)
     if (draft.length === 0) {
       const name = companyName || 'your company'
-      setDraft(DEFAULT_QUESTIONS.map((q) => ({ ...newQuestion(), prompt: q.prompt.replaceAll('{Company}', name), required: q.required, help: '' })))
+      setDraft(DEFAULT_QUESTIONS.map((q) => ({ ...newQuestion(), prompt: fillCompany(q.prompt, name), required: q.required, help: '' })))
     }
   }
 

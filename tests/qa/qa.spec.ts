@@ -19,9 +19,14 @@ import { QA_ROUTES, QA_WIDTHS } from './routes'
 
 const test = base.extend<{ scenario: 'demo' | 'edge' | 'empty' }>({ scenario: ['demo', { option: true }] })
 
-/** Seeded pitches and invites don't exist in `empty`; routes that open one are skipped there. */
-const CONTENT_IDS = [...Object.values(SEED.pitches), ...Object.values(SEED_INVITE_TOKENS)]
-const needsContent = (path: string) => CONTENT_IDS.some((id) => path.includes(id))
+/**
+ * `empty` seeds only the personas' own teams and companies (no other orgs, pitches, invites or
+ * reports); routes that open anything else are skipped there.
+ */
+const flatten = (value: unknown): string[] => (typeof value === 'object' && value ? Object.values(value).flatMap(flatten) : [String(value)])
+const SEEDED = [...flatten(SEED), ...Object.values(SEED_INVITE_TOKENS)]
+const IN_EMPTY = new Set(flatten([SEED.exodius, SEED.voltage, SEED.brightline, SEED.cedar, SEED.atlasPending]))
+const needsContent = (path: string) => SEEDED.some((v) => !IN_EMPTY.has(v) && path.includes(v))
 
 for (const route of QA_ROUTES) {
   for (const persona of route.personas) {
@@ -55,6 +60,8 @@ for (const route of QA_ROUTES) {
         if (new URL(page.url()).pathname + new URL(page.url()).search !== route.path) failures.push(`redirected to ${page.url()}`)
 
         await settle(page)
+        // A streamed 404 is still a 200: catch pages that unexpectedly render the not-found page.
+        if (!route.expectNotFound && (await page.getByRole('heading', { name: /We couldn.t find that page/ }).count()) > 0) failures.push('rendered the 404 page')
 
         let perf: Perf | null = null
         if (route.budget && width === 1280) {

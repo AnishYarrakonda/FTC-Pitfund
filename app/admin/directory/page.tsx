@@ -135,7 +135,7 @@ export default async function AdminDirectoryPage({ searchParams }: PageProps<'/a
                 <Avatar name={p.name} src={p.avatarUrl} size="sm" />
                 <span className="grid min-w-0">
                   <span className="text-small font-medium text-text line-clamp-1 user-text">{p.name}</span>
-                  <span className="text-small text-text-tertiary line-clamp-1 user-text">{p.email}</span>
+                  <span className="text-small text-text-tertiary line-clamp-2 break-all">{p.email}</span>
                 </span>
               </span>
             ),

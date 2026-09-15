@@ -47,7 +47,8 @@ export const createCompanyAction = defineAction(
       await notifyAdmins({ type: 'sponsor.created', title: `${company.name} is waiting for approval`, body: `${input.yourName} · ${input.jobTitle}`, href: `/admin/companies/${company.id}` })
       return company
     })
-    return { redirectTo: '/inbox' }
+    // Straight to the profile and questions: that's what approval waits on (plan §12: ≤ 4 screens).
+    return { redirectTo: '/company' }
   },
   { conflict: CREATE_COMPANY_CONFLICTS },
 )

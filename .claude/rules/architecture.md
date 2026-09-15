@@ -60,3 +60,25 @@ Add jobs there. `npm run cron:run` invokes it locally.
   Drizzle renders `${sponsors.id}` unqualified, which silently binds to the inner table.
 - Dates inside raw `sql\`\`` need `.toISOString()` + a cast; the postgres driver can't serialize a `Date` there.
 - Admin lists paginate with `lib/server/data/keyset.ts` (cursor on the sort key + id, 25 per page).
+
+## First-load JS (plan §6: ≤170 KB gzipped per route; `npm run perf` fails over budget)
+React + Next alone is ~145 KB, so client code on any page gets ~25 KB. Keep it there:
+- **Overlays load on first use.** `components/ui/dialog.tsx` keeps the Radix Dialog API (`Dialog`, `DialogTrigger`,
+  `DialogContent`, `DialogClose`, `Sheet*`, `ConfirmDialog`) but loads Radix and the markup (`dialog-impl.tsx`) on hover,
+  focus or open. Menus and popovers that must render Radix at once (account menu, bell, mobile nav, admin row menu) use
+  `useLazyComponent` (`lib/client/lazy.ts`): a lookalike trigger, the real component on first interaction.
+- **Toasts:** import `toast` from `@/lib/client/toast` (never `sonner`). `<Toaster>` mounts only in layouts with actions
+  and fetches Sonner at idle so offline errors can still show.
+- **pdf.js and the viewer:** `PdfViewer` is a shell (figure, toolbar, thumbnail); `pdf-viewer-impl.tsx` loads near the viewport.
+  Upload helpers (`lib/client/pdf.ts`, `upload.ts`, `image.ts`) are imported when a file is chosen.
+- **Choice controls are native inputs** (`checkbox.tsx`, `choice.tsx`); `Avatar` is plain markup. Import `Banner` and
+  `StatusBadge` from their own modules in client code, not from `feedback.tsx`.
+- **`cn` is ours** (`lib/shared/cn.ts`), checked against tailwind-merge on every class string in the repo
+  (`tests/unit/cn.test.ts`). Add a rule there when that test fails.
+- **Server components for static lists**, client components only for the controls (see `components/members/`).
+  A server component can't render `Button` without `asChild` (it attaches an onClick): use `buttonVariants()` on a plain element.
+- Turbopack bundles whole modules: one import from a big client module ships all of it. Split modules instead.
+- The landing page is static; its only island reads the session cookie. `/login` renders the form in the static shell
+  and reads `?intent`, `?next`, `?error` in the browser (a Suspense fallback swap would wipe what the user typed).
+- Measure with `npm run perf -- --only bundles` (gzip -9 of scripts requested before `load`, as Next reports sizes).
+

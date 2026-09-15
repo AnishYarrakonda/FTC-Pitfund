@@ -19,7 +19,7 @@
 - Supabase says `otp_expired` for both wrong and expired codes; the login page decides by time since sending.
 - Local stack: `supabase/config.toml` (OTP 6 digits / 10 min, `max_frequency` 5 s, Send Email hook →
   `host.docker.internal:3000`). `supabase/.env` holds the generated hook secret and Google toggle.
-- Production auth settings are applied by `scripts/provision` (prompt 4), never by hand.
+- Production auth settings (site URL, redirect URLs, OTP, Google, Send Email hook) are applied by `npm run provision:supabase`, never by hand.
 
 ## Authorization
 - Always `require*` from `lib/server/authz.ts`, then pass the viewer into data functions.

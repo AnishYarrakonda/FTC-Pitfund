@@ -1,7 +1,7 @@
 'use client'
 
 import { Slot } from 'radix-ui'
-import { createContext, use, useCallback, useRef, useState, type ComponentType, type ReactNode } from 'react'
+import { createContext, use, useCallback, useLayoutEffect, useRef, useState, type ComponentType, type ReactNode } from 'react'
 
 import { useAction } from '@/lib/client/use-action'
 import type { Result } from '@/lib/shared/result'
@@ -29,6 +29,7 @@ type OverlayState = {
   Impl: Impl | null
   preload: () => void
   triggerRef: React.RefObject<HTMLElement | null>
+  openerRef: React.RefObject<HTMLElement | null>
 }
 
 const OverlayContext = createContext<OverlayState | null>(null)
@@ -58,6 +59,15 @@ export function Dialog({
   const triggerRef = useRef<HTMLElement | null>(null)
   const open = controlledOpen ?? uncontrolledOpen
 
+  // Dialogs opened without a DialogTrigger (from a menu item, a lazily loaded button) return focus
+  // to whatever had it when they opened. Layout effects run before Radix moves focus inside.
+  const openerRef = useRef<HTMLElement | null>(null)
+  useLayoutEffect(() => {
+    if (open && !triggerRef.current && document.activeElement instanceof HTMLElement && document.activeElement !== document.body) {
+      openerRef.current = document.activeElement
+    }
+  }, [open])
+
   const preload = useCallback(() => {
     void loadImpl().then((impl) => setImpl(() => impl))
   }, [])
@@ -74,7 +84,7 @@ export function Dialog({
   // Opened from outside (controlled) before the implementation arrived.
   if (open && !Impl) preload()
 
-  return <OverlayContext value={{ open, setOpen, Impl, preload, triggerRef }}>{children}</OverlayContext>
+  return <OverlayContext value={{ open, setOpen, Impl, preload, triggerRef, openerRef }}>{children}</OverlayContext>
 }
 
 /** A Sheet has the same state and API as a Dialog; only its content differs. */
@@ -119,13 +129,14 @@ export function DialogClose({ children }: { asChild?: boolean; children: ReactNo
 }
 
 function OverlayContent({ kind, ...props }: OverlayContentProps & { kind: 'dialog' | 'sheet'; size?: keyof typeof dialogWidths }) {
-  const { open, setOpen, Impl, triggerRef } = useOverlay(kind === 'sheet' ? 'SheetContent' : 'DialogContent')
+  const { open, setOpen, Impl, triggerRef, openerRef } = useOverlay(kind === 'sheet' ? 'SheetContent' : 'DialogContent')
   const returnFocus = useCallback(
     (e: Event) => {
       e.preventDefault()
-      triggerRef.current?.focus()
+      const target = triggerRef.current ?? openerRef.current
+      if (target?.isConnected) target.focus()
     },
-    [triggerRef],
+    [triggerRef, openerRef],
   )
   if (!Impl) return null
   return <Impl kind={kind} open={open} onOpenChange={setOpen} returnFocus={returnFocus} {...props} />
