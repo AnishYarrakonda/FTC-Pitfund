@@ -1,7 +1,7 @@
 'use server'
 
 
-import { requireTeamMember } from '@/lib/server/authz'
+import { requireApprovedTeam } from '@/lib/server/authz'
 import { deleteDraft, pitchEmailKey, saveDraft, startPitch, submitPitch, SUBMIT_CONFLICTS, withdrawPitch } from '@/lib/server/data/pitches'
 import { simulated } from '@/lib/server/dev'
 import { scheduleDrain } from '@/lib/server/email/drain'
@@ -19,13 +19,13 @@ import { displayName } from '@/lib/shared/viewer'
 const BUSY = 'FTC Pitfund is busy right now. Try again in a moment.'
 
 export const startPitchAction = defineAction(sponsorIdSchema, async ({ sponsorId }) => {
-  const viewer = await requireTeamMember()
+  const viewer = await requireApprovedTeam()
   const { pitchId } = await inTransaction(() => startPitch(viewer, sponsorId))
   return { pitchId, redirectTo: `/sponsors/${sponsorId}/pitch` }
 })
 
 export const saveDraftAction = defineAction(saveDraftSchema, async (input) => {
-  const viewer = await requireTeamMember()
+  const viewer = await requireApprovedTeam()
   if (await simulated('save-draft')) throw new AppError('UNAVAILABLE', BUSY)
   return inTransaction(() => saveDraft(viewer, input))
 })
@@ -33,7 +33,7 @@ export const saveDraftAction = defineAction(saveDraftSchema, async (input) => {
 export const submitPitchAction = defineAction(
   submitPitchSchema,
   async (input) => {
-    const viewer = await requireTeamMember()
+    const viewer = await requireApprovedTeam()
     if (await simulated('submit-pitch')) throw new AppError('UNAVAILABLE', BUSY)
     const result = await inTransaction(async () => {
       const r = await submitPitch(viewer, input)
@@ -74,7 +74,7 @@ export const submitPitchAction = defineAction(
 )
 
 export const withdrawPitchAction = defineAction(pitchIdSchema, async ({ pitchId }) => {
-  const viewer = await requireTeamMember()
+  const viewer = await requireApprovedTeam()
   const result = await inTransaction(async () => {
     const r = await withdrawPitch(viewer, pitchId)
     let emailDelayed = false
@@ -108,7 +108,7 @@ export const withdrawPitchAction = defineAction(pitchIdSchema, async ({ pitchId 
 })
 
 export const deleteDraftAction = defineAction(pitchIdSchema, async ({ pitchId }) => {
-  const viewer = await requireTeamMember()
+  const viewer = await requireApprovedTeam()
   const row = await inTransaction(() => deleteDraft(viewer, pitchId))
   return { redirectTo: `/sponsors/${row.sponsorId}` }
 })

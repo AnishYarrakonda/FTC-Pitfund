@@ -13,6 +13,8 @@ type ViewerOrg = {
   status: OrgStatus
   /** This viewer's role in it. Only an owner changes who is on the account. */
   role: OrgRole
+  /** Why an admin rejected it, shown back on /welcome/pending. Null unless rejected. */
+  note: string | null
   logoPath: string | null
 }
 

@@ -74,29 +74,12 @@ function assertApproved(org: { name: string; status: OrgStatus }, label: string)
   throw new AppError('FORBIDDEN', `${label} is suspended. Contact ${SUPPORT_EMAIL}.`)
 }
 
-/** Editing the setup page: allowed before submitting, and again after a rejection so it can be fixed. */
-function assertEditableSetup(org: { name: string; status: OrgStatus }, label: string): void {
-  if (org.status === 'draft' || org.status === 'rejected') return
-  if (org.status === 'pending') {
-    throw new AppError('FORBIDDEN', `${label} is being reviewed. You can change this again if we ask for changes.`)
-  }
-  if (org.status === 'approved') return
-  throw new AppError('FORBIDDEN', `${label} is suspended. Contact ${SUPPORT_EMAIL}.`)
-}
-
 const teamLabelOf = (team: ViewerTeam) => `Team ${team.number}`
 
 /** A team that has been approved: everything in the workspace requires this. */
 export async function requireApprovedTeam(options: GuardOptions & { teamId?: string } = {}): Promise<TeamViewer> {
   const viewer = await requireTeamMember(options)
   assertApproved(viewer.team, teamLabelOf(viewer.team))
-  return viewer
-}
-
-/** A team that is still filling in its setup page, or fixing it after a rejection. */
-export async function requireTeamSetup(options: GuardOptions = {}): Promise<TeamViewer> {
-  const viewer = await requireTeamMember(options)
-  assertEditableSetup(viewer.team, teamLabelOf(viewer.team))
   return viewer
 }
 
@@ -133,13 +116,6 @@ export async function requireSponsorMember(
 export async function requireApprovedSponsor(options: GuardOptions & { sponsorId?: string } = {}): Promise<SponsorViewer> {
   const viewer = await requireSponsorMember(options)
   assertApproved(viewer.sponsor, viewer.sponsor.name)
-  return viewer
-}
-
-/** A company still filling in its profile and questions, or fixing them after a rejection. */
-export async function requireSponsorSetup(options: GuardOptions = {}): Promise<SponsorViewer> {
-  const viewer = await requireSponsorMember(options)
-  assertEditableSetup(viewer.sponsor, viewer.sponsor.name)
   return viewer
 }
 

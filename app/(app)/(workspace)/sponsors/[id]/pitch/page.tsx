@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 
 import { PageContainer } from '@/components/ui/page'
-import { requireTeamMember } from '@/lib/server/authz'
+import { requireApprovedTeam } from '@/lib/server/authz'
 import { getDirectorySponsor } from '@/lib/server/data/directory'
 import { getComposerState } from '@/lib/server/data/pitches'
 import { guardPage } from '@/lib/server/page-guards'
@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: 'Pitch' }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export default async function ComposerPage({ params }: PageProps<'/sponsors/[id]/pitch'>) {
-  const [viewer, { id }] = await Promise.all([guardPage(() => requireTeamMember()), params])
+  const [viewer, { id }] = await Promise.all([guardPage(() => requireApprovedTeam()), params])
   if (!UUID.test(id)) notFound()
   const [sponsor, state] = await Promise.all([getDirectorySponsor(id), getComposerState(viewer, id)])
   if (!sponsor) notFound()

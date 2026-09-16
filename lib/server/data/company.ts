@@ -1,8 +1,9 @@
 import 'server-only'
 
-import { and, asc, count, eq, ne, sql } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, ne, sql } from 'drizzle-orm'
 
 import { SUPPORT_EMAIL } from '@/lib/shared/brand'
+import { companyChecklist } from '@/lib/shared/company'
 import { questionsFor, type Question } from '@/lib/shared/questions'
 import type { OrgRole, SupportType } from '@/lib/shared/types'
 import type { Viewer } from '@/lib/shared/viewer'
@@ -17,8 +18,9 @@ import { assertOwnStagingPath, createStagingUpload, discard, publishVerified, re
 
 /*
  * Companies (sponsors): first-run creation, the profile and questions editor, logo, and members
- * (prompt 3, scope A and B). A company is created `pending`: it can set itself up but is invisible
- * to coaches until an admin approves it (lib/server/data/directory.ts only ever reads `approved`).
+ * (prompt 3, scope A and B). A company is created as a `draft`: it fills its profile and questions
+ * in, sends itself for review, and is invisible to coaches until an admin approves it
+ * (lib/server/data/directory.ts only ever reads `approved`).
  */
 
 // ─── First run ──────────────────────────────────────────────────────────────────────────
@@ -33,7 +35,7 @@ export async function createCompany(viewer: Viewer, input: CreateCompanyData) {
   const db = getDb()
   const [company] = await db
     .insert(sponsors)
-    .values({ name: input.name, website: input.website, status: 'pending', applicantTitle: input.jobTitle, applicantLinkedin: input.linkedin })
+    .values({ name: input.name, website: input.website, status: 'draft', applicantTitle: input.jobTitle, applicantLinkedin: input.linkedin })
     .returning({ id: sponsors.id, name: sponsors.name })
   // Whoever creates the company owns it. Everyone invited later is an editor.
   await db.insert(sponsorMembers).values({ sponsorId: company.id, userId: viewer.id, role: 'owner' })
@@ -248,6 +250,34 @@ export async function transferCompanyOwnership(viewer: SponsorViewer, userId: st
     .where(and(eq(sponsorMembers.sponsorId, viewer.sponsor.id), eq(sponsorMembers.userId, userId)))
   await audit({ actorId: viewer.id, action: 'sponsor.ownership_transferred', entityType: 'sponsor', entityId: viewer.sponsor.id, data: { to: userId } })
   return { userId, name: target.name.trim() || target.email }
+}
+
+export const SUBMIT_COMPANY_CONFLICTS = {}
+
+/** Send a company for review. Mirrors submitTeamForReview; the checklist is the blocker list. */
+export async function submitCompanyForReview(viewer: SponsorViewer) {
+  const profile = await getCompanyProfile(viewer)
+  const checklist = companyChecklist({
+    hasLogo: Boolean(profile.logoUrl),
+    hasAbout: Boolean(profile.about?.trim()),
+    supportTypeCount: profile.supportTypes.length,
+    questionCount: profile.usesDefaultQuestions ? 0 : profile.questions.length,
+    reviewedQuestions: profile.reviewedQuestions,
+  })
+  const missing = checklist.items.find((i) => !i.done)
+  if (missing) throw new AppError('VALIDATION', `Finish your setup first: ${missing.label.toLowerCase()}.`)
+
+  const now = new Date()
+  const [row] = await getDb()
+    .update(sponsors)
+    // Only a draft or rejected company can be submitted, so a double-click can't reset its place in
+    // the queue.
+    .set({ status: 'pending', submittedAt: now, statusNote: null, updatedAt: now })
+    .where(and(eq(sponsors.id, viewer.sponsor.id), inArray(sponsors.status, ['draft', 'rejected'])))
+    .returning({ id: sponsors.id, name: sponsors.name })
+  if (!row) throw new AppError('CONFLICT', `${viewer.sponsor.name} has already been sent for review.`)
+  await audit({ actorId: viewer.id, action: 'sponsor.submitted', entityType: 'sponsor', entityId: row.id })
+  return row
 }
 
 /** Every active member of a company, for emails (suspended people are skipped). */

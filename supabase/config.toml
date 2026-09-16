@@ -58,6 +58,12 @@ public = false
 file_size_limit = "10MiB"
 allowed_mime_types = ["application/pdf", "image/*"]
 
+# Verification screenshots: private, admin-only, and never swept by the staging cleaner.
+[storage.buckets.verification]
+public = false
+file_size_limit = "10MiB"
+allowed_mime_types = ["image/webp", "image/png", "image/jpeg"]
+
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:3000"

@@ -35,11 +35,13 @@ export async function loadViewer(userId: string): Promise<Viewer | null> {
         name: teams.name,
         logoPath: teams.logoPath,
         status: sql<OrgStatus>`case when ${teams.suspendedAt} is not null then 'suspended'::org_status else ${teams.status} end`,
+        note: teams.statusNote,
       },
       sponsor: {
         id: sponsors.id,
         name: sponsors.name,
         status: sponsors.status,
+        note: sponsors.statusNote,
         logoPath: sponsors.logoPath,
       },
       // Kept out of the nested objects above: they come from the membership tables, and mixing two

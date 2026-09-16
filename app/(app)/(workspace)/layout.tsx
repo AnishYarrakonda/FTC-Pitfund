@@ -3,6 +3,7 @@ import { Suspense, type ReactNode } from 'react'
 
 import { SuspendedNotice } from '@/components/app/states'
 import { pageViewer } from '@/lib/server/page-guards'
+import { gatePathFor } from '@/lib/shared/viewer'
 
 /* Team and company workspaces: a person with no org goes to /welcome (admins to /admin). */
 export default function WorkspaceLayout({ children }: { children: ReactNode }) {
@@ -16,6 +17,11 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
 async function WorkspaceGate({ children }: { children: ReactNode }) {
   const viewer = await pageViewer()
   if (!viewer.team && !viewer.sponsor) redirect(viewer.isAdmin && !viewer.pendingJoin ? '/admin' : '/welcome')
+
+  // An org that hasn't been approved has nothing to do in here: it finishes its setup page, or it
+  // waits. This is the gate that stops someone claiming a team number and pitching as that team.
+  const gate = gatePathFor(viewer)
+  if (gate && viewer.team?.status !== 'suspended' && viewer.sponsor?.status !== 'suspended') redirect(gate)
 
   if (viewer.team?.status === 'suspended') {
     return (

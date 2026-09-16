@@ -36,9 +36,9 @@ describe('action authz matrix', () => {
       const { viewers } = await buildPersonas()
 
       const anyone: Persona[] = ['admin', 'coach-new', 'sponsor-new', 'coach', 'sponsor-pending', 'sponsor', 'sponsor-rejected', 'sponsor-suspended']
-      // Editing the setup page: allowed before you submit and again after a rejection, so you can
-      // fix what was wrong — but not while it is being reviewed.
-      const companyMembers: Persona[] = ['sponsor', 'sponsor-rejected']
+      // Editing what you sent us is allowed in every state except suspended — including while it
+      // waits, so a typo doesn't have to sit in the queue.
+      const companyMembers: Persona[] = ['sponsor-pending', 'sponsor', 'sponsor-rejected']
       const approvedCompany: Persona[] = ['sponsor']
       const admins: Persona[] = ['admin']
 

@@ -357,7 +357,7 @@ export const DECIDE_JOIN_CONFLICTS = { team_members_user_key: 'That person has s
 
 const teamPrefix = (teamId: string) => `teams/${teamId}`
 
-export async function createTeamUpload(viewer: TeamViewer, purpose: 'deck' | 'thumb' | 'logo', imageExt: 'webp' | 'jpg' = 'webp') {
+export async function createTeamUpload(viewer: TeamViewer, purpose: 'deck' | 'thumb' | 'logo' | 'proof', imageExt: 'webp' | 'jpg' | 'png' = 'webp') {
   return createStagingUpload(teamPrefix(viewer.team.id), purpose === 'deck' ? 'pdf' : imageExt)
 }
 

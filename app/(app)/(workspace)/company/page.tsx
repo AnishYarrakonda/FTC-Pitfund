@@ -12,7 +12,7 @@ import { CompanyEditor } from '@/components/company/company-editor'
 import { CompanyChecklist, CompanyStatusBanner } from '@/components/company/company-status'
 import { MembersSection } from '@/components/members/members-section'
 import { PageContainer, PageHeader } from '@/components/ui/page'
-import { requireSponsorMember } from '@/lib/server/authz'
+import { requireApprovedSponsor } from '@/lib/server/authz'
 import { getCompanyProfile, listCompanyMembers } from '@/lib/server/data/company'
 import { listOpenInvites } from '@/lib/server/data/invites'
 import { guardPage } from '@/lib/server/page-guards'
@@ -21,7 +21,7 @@ import { SUPPORT_EMAIL } from '@/lib/shared/brand'
 export const metadata: Metadata = { title: 'Company' }
 
 export default async function CompanyPage() {
-  const viewer = await guardPage(() => requireSponsorMember())
+  const viewer = await guardPage(() => requireApprovedSponsor())
   const [profile, members, invites] = await Promise.all([
     getCompanyProfile(viewer),
     listCompanyMembers(viewer),

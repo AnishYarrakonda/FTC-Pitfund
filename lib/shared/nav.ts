@@ -25,10 +25,15 @@ export function isActive(item: NavItem, pathname: string) {
   return item.match.some((m) => (m.endsWith('$') ? pathname === m.slice(0, -1) : pathname === m || pathname.startsWith(`${m}/`)))
 }
 
-/** The workspace shown in the app area (outside /admin). */
+/**
+ * The workspace shown in the app area (outside /admin).
+ *
+ * An org that hasn't been approved has no workspace: every one of those links would only bounce it
+ * back to /welcome, so the top bar shows the wordmark and the account menu and nothing else.
+ */
 export function appWorkspace(viewer: Pick<Viewer, 'team' | 'sponsor'>): Workspace | null {
-  if (viewer.team) return 'team'
-  if (viewer.sponsor) return 'sponsor'
+  if (viewer.team) return viewer.team.status === 'approved' ? 'team' : null
+  if (viewer.sponsor) return viewer.sponsor.status === 'approved' ? 'sponsor' : null
   return null
 }
 

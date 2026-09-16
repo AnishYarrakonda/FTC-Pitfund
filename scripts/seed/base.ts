@@ -34,11 +34,11 @@ const APP_TABLES = [
   'users',
 ]
 
-/** Wipe every app table and both storage buckets. Auth users are reconciled separately. */
+/** Wipe every app table and every storage bucket. Auth users are reconciled separately. */
 export async function wipeAppData() {
   await getDb().execute(sql.raw(`truncate table ${APP_TABLES.map((t) => `public.${t}`).join(', ')} cascade`))
   const admin = createSupabaseAdminClient()
-  for (const bucket of [BUCKETS.public, BUCKETS.staging]) {
+  for (const bucket of [BUCKETS.public, BUCKETS.staging, BUCKETS.verification]) {
     const paths: string[] = []
     const walk = async (prefix: string) => {
       const { data, error } = await admin.storage.from(bucket).list(prefix, { limit: 1000 })

@@ -5,7 +5,7 @@ import { after } from 'next/server'
 import { z } from 'zod'
 
 import { audit } from '@/lib/server/audit'
-import { requireTeamMember, requireTeamOwner, requireTeamSetup, requireViewer } from '@/lib/server/authz'
+import { requireTeamMember, requireTeamOwner, requireViewer } from '@/lib/server/authz'
 import { TAGS } from '@/lib/server/cache-tags'
 import {
   checkStagedDeck,
@@ -96,7 +96,7 @@ export const requestToJoin = defineAction(
 )
 
 export const saveTeamProfile = defineAction(teamProfileSchema, async (input) => {
-  const viewer = await requireTeamSetup()
+  const viewer = await requireTeamMember()
   const profile = await inTransaction(() => updateTeamProfile(viewer, input))
   updateTag(TAGS.team(profile.id))
   return profile
@@ -105,22 +105,23 @@ export const saveTeamProfile = defineAction(teamProfileSchema, async (input) => 
 // ─── Files ──────────────────────────────────────────────────────────────────────────────
 
 export const createUploadUrl = defineAction(
-  z.object({ purpose: z.enum(['deck', 'thumb', 'logo']), imageType: z.enum(['image/webp', 'image/jpeg']).optional() }),
+  z.object({ purpose: z.enum(['deck', 'thumb', 'logo', 'proof']), imageType: z.enum(['image/webp', 'image/jpeg', 'image/png']).optional() }),
   async ({ purpose, imageType }) => {
-    const viewer = await requireTeamSetup()
-    return createTeamUpload(viewer, purpose, imageType === 'image/jpeg' ? 'jpg' : 'webp')
+    const viewer = await requireTeamMember()
+    const ext = imageType === 'image/jpeg' ? 'jpg' : imageType === 'image/png' ? 'png' : 'webp'
+    return createTeamUpload(viewer, purpose, ext)
   },
 )
 
 export const checkDeck = defineAction(z.object({ path: z.string().min(1).max(300) }), async ({ path }) => {
-  const viewer = await requireTeamSetup()
+  const viewer = await requireTeamMember()
   return checkStagedDeck(viewer, path)
 })
 
 export const saveDeck = defineAction(
   z.object({ receipt: z.string().min(1).max(2000), thumbPath: z.string().min(1).max(300), consent: z.boolean() }),
   async (input) => {
-    const viewer = await requireTeamSetup()
+    const viewer = await requireTeamMember()
     const result = await inTransaction(() => finalizeDeck(viewer, input))
     after(() => discard('public', result.replaced))
     updateTag(TAGS.team(viewer.team.id))
@@ -129,7 +130,7 @@ export const saveDeck = defineAction(
 )
 
 export const saveLogo = defineAction(z.object({ path: z.string().min(1).max(300) }), async ({ path }) => {
-  const viewer = await requireTeamSetup()
+  const viewer = await requireTeamMember()
   const result = await inTransaction(() => finalizeTeamLogo(viewer, path))
   after(() => discard('public', result.replaced))
   updateTag(TAGS.team(viewer.team.id))
@@ -138,7 +139,7 @@ export const saveLogo = defineAction(z.object({ path: z.string().min(1).max(300)
 
 /** The screenshot showing this person is on the team's roster. Goes to the private bucket. */
 export const saveProof = defineAction(z.object({ path: z.string().min(1).max(300) }), async ({ path }) => {
-  const viewer = await requireTeamSetup()
+  const viewer = await requireTeamMember()
   const result = await inTransaction(() => finalizeTeamProof(viewer, path))
   after(() => discard('verification', result.replaced))
   return result.profile
@@ -149,7 +150,7 @@ export const saveProof = defineAction(z.object({ path: z.string().min(1).max(300
 export const submitTeam = defineAction(
   z.object({ confirm: z.literal('submit') }),
   async () => {
-    const viewer = await requireTeamSetup()
+    const viewer = await requireTeamMember()
     const result = await inTransaction(async () => {
       const team = await submitTeamForReview(viewer)
       await notifyAdmins({

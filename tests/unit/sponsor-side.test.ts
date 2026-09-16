@@ -56,18 +56,19 @@ async function otherSponsor() {
 
 describe('company first run', () => {
   it(
-    'creates a pending company with the applicant as its member, their title and terms',
+    'creates a draft company owned by the applicant, with their title and terms',
     dbTest(async () => {
       const user = await createUser({ acceptedTermsAt: null })
       const viewer = (await loadViewer(user.id))!
       const company = await createCompany(viewer, { name: 'Acme Robotics Fund', website: 'https://acme.example', yourName: 'Pat Lee', jobTitle: 'Giving Lead', linkedin: 'https://www.linkedin.com/in/patlee' })
       const [row] = await getDb().select().from(sponsors).where(eq(sponsors.id, company.id))
-      expect(row).toMatchObject({ status: 'pending', applicantTitle: 'Giving Lead', applicantLinkedin: 'https://www.linkedin.com/in/patlee' })
+      // A draft, not pending: it reaches the admin queue only when they send it for review.
+      expect(row).toMatchObject({ status: 'draft', applicantTitle: 'Giving Lead', applicantLinkedin: 'https://www.linkedin.com/in/patlee' })
       const [person] = await getDb().select().from(users).where(eq(users.id, user.id))
       expect(person).toMatchObject({ name: 'Pat Lee', jobTitle: 'Giving Lead' })
       expect(person.acceptedTermsAt).not.toBeNull()
       const [member] = await getDb().select().from(sponsorMembers).where(eq(sponsorMembers.userId, user.id))
-      expect(member.sponsorId).toBe(company.id)
+      expect(member).toMatchObject({ sponsorId: company.id, role: 'owner' })
       const [event] = await getDb().select().from(auditEvents).where(and(eq(auditEvents.entityId, company.id), eq(auditEvents.action, 'sponsor.created')))
       expect(event.actorId).toBe(user.id)
 

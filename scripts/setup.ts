@@ -4,8 +4,9 @@
  *   1. Check Docker is running.
  *   2. Write supabase/.env (hook secret, Google toggle) and start the local Supabase stack.
  *   3. Merge local values into .env.local. Existing non-local values are never overwritten.
- *   4. Apply migrations.
- *   5. Seed the `demo` scenario (pass --scenario to choose another, --no-seed to skip).
+ *   4. Make sure every storage bucket exists.
+ *   5. Apply migrations.
+ *   6. Seed the `demo` scenario (pass --scenario to choose another, --no-seed to skip).
  */
 import { randomBytes } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
@@ -165,6 +166,33 @@ function mergeEnvLocal(existing: Map<string, string>, stack: Map<string, string>
   return values
 }
 
+/**
+ * Buckets the app expects. `supabase start` only creates the ones in config.toml on a fresh stack,
+ * so a stack that already exists never gains a newly added bucket — which is a confusing runtime
+ * failure ("Bucket not found") rather than a setup one. Create them here instead, every time.
+ */
+const BUCKETS: Record<string, { public: boolean; allowedMimeTypes: string[] }> = {
+  public: { public: true, allowedMimeTypes: ['application/pdf', 'image/webp', 'image/png', 'image/jpeg'] },
+  staging: { public: false, allowedMimeTypes: ['application/pdf', 'image/*'] },
+  verification: { public: false, allowedMimeTypes: ['image/webp', 'image/png', 'image/jpeg'] },
+}
+
+async function ensureBuckets(env: NodeJS.ProcessEnv) {
+  step('Checking storage buckets')
+  const { createClient } = await import('@supabase/supabase-js')
+  const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL!, env.SUPABASE_SECRET_KEY!, { auth: { persistSession: false } })
+  const { data: existing, error } = await admin.storage.listBuckets()
+  if (error) fail(`Couldn't list storage buckets: ${error.message}`)
+  const created: string[] = []
+  for (const [id, settings] of Object.entries(BUCKETS)) {
+    if (existing.some((b) => b.id === id)) continue
+    const { error: createError } = await admin.storage.createBucket(id, { ...settings, fileSizeLimit: '10MB' })
+    if (createError) fail(`Couldn't create the "${id}" bucket: ${createError.message}`)
+    created.push(id)
+  }
+  console.log(created.length ? `  created ${created.join(', ')}` : '  All present')
+}
+
 async function main() {
   checkDocker()
 
@@ -175,6 +203,8 @@ async function main() {
   const stack = await startSupabase(configChanged, hookSecret)
   const env = mergeEnvLocal(existing, stack, hookSecret)
   const childEnv = { ...process.env, ...Object.fromEntries(env) }
+
+  await ensureBuckets(childEnv)
 
   step('Applying migrations')
   if ((await runScript('scripts/db-migrate.ts', [], childEnv)) !== 0) fail('Migrations failed.')

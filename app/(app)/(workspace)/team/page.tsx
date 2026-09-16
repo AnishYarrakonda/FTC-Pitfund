@@ -6,7 +6,7 @@ import { leaveMyTeam, removeMember, transferOwnership } from '@/app/actions/team
 import { MembersSection } from '@/components/members/members-section'
 import { Button } from '@/components/ui/button'
 import { PageContainer, PageHeader } from '@/components/ui/page'
-import { requireTeamMember } from '@/lib/server/authz'
+import { requireApprovedTeam } from '@/lib/server/authz'
 import { listOpenInvites } from '@/lib/server/data/invites'
 import { getTeamProfile, listPendingJoinRequests, listTeamMembers } from '@/lib/server/data/teams'
 import { guardPage } from '@/lib/server/page-guards'
@@ -21,7 +21,7 @@ import { PublicPreview } from './public-preview'
 export const metadata: Metadata = { title: 'Team' }
 
 export default async function TeamPage() {
-  const viewer = await guardPage(() => requireTeamMember())
+  const viewer = await guardPage(() => requireApprovedTeam())
   const [profile, members, invites, requests] = await Promise.all([
     getTeamProfile(viewer),
     listTeamMembers(viewer),

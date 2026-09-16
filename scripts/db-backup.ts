@@ -34,7 +34,7 @@ async function listStorage() {
   if (!url || !key) return []
   const storage = createClient(url, key, { auth: { persistSession: false } }).storage
   const out: Array<{ bucket: string; path: string; size: number | null; updated: string | null }> = []
-  for (const bucket of ['public', 'staging']) {
+  for (const bucket of ['public', 'staging', 'verification']) {
     const walk = async (prefix: string) => {
       const { data } = await storage.from(bucket).list(prefix, { limit: 1000 })
       for (const item of data ?? []) {

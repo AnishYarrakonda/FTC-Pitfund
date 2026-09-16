@@ -7,10 +7,8 @@ import {
   requireNoOrg,
   requireSponsorMember,
   requireSponsorOwner,
-  requireSponsorSetup,
   requireTeamMember,
   requireTeamOwner,
-  requireTeamSetup,
   requireViewer,
 } from '@/lib/server/authz'
 import { AppError } from '@/lib/server/result'
@@ -32,11 +30,9 @@ type Guard =
   | 'admin'
   | 'teamMember'
   | 'approvedTeam'
-  | 'teamSetup'
   | 'teamOwner'
   | 'sponsorMember'
   | 'approvedSponsor'
-  | 'sponsorSetup'
   | 'sponsorOwner'
   | 'noOrg'
 
@@ -52,9 +48,9 @@ const MATRIX: Record<string, Record<Guard, Outcome>> = {
   admin: { ...row('FORBIDDEN'), viewer: 'ok', admin: 'ok', noOrg: 'ok' },
   'admin-suspended': row('FORBIDDEN'),
   'coach-new': { ...row('FORBIDDEN'), viewer: 'ok', noOrg: 'ok' },
-  coach: { ...row('FORBIDDEN'), viewer: 'ok', teamMember: 'ok', approvedTeam: 'ok', teamSetup: 'ok', teamOwner: 'ok', noOrg: 'CONFLICT' },
-  'coach-editor': { ...row('FORBIDDEN'), viewer: 'ok', teamMember: 'ok', approvedTeam: 'ok', teamSetup: 'ok', noOrg: 'CONFLICT' },
-  'coach-draft': { ...row('FORBIDDEN'), viewer: 'ok', teamMember: 'ok', teamSetup: 'ok', noOrg: 'CONFLICT' },
+  coach: { ...row('FORBIDDEN'), viewer: 'ok', teamMember: 'ok', approvedTeam: 'ok', teamOwner: 'ok', noOrg: 'CONFLICT' },
+  'coach-editor': { ...row('FORBIDDEN'), viewer: 'ok', teamMember: 'ok', approvedTeam: 'ok', noOrg: 'CONFLICT' },
+  'coach-draft': { ...row('FORBIDDEN'), viewer: 'ok', teamMember: 'ok', noOrg: 'CONFLICT' },
   'coach-pending': { ...row('FORBIDDEN'), viewer: 'ok', teamMember: 'ok', noOrg: 'CONFLICT' },
   'coach-joiner': { ...row('FORBIDDEN'), viewer: 'ok', noOrg: 'ok' },
   'coach-suspended-team': { ...row('FORBIDDEN'), viewer: 'ok', noOrg: 'CONFLICT' },
@@ -65,7 +61,6 @@ const MATRIX: Record<string, Record<Guard, Outcome>> = {
     viewer: 'ok',
     sponsorMember: 'ok',
     approvedSponsor: 'ok',
-    sponsorSetup: 'ok',
     sponsorOwner: 'ok',
     noOrg: 'CONFLICT',
   },
@@ -74,11 +69,10 @@ const MATRIX: Record<string, Record<Guard, Outcome>> = {
     viewer: 'ok',
     sponsorMember: 'ok',
     approvedSponsor: 'ok',
-    sponsorSetup: 'ok',
     sponsorOwner: 'ok',
     noOrg: 'CONFLICT',
   },
-  'sponsor-rejected': { ...row('FORBIDDEN'), viewer: 'ok', sponsorMember: 'ok', sponsorSetup: 'ok', noOrg: 'CONFLICT' },
+  'sponsor-rejected': { ...row('FORBIDDEN'), viewer: 'ok', sponsorMember: 'ok', noOrg: 'CONFLICT' },
   'sponsor-suspended': { ...row('FORBIDDEN'), viewer: 'ok', noOrg: 'CONFLICT' },
   'suspended-user': row('FORBIDDEN'),
 }
@@ -89,11 +83,9 @@ function row(outcome: Outcome): Record<Guard, Outcome> {
     admin: outcome,
     teamMember: outcome,
     approvedTeam: outcome,
-    teamSetup: outcome,
     teamOwner: outcome,
     sponsorMember: outcome,
     approvedSponsor: outcome,
-    sponsorSetup: outcome,
     sponsorOwner: outcome,
     noOrg: outcome,
   }
@@ -122,11 +114,9 @@ describe('authz matrix', () => {
           admin: await outcome(() => requireAdmin({ viewer })),
           teamMember: await outcome(() => requireTeamMember({ viewer })),
           approvedTeam: await outcome(() => requireApprovedTeam({ viewer })),
-          teamSetup: await outcome(() => requireTeamSetup({ viewer })),
           teamOwner: await outcome(() => requireTeamOwner({ viewer })),
           sponsorMember: await outcome(() => requireSponsorMember({ viewer })),
           approvedSponsor: await outcome(() => requireApprovedSponsor({ viewer })),
-          sponsorSetup: await outcome(() => requireSponsorSetup({ viewer })),
           sponsorOwner: await outcome(() => requireSponsorOwner({ viewer })),
           noOrg: await outcome(() => requireNoOrg({ viewer })),
         }
