@@ -5,13 +5,13 @@ import { DIRECTORY_PAGE_SIZE, queryDirectory, queryDirectorySponsor } from '@/li
 import { queryPublicTeam } from '@/lib/server/data/public-team'
 import { createReport } from '@/lib/server/data/reports'
 import { getDb } from '@/lib/server/db'
-import { notifications, reports } from '@/lib/server/schema'
+import { notifications, reports, sponsors } from '@/lib/server/schema'
 import { loadViewer } from '@/lib/server/viewer'
 
 import { addTeamMember, createSponsor, createTeam, createUser, dbTest } from './helpers/db'
 import { expectAppError } from './helpers/errors'
 
-const query = (q: string, extra: Partial<Parameters<typeof queryDirectory>[0]> = {}) => queryDirectory({ q, type: null, after: null, before: null, ...extra })
+const query = (q: string, extra: Partial<Parameters<typeof queryDirectory>[0]> = {}) => queryDirectory({ q, after: null, before: null, ...extra })
 
 describe('sponsor directory', () => {
   it(
@@ -30,29 +30,87 @@ describe('sponsor directory', () => {
   )
 
   it(
-    'searches by name (LIKE characters are literal), filters by support type and pages by cursor',
+    'pages by cursor when nothing is being searched for',
     dbTest(async () => {
+      // The seed leaves companies in the database; paging is about the whole approved list, so clear
+      // it first. The surrounding transaction is rolled back, so the seed survives the test.
+      await getDb().delete(sponsors)
       const tag = `Pg${crypto.randomUUID().slice(0, 8)}`
-      const created = []
       for (let i = 0; i < DIRECTORY_PAGE_SIZE + 3; i++) {
-        created.push(await createSponsor({ name: `${tag} ${String(i).padStart(2, '0')}`, supportTypes: i % 2 ? ['equipment'] : ['funding'] }))
+        await createSponsor({ name: `${tag} ${String(i).padStart(2, '0')}` })
       }
-      const first = await query(tag)
+      const first = await query('')
       expect(first.items).toHaveLength(DIRECTORY_PAGE_SIZE)
       expect(first.prevCursor).toBeNull()
       expect(first.nextCursor).not.toBeNull()
-      const second = await query(tag, { after: first.nextCursor })
+      const second = await query('', { after: first.nextCursor })
       expect(second.items.map((i) => i.name)).toEqual([`${tag} 25`, `${tag} 26`, `${tag} 27`])
       expect(second.nextCursor).toBeNull()
-      const back = await query(tag, { before: second.prevCursor })
+      const back = await query('', { before: second.prevCursor })
       expect(back.items.map((i) => i.id)).toEqual(first.items.map((i) => i.id))
       expect(back.prevCursor).toBeNull()
+      expect((await query('', { after: 'not-a-cursor' })).items).toHaveLength(DIRECTORY_PAGE_SIZE)
+    }),
+  )
 
-      const equipment = await query(tag, { type: 'equipment' })
-      expect(equipment.items).toHaveLength(14)
-      expect(equipment.items.every((i) => i.supportTypes.includes('equipment'))).toBe(true)
-      expect((await query(`${tag}%`)).items).toEqual([])
-      expect((await query(tag, { after: 'not-a-cursor' })).items).toHaveLength(DIRECTORY_PAGE_SIZE)
+  it(
+    'finds companies whose names were typed wrong, best match first',
+    dbTest(async () => {
+      await getDb().delete(sponsors)
+      const brightline = await createSponsor({ name: 'Brightline Energy' })
+      const keystone = await createSponsor({ name: 'Keystone Robotics Foundation' })
+      const summit = await createSponsor({ name: 'Summit Manufacturing' })
+
+      // The whole point: one wrong letter used to produce an empty page.
+      const names = async (q: string) => (await query(q)).items.map((i) => i.id)
+      expect(await names('brightlne')).toContain(brightline.id)
+      expect(await names('brightline energy')).toEqual([brightline.id])
+      expect(await names('keystone robotic')).toContain(keystone.id)
+      expect(await names('sumit manufacturng')).toContain(summit.id)
+      expect(await names('Keytsone')).toContain(keystone.id)
+
+      // Best match first, not merely "somewhere in the results".
+      expect((await names('keystone'))[0]).toBe(keystone.id)
+      expect((await names('summit'))[0]).toBe(summit.id)
+
+      // A prefix beats a better-scoring match elsewhere in the name.
+      const foundation = await createSponsor({ name: 'Keystone Trust' })
+      expect((await names('keystone t'))[0]).toBe(foundation.id)
+
+      // Below the threshold is nothing at all, not a page of near-misses.
+      expect(await names('zzzzzzzz')).toEqual([])
+      expect(await names('plumbing')).toEqual([])
+
+      // A wildcard is not a wildcard: "%" on its own matches nothing rather than everything. A
+      // stray one next to a real word is just a typo, and fuzzy matching is allowed to see past it.
+      expect((await query('%')).items).toEqual([])
+      expect((await query('_')).items).toEqual([])
+      expect(await names('Keystone%')).toContain(keystone.id)
+
+      // Searching never pages: the results are ranked, so a cursor on the alphabetical key is
+      // meaningless. The page says how many matched instead.
+      expect(await query('keystone')).toMatchObject({ nextCursor: null, prevCursor: null })
+    }),
+  )
+
+  it(
+    'narrows the list to what this team has and hasn’t pitched',
+    dbTest(async () => {
+      await getDb().delete(sponsors)
+      const untouched = await createSponsor({ name: 'Aardvark Co' })
+      const drafted = await createSponsor({ name: 'Bravo Co' })
+      const answered = await createSponsor({ name: 'Charlie Co' })
+
+      const ids = (page: { items: Array<{ id: string }> }) => page.items.map((i) => i.id)
+      expect(ids(await query('', { filter: { kind: 'not_pitched', ids: [drafted.id, answered.id] } }))).toEqual([untouched.id])
+      expect(ids(await query('', { filter: { kind: 'in_progress', ids: [drafted.id] } }))).toEqual([drafted.id])
+      expect(ids(await query('', { filter: { kind: 'pitched', ids: [answered.id] } }))).toEqual([answered.id])
+
+      // Nothing pitched yet: "not yet pitched" is everything, and the other two are empty rather
+      // than falling back to the whole directory.
+      expect(ids(await query('', { filter: { kind: 'not_pitched', ids: [] } }))).toHaveLength(3)
+      expect(ids(await query('', { filter: { kind: 'pitched', ids: [] } }))).toEqual([])
+      expect(ids(await query('', { filter: { kind: 'in_progress', ids: [] } }))).toEqual([])
     }),
   )
 })

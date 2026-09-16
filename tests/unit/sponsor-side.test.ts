@@ -101,7 +101,7 @@ describe('company visibility', () => {
       await addTeamMember(team.id, coach.id)
 
       expect(await queryDirectorySponsor(company.id)).toBeNull()
-      expect((await queryDirectory({ q: company.name, type: null, after: null, before: null })).items).toEqual([])
+      expect((await queryDirectory({ q: company.name, after: null, before: null })).items).toEqual([])
       await expectAppError(startPitch(await teamViewer(coach.id), company.id, NOW), 'NOT_FOUND')
 
       expect((await getCompanyProfile(await sponsorViewer(member.id))).status).toBe('pending')
@@ -111,7 +111,7 @@ describe('company visibility', () => {
       // Approval makes it visible.
       await getDb().update(sponsors).set({ status: 'approved' }).where(eq(sponsors.id, company.id))
       expect((await queryDirectorySponsor(company.id))?.id).toBe(company.id)
-      expect((await queryDirectory({ q: company.name, type: null, after: null, before: null })).items.map((i) => i.id)).toEqual([company.id])
+      expect((await queryDirectory({ q: company.name, after: null, before: null })).items.map((i) => i.id)).toEqual([company.id])
     }),
   )
 
