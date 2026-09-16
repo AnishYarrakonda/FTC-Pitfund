@@ -11,14 +11,20 @@ capacity caps, ledger) is gone; it is preserved at git tag `legacy-v1`.
 FTC Pitfund connects FIRST® Tech Challenge teams with companies that sponsor robotics teams.
 Adult coaches sign in (Google or a 6-digit email code), create or join one shared team account,
 upload a sponsorship deck PDF (≤5 pages, ≤10 MB) and a one-line summary, and pitch **approved**
-companies by answering each company's own questions (≤10, or 3 defaults). **An admin reviews every
-pitch** before the company sees it. A company answers **Interested** (contacts are exchanged, the
+companies by answering each company's own questions (≤10, or 3 defaults). **Teams and companies are
+both admin-reviewed before they reach the app**, and **an admin reviews every pitch** before the
+company sees it. A company answers **Interested** (contacts are exchanged, the
 pitch is *matched*) or **Not a fit**. One pitch per team per company per season (Sept 1).
 No money handling, no caps, no messaging. $0 budget except the domain.
 
 ## Core rules (plan §1; never violate)
 
-- Adults only. No student accounts. Teams and companies are one shared account with equal members; **no roles**.
+- Adults only. No student accounts. Teams and companies are one shared account. **One member owns it**
+  (`owner`); everyone else is an `editor`. Only the owner invites, removes and hands ownership on; the
+  owner can't leave without transferring. Everything else both roles can do.
+- **Both orgs are admin-approved before they reach the app** (`draft → pending → approved | rejected`).
+  A team proves itself with a FIRST Dashboard screenshot in the private `verification` bucket. Nothing
+  about an unapproved org is reachable, including its public page.
 - Pitches go only to approved companies. Pending companies are invisible to coaches.
 - Every pitch is admin-reviewed before a company sees it.
 - One pitch per team × company × season; withdrawing before a response frees the slot.
@@ -26,7 +32,8 @@ No money handling, no caps, no messaging. $0 budget except the domain.
 - Email is capped at 100/day: it is always queued through the outbox, quota-aware, and never fails silently.
   The in-app notification is always written; email is a copy.
 - Contact details are returned only for matched pitches, only to the two orgs involved.
-- Non-goals (plan §1) must not be built: messaging, caps/ledger, roles, SSO, e-sign, payments, student accounts, dark mode.
+- Non-goals (plan §1) must not be built: messaging, caps/ledger, role *tiers* beyond owner/editor, SSO,
+  e-sign, payments, student accounts, dark mode.
   `npm run security:scan` greps for leftovers.
 
 ## Stack
@@ -53,7 +60,7 @@ components/members/  members + invites section (server) with client controls
 drizzle/           generated migrations       scripts/  setup, db-*, seed/, admin-grant, provision/, prod, perf,
                                                          security-scan, email-preview, marketing-screenshots, serve-prod
 tests/unit  Vitest   tests/e2e  Playwright   tests/qa  UX gate + dead-click audit   docs/  LAUNCH, RUNBOOK, QA-REPORT
-proxy.ts           session refresh only (plus x-pathname); no role logic
+proxy.ts           session refresh only (plus x-pathname); no authorization
 ```
 
 ## The action shape (every mutation)

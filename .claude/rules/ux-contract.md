@@ -8,6 +8,8 @@ This is a full product UI replacement: light, white, calm, precise. Hierarchy by
    pending in the same frame, verb label ("Submitting…"), `aria-busy`, double-click safe. Mark them `data-action-button`.
 2. Actions return `Result`; the UI branches on `error.code`. Never throw to the client.
 3. Success shows in place (row updates, "Saved", "Sent ✓"). Toasts only for off-screen effects.
+   Every toast carries a decay bar timed to its own duration and a dismiss X (`components/ui/toast-content.tsx`);
+   nothing states an outcome in a line of text that never clears.
 4. Errors sit next to what failed and keep input. Network failure: "Couldn't reach FTC Pitfund. Check your
    connection." + Retry. Unexpected: short message + reference id.
 5. Waits over 1 s say what is happening ("Checking FIRST records…"). No bare spinners.

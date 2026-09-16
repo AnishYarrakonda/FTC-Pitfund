@@ -112,7 +112,10 @@ function nonGoals() {
     [/\bappeals?\b/i, 'appeals'],
     [/\bimpact report/i, 'impact reports'],
     [/\banalytics\b/i, 'analytics'],
-    [/\b(owner|admin|member)Role\b|\brole: '(owner|manager)'/i, 'org roles'],
+    // Org roles used to be a non-goal. They exist now, but only as owner/editor: an owner decides
+    // who is on the account and nothing else. Anything richer (manager, approver, admin tiers) is
+    // still the thing this rule is here to catch.
+    [/\brole: '(manager|approver|viewer|billing)'|\badminRole\b|\brole_level\b/i, 'org role tiers'],
     [/\bSSO\b|\bsaml\b/i, 'SSO'],
     [/\bMFA\b|\btotp\b|two-factor/i, 'MFA'],
     [/\bsignInWithPassword\b|\bpassword:\s/i, 'password sign-in'],

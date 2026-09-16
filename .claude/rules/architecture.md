@@ -82,6 +82,11 @@ React + Next alone is ~145 KB, so client code on any page gets ~25 KB. Keep it t
   and reads `?intent`, `?next`, `?error` in the browser (a Suspense fallback swap would wipe what the user typed).
 - **CSS is inlined into the HTML** (`experimental.inlineCss`): a render-blocking stylesheet request competing with the scripts
   held `/login` first paint to ~2 s on Slow 4G. Images are served AVIF first (`images.formats`); the landing hero is the LCP.
+- **The logo cropper loads on file pick** (`components/uploads/logo-cropper-impl.tsx`), like the dialog and
+  PDF viewer. Sonner and the toast body load on the first toast.
+- **The bell is a to-do list, not a feed**: `lib/shared/notifications.ts` `ACTIONABLE_TYPES` decides what
+  it counts, and `resolveNotifications(subjectKey)` clears an item for everyone on the org when the thing
+  is handled. Every event still writes a notification row.
 - **Times inside client components use `<TimeText>`** (`components/ui/time-text.tsx`): server and browser format them at
   different moments and in different time zones, which fails hydration (#418). Format numbers with an explicit `'en-US'`.
 - **Font fallbacks are calibrated beyond Arial** (`app/globals.css`): Liberation Sans, Roboto and DejaVu Sans faces keep text
