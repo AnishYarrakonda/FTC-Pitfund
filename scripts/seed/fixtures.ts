@@ -151,8 +151,8 @@ export const TEAMS: TeamFixture[] = [
   {
     number: 25530,
     name: 'Polar Pistons',
-    city: 'Anchorage',
-    state: 'AK',
+    city: 'Kuala Lumpur',
+    state: 'Malaysia',
     color: '#334155',
     shape: 'hex',
     verified: true,
@@ -165,8 +165,8 @@ export const TEAMS: TeamFixture[] = [
   {
     number: 19904,
     name: 'Circuit Sages',
-    city: 'Madison',
-    state: 'WI',
+    city: 'Hamilton',
+    state: 'New Zealand',
     color: '#15803D',
     shape: 'diamond',
     verified: false,
@@ -179,8 +179,8 @@ export const TEAMS: TeamFixture[] = [
   {
     number: 27112,
     name: 'Sprocket Society',
-    city: 'Boston',
-    state: 'MA',
+    city: 'Kraków',
+    state: 'Poland',
     color: '#BE123C',
     shape: 'circle',
     verified: true,

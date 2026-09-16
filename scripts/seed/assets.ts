@@ -6,6 +6,8 @@ import { deflateSync } from 'node:zlib'
 
 import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage } from 'pdf-lib'
 
+import { THUMB_WIDTH_PX } from '@/lib/shared/team'
+
 // ─── PNG ────────────────────────────────────────────────────────────────────────────────
 
 const CRC_TABLE = (() => {
@@ -111,10 +113,15 @@ export function generateLogo(color: string, shape: Shape, size = 256): Uint8Arra
   return encodePng(size, size, px)
 }
 
-/** A page-1 thumbnail (300×388, US Letter ratio): white page, colored header, text lines. */
+/**
+ * A page-1 thumbnail in US Letter ratio: white page, colored header, text lines.
+ *
+ * Sized like a real upload (THUMB_WIDTH_PX). A 300px stub used to be stretched across the whole
+ * deck column, so the seeded app looked blurry in a way the real one wasn't.
+ */
 export function generateDeckThumbnail(color: string): Uint8Array {
-  const w = 300
-  const h = 388
+  const w = THUMB_WIDTH_PX
+  const h = Math.round((THUMB_WIDTH_PX * 792) / 612)
   const [r, g, b] = hexToRgb(color)
   const px = new Uint8Array(w * h * 3).fill(255)
   const fill = (x0: number, y0: number, x1: number, y1: number, c: [number, number, number]) => {

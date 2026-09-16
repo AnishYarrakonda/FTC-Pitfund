@@ -112,7 +112,7 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
       number: t.number,
       name: t.name,
       location: `${t.city}, ${t.state}`,
-      country: 'USA',
+      country: t.state.length > 2 ? t.state : 'USA',
       website: mode === 'demo' ? t.website : null,
       summary: mode === 'demo' ? t.summary : null,
       logoPath: assets?.logoPath ?? null,
@@ -142,7 +142,15 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
     )
     await db
       .insert(ftcTeamCache)
-      .values({ number: t.number, name: t.name, city: t.city, state: t.state, country: 'USA', source: i % 3 === 0 ? 'ftcscout' : 'first', fetchedAt: createdAt })
+      .values({
+        number: t.number,
+        name: t.name,
+        city: t.city,
+        state: t.state,
+        country: t.state.length > 2 ? t.state : 'USA',
+        source: i % 3 === 0 ? 'ftcscout' : 'first',
+        fetchedAt: createdAt,
+      })
       .onConflictDoNothing()
   }
 

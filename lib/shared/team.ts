@@ -8,8 +8,14 @@ export const MAX_PDF_PAGES = 5
 /** Logos are resized in the browser; the source image may be up to 2 MB (plan §5 "Files"). */
 export const MAX_LOGO_SOURCE_BYTES = 2 * 1024 * 1024
 export const LOGO_SIZE_PX = 512
-/** The page-1 preview rendered in the browser before upload. */
-export const THUMB_WIDTH_PX = 1200
+/**
+ * The page-1 preview rendered in the browser before upload.
+ *
+ * It is shown in a column up to 820 CSS px wide, so a screen at 2x needs 1640 real pixels. 1200 was
+ * short of that and the optimizer had to upscale, which is what made the deck preview look soft
+ * before the live canvases replaced it.
+ */
+export const THUMB_WIDTH_PX = 1700
 export const MAX_IMAGE_UPLOAD_BYTES = 2 * 1024 * 1024
 
 export const INVITE_TTL_DAYS = 14
