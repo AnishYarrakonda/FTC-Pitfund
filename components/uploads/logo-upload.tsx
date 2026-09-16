@@ -11,11 +11,17 @@ import { NETWORK_ERROR_MESSAGE, type Result } from '@/lib/shared/result'
 type Stage = { kind: 'idle' } | { kind: 'working'; label: string } | { kind: 'done' } | { kind: 'error'; message: string; retry: File | null }
 
 /**
- * Logo picker: crop to a centered square and resize to 512 px in the browser, upload straight to
- * storage, then let the server verify and publish it. Shared by teams (/team) and companies
- * (/company, prompt 3): the caller passes the two actions.
+ * Logo picker: choose the square yourself in the cropper, resize to 512 px in the browser, upload
+ * straight to storage, then let the server verify and publish it. Shared by teams (/team) and
+ * companies (/company, prompt 3): the caller passes the two actions.
+ *
+ * Everything heavy — the canvas work, the uploader and the cropper dialog — loads when a file is
+ * chosen, so none of it is in any page's first-load JS.
  */
 const loadModules = () => Promise.all([import('@/lib/client/image'), import('@/lib/client/upload')])
+const loadCropper = () => import('./logo-cropper-impl')
+
+type Pending = { bitmap: ImageBitmap; previewUrl: string; file: File; Cropper: Awaited<ReturnType<typeof loadCropper>>['default'] }
 
 export function LogoUpload({
   name,
@@ -34,7 +40,19 @@ export function LogoUpload({
   const inputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(currentUrl)
   const [stage, setStage] = useState<Stage>({ kind: 'idle' })
+  const [pending, setPending] = useState<Pending | null>(null)
   const busy = stage.kind === 'working'
+
+  // The bitmap and the object URL are real resources; let them go whenever the cropper closes.
+  const closeCropper = () => {
+    setPending((p) => {
+      if (p) {
+        p.bitmap.close()
+        URL.revokeObjectURL(p.previewUrl)
+      }
+      return null
+    })
+  }
 
   useEffect(() => {
     if (stage.kind !== 'done') return
@@ -42,14 +60,27 @@ export function LogoUpload({
     return () => clearTimeout(timer)
   }, [stage.kind])
 
+  /** Decode the file and hand it to the cropper. Nothing is uploaded until they choose a square. */
   const start = async (file: File) => {
     let modules: Awaited<ReturnType<typeof loadModules>> | null = null
     try {
-      setStage({ kind: 'working', label: 'Resizing…' })
-      // The resizer and uploader load when a file is chosen.
+      setStage({ kind: 'working', label: 'Opening…' })
       modules = await loadModules()
-      const [{ squareLogo }, { putFile }] = modules
-      const blob = await squareLogo(file)
+      const [{ loadLogoSource }] = modules
+      const [bitmap, { default: Cropper }] = await Promise.all([loadLogoSource(file), loadCropper()])
+      setStage({ kind: 'idle' })
+      setPending({ bitmap, previewUrl: URL.createObjectURL(file), file, Cropper })
+    } catch (e) {
+      if (modules && e instanceof modules[0].ImageCheckError) return setStage({ kind: 'error', message: e.message, retry: null })
+      setStage({ kind: 'error', message: NETWORK_ERROR_MESSAGE, retry: file })
+    }
+  }
+
+  const upload = async (blob: Blob, file: File) => {
+    let modules: Awaited<ReturnType<typeof loadModules>> | null = null
+    try {
+      modules = await loadModules()
+      const [, { putFile }] = modules
       setStage({ kind: 'working', label: 'Uploading…' })
       const target = await createUpload(blob.type === 'image/jpeg' ? 'image/jpeg' : 'image/webp')
       if (!target.ok) return setStage({ kind: 'error', message: target.error.message, retry: target.error.code === 'UNAVAILABLE' ? file : null })
@@ -69,6 +100,18 @@ export function LogoUpload({
 
   return (
     <div className="flex min-w-0 items-center gap-4">
+      {pending ? (
+        <pending.Cropper
+          bitmap={pending.bitmap}
+          previewUrl={pending.previewUrl}
+          onCancel={closeCropper}
+          onCropped={(blob) => {
+            const { file } = pending
+            closeCropper()
+            void upload(blob, file)
+          }}
+        />
+      ) : null}
       <div className="relative">
         <OrgLogo name={name} src={preview} size="lg" />
         {busy ? (
@@ -102,7 +145,7 @@ export function LogoUpload({
               {stage.message}
             </span>
           ) : (
-            <span className="text-text-tertiary">PNG, JPEG or WebP up to 2 MB. We crop it to a square.</span>
+            <span className="text-text-tertiary">PNG, JPEG or WebP up to 2 MB. You choose which square to keep.</span>
           )}
         </p>
         <input
