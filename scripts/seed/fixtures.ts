@@ -39,6 +39,8 @@ export type TeamFixture = {
   website: string | null
   members: Array<PersonaKey | { email: string; name: string }>
   recordStatus: 'matched' | 'manual' | 'unchecked'
+  /** Bare handle, without the leading "@". */
+  instagram?: string
   /** Defaults to true; `false` seeds a team with no logo. */
   logo?: boolean
 }
@@ -49,6 +51,7 @@ export const TEAMS: TeamFixture[] = [
   {
     number: 31579,
     name: 'Exodius',
+    instagram: 'exodiusftc',
     city: 'Austin',
     state: 'TX',
     color: '#1F6F5C',

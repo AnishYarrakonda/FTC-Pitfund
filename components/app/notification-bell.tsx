@@ -10,20 +10,21 @@ import { useLazyComponent } from '@/lib/client/lazy'
 const loadPopover = () => import('./notification-popover')
 
 /**
- * The bell: unread count comes from the viewer query (no polling). The popover (Radix, the list,
- * mark-as-read) loads on first hover, focus or click; opening it loads the latest 20, and marking
- * read is optimistic and rolls back if the server refuses.
+ * The bell is a to-do list, not a feed: it holds only the things this person still has to act on,
+ * and each one clears itself when the thing is handled (lib/shared/notifications.ts). Everything
+ * else is told as a toast at the moment it happens. The count comes from the viewer query, so
+ * there is no polling; the popover loads on first hover, focus or click.
  */
-export function NotificationBell({ unreadCount }: { unreadCount: number }) {
+export function NotificationBell({ actionCount }: { actionCount: number }) {
   const router = useRouter()
-  const [unread, setUnread] = useState(unreadCount)
-  const [lastUnreadProp, setLastUnreadProp] = useState(unreadCount)
+  const [unread, setUnread] = useState(actionCount)
+  const [lastCountProp, setLastCountProp] = useState(actionCount)
   const { Component, openOnMount, preload, open } = useLazyComponent(loadPopover)
 
   // A fresh server count (navigation, router.refresh) replaces the optimistic one.
-  if (lastUnreadProp !== unreadCount) {
-    setLastUnreadProp(unreadCount)
-    setUnread(unreadCount)
+  if (lastCountProp !== actionCount) {
+    setLastCountProp(actionCount)
+    setUnread(actionCount)
   }
 
   // Refresh the server-rendered count when the tab regains focus (throttled).
@@ -56,7 +57,7 @@ export function BellButton({ unread, ...props }: { unread: number } & Omit<Compo
   return (
     <IconButton
       {...props}
-      label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
+      label={unread > 0 ? `Needs your attention, ${unread} ${unread === 1 ? 'item' : 'items'}` : 'Needs your attention'}
       icon={
         <span className="relative">
           <Bell aria-hidden="true" />

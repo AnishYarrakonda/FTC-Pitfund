@@ -1,10 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition, type Dispatch, type SetStateAction } from 'react'
 
-import { fetchNotifications, readAllNotifications, readNotification } from '@/app/actions/account'
+import { fetchNotifications, readNotification } from '@/app/actions/account'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/feedback'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/menu'
@@ -27,7 +26,6 @@ export default function NotificationPopover({
   setUnread: Dispatch<SetStateAction<number>>
   defaultOpen: boolean
 }) {
-  const router = useRouter()
   const [open, setOpen] = useState(defaultOpen)
   const [items, setItems] = useState<Item[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -64,22 +62,6 @@ export default function NotificationPopover({
     }
   }
 
-  const markAll = async () => {
-    const previous = items
-    const previousUnread = unread
-    setItems((prev) => prev?.map((n) => ({ ...n, readAt: n.readAt ?? new Date() })) ?? null)
-    setUnread(0)
-    try {
-      const result = await readAllNotifications({})
-      if (!result.ok) throw new Error(result.error.message)
-      router.refresh()
-    } catch {
-      setItems(previous)
-      setUnread(previousUnread)
-      setError("Couldn't mark notifications as read. Try again.")
-    }
-  }
-
   return (
     <Popover
       open={open}
@@ -91,14 +73,13 @@ export default function NotificationPopover({
       <PopoverTrigger asChild>
         <BellButton unread={unread} />
       </PopoverTrigger>
-      <PopoverContent className="overflow-hidden p-0" aria-label="Notifications">
-        <div className="flex h-12 items-center justify-between border-b border-border pr-2 pl-4">
-          <h2 className="text-body font-semibold text-text">Notifications</h2>
-          {unread > 0 ? (
-            <Button variant="ghost" size="sm" onClick={() => void markAll()}>
-              Mark all read
-            </Button>
-          ) : null}
+      <PopoverContent className="overflow-hidden p-0" aria-label="Needs your attention">
+        {/*
+          No "Mark all read": these are things to do, and the way to clear one is to do it. The
+          server clears them itself when the underlying thing is handled, by anyone on the org.
+        */}
+        <div className="flex h-12 items-center border-b border-border px-4">
+          <h2 className="text-body font-semibold text-text">Needs your attention</h2>
         </div>
         <div className="max-h-[min(420px,60dvh)] overflow-y-auto" aria-busy={loading || undefined}>
           {error ? (
@@ -111,7 +92,7 @@ export default function NotificationPopover({
               </Button>
             </div>
           ) : items === null ? (
-            <div className="grid gap-4 px-4 py-4" aria-label="Loading notifications">
+            <div className="grid gap-4 px-4 py-4" aria-label="Loading">
               {[0, 1, 2].map((i) => (
                 <div key={i} className="grid gap-2">
                   <Skeleton className="h-3.5 w-3/4" />
@@ -122,7 +103,7 @@ export default function NotificationPopover({
           ) : items.length === 0 ? (
             <div className="px-4 py-10 text-center">
               <p className="text-body font-medium text-text">You&apos;re all caught up</p>
-              <p className="mt-1 text-small text-text-tertiary">Updates about your pitches and members show up here.</p>
+              <p className="mt-1 text-small text-text-tertiary">Anything waiting on you shows up here.</p>
             </div>
           ) : (
             <ul className="divide-y divide-border">

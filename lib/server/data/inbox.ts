@@ -110,6 +110,7 @@ export async function getInboxPitch(viewer: SponsorViewer, pitchId: string, now 
         location: teams.location,
         summary: teams.summary,
         website: teams.website,
+        instagram: teams.instagram,
         logoPath: teams.logoPath,
         status: teams.status,
         pdfPath: teams.pdfPath,

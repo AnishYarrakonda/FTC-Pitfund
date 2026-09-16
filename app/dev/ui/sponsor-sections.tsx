@@ -49,7 +49,7 @@ function Specimen({ label, children, wide }: { label: string; children: ReactNod
 
 const row = (overrides: Partial<InboxRowData> & { status: InboxRowData['status'] }): InboxRowData => ({
   id: `row-${overrides.status}`,
-  team: { number: 31579, name: 'Exodius', logoUrl: null, verified: true, city: 'Austin', state: 'TX', summary: 'Third-year Austin community team building a fast, reliable robot and free workshops for 600+ local students.' },
+  team: { number: 31579, name: 'Exodius', logoUrl: null, verified: true, location: 'Austin, Texas, USA', summary: 'Third-year Austin community team building a fast, reliable robot and free workshops for 600+ local students.' },
   ask: '$1,500',
   receivedAt: new Date(NOW.getTime() - 3 * 3600_000),
   respondedAt: overrides.status === 'sent' ? null : new Date(NOW.getTime() - 3600_000),
@@ -85,7 +85,7 @@ export function SponsorSections() {
             <InboxRow pitch={row({ status: 'declined', ask: null, team: { ...row({ status: 'sent' }).team, verified: false, summary: null } })} href={null} now={NOW} />
           </li>
           <li>
-            <InboxRow pitch={row({ status: 'sent', ask: '$999,999', team: { number: 999999, name: LONG.slice(0, 60), logoUrl: null, verified: true, city: LONG.slice(0, 80), state: 'TX', summary: LONG.slice(0, 160) } })} href={null} now={NOW} />
+            <InboxRow pitch={row({ status: 'sent', ask: '$999,999', team: { number: 999999, name: LONG.slice(0, 60), logoUrl: null, verified: true, location: LONG.slice(0, 120), summary: LONG.slice(0, 160) } })} href={null} now={NOW} />
           </li>
         </ul>
         <div className="grid gap-6 lg:grid-cols-2">

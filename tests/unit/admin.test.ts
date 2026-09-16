@@ -16,8 +16,8 @@ import {
   suspendTeam,
   unsuspendCompany,
   unsuspendTeam,
-  unverifyTeam,
-  verifyTeam,
+  approveTeam,
+  rejectTeam,
 } from '@/lib/server/data/admin-orgs'
 import { approvalBlocker, approvePitch, getPitchReview, listPitchQueue, nextInQueue, rejectPitch, reviewCounts, sendBackPitch } from '@/lib/server/data/admin-review'
 import { searchPeople, searchTeams } from '@/lib/server/data/admin-directory'
@@ -227,15 +227,36 @@ describe('company decisions', () => {
 
 describe('team decisions', () => {
   it(
-    'verify and unverify are one-shot transitions',
+    'approve and reject are one-shot transitions, and only an approved team has a public page',
     dbTest(async () => {
       const admin = await adminViewer()
-      const team = await createTeam()
-      await verifyTeam(admin, team.id, NOW)
-      await expectAppError(verifyTeam(admin, team.id, NOW), 'CONFLICT')
+      const team = await createTeam({ status: 'pending' })
+      // A team waiting for review must not already be reachable at its own number: that is what
+      // stops someone claiming a team number and getting a page with that team on it.
+      expect(await queryPublicTeam(team.number)).toBeNull()
+
+      await approveTeam(admin, team.id, NOW)
+      await expectAppError(approveTeam(admin, team.id, NOW), 'CONFLICT')
       expect((await queryPublicTeam(team.number))?.verified).toBe(true)
-      await unverifyTeam(admin, team.id)
-      await expectAppError(unverifyTeam(admin, team.id), 'CONFLICT')
+
+      // Rejecting only applies to a team still waiting, so a second admin can't undo an approval
+      // by racing it.
+      await expectAppError(rejectTeam(admin, team.id, 'No', NOW), 'CONFLICT')
+    }),
+  )
+
+  it(
+    'a rejected team keeps the note, loses its page, and can be approved after fixing things',
+    dbTest(async () => {
+      const admin = await adminViewer()
+      const team = await createTeam({ status: 'pending' })
+      const { team: rejected } = await rejectTeam(admin, team.id, 'The screenshot doesn’t show your name.', NOW)
+      expect(rejected.status).toBe('rejected')
+      expect(await queryPublicTeam(team.number)).toBeNull()
+
+      const { team: approved } = await approveTeam(admin, team.id, NOW)
+      expect(approved.status).toBe('approved')
+      expect((await queryPublicTeam(team.number))?.verified).toBe(true)
     }),
   )
 
@@ -331,7 +352,7 @@ describe('the admin digest', () => {
       await getDb().update(pitches).set({ status: 'draft' }).where(eq(pitches.status, 'in_review'))
       await getDb().update(sponsors).set({ status: 'approved' }).where(eq(sponsors.status, 'pending'))
       await getDb().update(reports).set({ status: 'resolved' }).where(eq(reports.status, 'open'))
-      await getDb().update(teams).set({ verifiedAt: NOW }).where(eq(teams.verifiedAt, null as unknown as Date))
+      await getDb().update(teams).set({ status: 'approved' }).where(eq(teams.status, 'pending'))
       await getDb().update(teams).set({ createdAt: new Date(NOW.getTime() - 5 * 86400_000) })
       expect(await buildDigest(NOW)).toBeNull()
       expect((await enqueueAdminDigest(NOW)).skipped).toBe(true)
@@ -339,8 +360,8 @@ describe('the admin digest', () => {
       const late = await inReviewPitch({ submittedAt: new Date(NOW.getTime() - 30 * 3600_000) })
       await inReviewPitch({ submittedAt: new Date(NOW.getTime() - 2 * 3600_000) })
       const pending = await createSponsor({ status: 'pending', name: 'Waiting Co' })
-      const newTeam = await createTeam({ name: 'Brand New Bots', createdAt: new Date(NOW.getTime() - 3600_000) })
-      await getDb().update(teams).set({ verifiedAt: NOW }).where(inArray(teams.id, [late.team.id]))
+      const newTeam = await createTeam({ name: 'Brand New Bots', status: 'pending', createdAt: new Date(NOW.getTime() - 3600_000) })
+      await getDb().update(teams).set({ status: 'approved' }).where(inArray(teams.id, [late.team.id]))
       const digest = await buildDigest(NOW)
       expect(digest).toMatchObject({ waitingPitches: 1, oldestWaitingHours: 30, pendingCompaniesTotal: 1, openReports: 0 })
       expect(digest?.pendingCompanies.map((c) => c.id)).toEqual([pending.id])

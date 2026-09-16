@@ -54,7 +54,7 @@ export const submitPitchAction = defineAction(
           data: {
             teamNumber: team.number,
             teamName: team.name,
-            verified: Boolean(team.verifiedAt),
+            verified: team.status === 'approved',
             companyName: r.company.name,
             summary: r.team?.summary?.slice(0, 400) ?? null,
             ask: ask ? [ask, r.pitch.askNote].filter(Boolean).join(': ').slice(0, 700) : null,

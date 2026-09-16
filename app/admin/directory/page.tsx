@@ -74,11 +74,11 @@ export default async function AdminDirectoryPage({ searchParams }: PageProps<'/a
             className: 'w-[42%]',
             cell: (t) => (
               <Link href={`/admin/teams/${t.id}`} className="block min-w-0 rounded-control hover:underline hover:decoration-border-strong hover:underline-offset-4">
-                <TeamMark name={t.name} number={t.number} logoSrc={t.logoUrl} verified={t.verified} meta={placeLabel(t) || null} size="sm" />
+                <TeamMark name={t.name} number={t.number} logoSrc={t.logoUrl} verified={t.status === 'approved'} meta={placeLabel(t) || null} size="sm" />
               </Link>
             ),
           },
-          { key: 'status', header: 'Status', cell: (t) => (t.suspended ? <StatusBadge label="Suspended" tone="danger" /> : t.verified ? <StatusBadge label="Verified" tone="success" /> : <StatusBadge label="Not verified" tone="warning" />) },
+          { key: 'status', header: 'Status', cell: (t) => (t.suspended ? <StatusBadge label="Suspended" tone="danger" /> : <StatusBadge label={ORG_STATUS[t.status].label} tone={ORG_STATUS[t.status].tone} />) },
           { key: 'members', header: 'Coaches', align: 'right', cell: (t) => <span className="tabular">{t.members}</span> },
           { key: 'pitches', header: 'Pitches', align: 'right', cell: (t) => <span className="tabular">{t.pitches}</span> },
           { key: 'joined', header: 'Joined', align: 'right', cell: (t) => <span className="text-text-secondary">{formatDate(t.createdAt)}</span> },

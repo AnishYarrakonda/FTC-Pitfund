@@ -44,11 +44,3 @@ export async function markNotificationRead(viewer: Viewer, id: string) {
   return rows.length
 }
 
-export async function markAllNotificationsRead(viewer: Viewer) {
-  const rows = await getDb()
-    .update(notifications)
-    .set({ readAt: new Date() })
-    .where(and(eq(notifications.userId, viewer.id), isNull(notifications.readAt)))
-    .returning({ id: notifications.id })
-  return rows.length
-}

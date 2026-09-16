@@ -45,10 +45,10 @@ function pitchData(deck: Deck, variant: 'full' | 'bare' | 'long'): PitchViewData
     team: {
       number: 31579,
       name: long ? LONG.slice(0, 60) : 'Exodius',
-      city: long ? LONG.slice(0, 80) : 'Austin',
-      state: 'TX',
+      location: long ? LONG.slice(0, 120) : 'Austin, Texas, USA',
       summary: variant === 'bare' ? null : long ? LONG.slice(0, 160) : 'Third-year Austin community team building a fast, reliable robot and free workshops for 600+ local students.',
       website: long ? `https://example.org/${LONG.slice(0, 280)}` : 'https://exodiusftc.com',
+      instagram: variant === 'bare' ? null : 'exodiusftc',
       logoUrl: variant === 'bare' ? null : (deck?.logo ?? null),
       verified: variant !== 'bare',
       deck: variant !== 'bare' && deck ? { url: deck.src, thumbUrl: deck.thumb, pages: deck.pages ?? 1 } : null,

@@ -16,12 +16,16 @@ import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { useAction, useLatestAction } from '@/lib/client/use-action'
 import { SUPPORT_EMAIL } from '@/lib/shared/brand'
-import { MAX_TEAM_NAME_LENGTH, placeLabel } from '@/lib/shared/team'
+import { MAX_LOCATION_LENGTH, MAX_TEAM_NAME_LENGTH, placeLabel } from '@/lib/shared/team'
+
+/** FIRST stores city, state and country separately; we keep one line the team can edit. */
+const recordLocation = (r: { city: string | null; state: string | null; country: string | null }) =>
+  [r.city, r.state, r.country].filter(Boolean).join(', ')
 
 type Source = 'matched' | 'manual' | 'unchecked'
-type Details = { name: string; city: string; state: string; country: string | null }
+type Details = { name: string; location: string; country: string | null }
 
-const EMPTY: Details = { name: '', city: '', state: '', country: null }
+const EMPTY: Details = { name: '', location: '', country: null }
 
 /**
  * Coach first run (plan §3.2): number → debounced FIRST lookup → confirm or type details, or
@@ -126,14 +130,14 @@ export function TeamSetup() {
               <span className="font-semibold">
                 Team {result.record.number} · {result.record.name}
               </span>
-              {placeLabel(result.record) ? <span className="text-text-secondary"> · {placeLabel(result.record)}</span> : null}
+              {recordLocation(result.record) ? <span className="text-text-secondary"> · {recordLocation(result.record)}</span> : null}
             </p>
             <p className="text-body text-text-secondary">Is this your team?</p>
             <div className="flex flex-wrap gap-2">
               <Button
                 onClick={() => {
                   setSource('matched')
-                  setDetails({ name: result.record.name.slice(0, MAX_TEAM_NAME_LENGTH), city: result.record.city ?? '', state: result.record.state ?? '', country: result.record.country })
+                  setDetails({ name: result.record.name.slice(0, MAX_TEAM_NAME_LENGTH), location: recordLocation(result.record), country: result.record.country })
                 }}
               >
                 <Check aria-hidden="true" />
@@ -212,14 +216,15 @@ export function TeamSetup() {
           <Field label="Team name" required error={errors.name}>
             <Input value={details.name} onChange={(e) => setDetails({ ...details, name: e.target.value })} maxLength={MAX_TEAM_NAME_LENGTH} autoComplete="organization" />
           </Field>
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="City" required error={errors.city}>
-              <Input value={details.city} onChange={(e) => setDetails({ ...details, city: e.target.value })} maxLength={80} autoComplete="address-level2" />
-            </Field>
-            <Field label="State or region" required error={errors.state}>
-              <Input value={details.state} onChange={(e) => setDetails({ ...details, state: e.target.value })} maxLength={80} autoComplete="address-level1" />
-            </Field>
-          </div>
+          <Field label="Location" hint="Where your team is based, however you’d say it." required error={errors.location}>
+            <Input
+              value={details.location}
+              onChange={(e) => setDetails({ ...details, location: e.target.value })}
+              maxLength={MAX_LOCATION_LENGTH}
+              autoComplete="address-level2"
+              placeholder="Austin, Texas, USA"
+            />
+          </Field>
         </div>
       ) : null}
 

@@ -111,8 +111,7 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
       id,
       number: t.number,
       name: t.name,
-      city: t.city,
-      state: t.state,
+      location: `${t.city}, ${t.state}`,
       country: 'USA',
       website: mode === 'demo' ? t.website : null,
       summary: mode === 'demo' ? t.summary : null,
@@ -126,12 +125,21 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
       pdfUpdatedAt: assets?.pdf ? ago(now, (20 - i) * DAY) : null,
       mediaConsentAt: assets?.pdf ? ago(now, (20 - i) * DAY) : null,
       recordStatus: t.recordStatus,
-      verifiedAt: t.verified && mode === 'demo' ? ago(now, (30 - i * 2) * DAY) : null,
-      verifiedBy: t.verified && mode === 'demo' ? adminId : null,
+      // Seeded teams are already live so the rest of the app has something to show. The review
+      // queue gets its own teams below.
+      status: 'approved',
+      submittedAt: createdAt,
+      decidedAt: mode === 'demo' ? ago(now, (30 - i * 2) * DAY) : null,
+      decidedBy: mode === 'demo' ? adminId : null,
+      proofPath: null,
+      instagram: t.instagram ?? null,
       createdAt,
     })
     const members = mode === 'demo' ? t.members : t.members.filter((m) => typeof m === 'string')
-    await db.insert(teamMembers).values(members.map((m, j) => ({ teamId: id, userId: idOf(memberEmail(m)), createdAt: ago(now, (34 - i * 2 - j) * DAY) })))
+    // The first member listed is the coach who set the team up, so they own it.
+    await db.insert(teamMembers).values(
+      members.map((m, j) => ({ teamId: id, userId: idOf(memberEmail(m)), role: (j === 0 ? 'owner' : 'editor') as 'owner' | 'editor', createdAt: ago(now, (34 - i * 2 - j) * DAY) })),
+    )
     await db
       .insert(ftcTeamCache)
       .values({ number: t.number, name: t.name, city: t.city, state: t.state, country: 'USA', source: i % 3 === 0 ? 'ftcscout' : 'first', fetchedAt: createdAt })
@@ -171,7 +179,7 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
       createdAt: ago(now, (32 - i) * DAY),
     })
     const members = mode === 'demo' ? s.members : s.members.filter((m) => typeof m === 'string')
-    await db.insert(sponsorMembers).values(members.map((m) => ({ sponsorId: id, userId: idOf(memberEmail(m)) })))
+    await db.insert(sponsorMembers).values(members.map((m, j) => ({ sponsorId: id, userId: idOf(memberEmail(m)), role: (j === 0 ? 'owner' : 'editor') as 'owner' | 'editor' })))
   }
 
   // Join request: coach-joiner waits on Exodius in both modes.

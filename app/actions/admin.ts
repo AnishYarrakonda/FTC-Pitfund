@@ -29,7 +29,7 @@ import { dismissEmail, makeEmailDue, requeueEmail } from '@/lib/server/data/syst
 import { scheduleDrain } from '@/lib/server/email/drain'
 import { enqueueEmail, PRIORITY, sendNow } from '@/lib/server/email/outbox'
 import { absoluteUrl } from '@/lib/server/env'
-import { notifyAdmins, notifySponsor, notifyTeam, notifyUsers, resolveNotifications } from '@/lib/server/notify'
+import { notifySponsor, notifyTeam, notifyUsers, resolveNotifications } from '@/lib/server/notify'
 import { AppError, defineAction } from '@/lib/server/result'
 import { inTransaction } from '@/lib/server/transaction'
 import { discard } from '@/lib/server/uploads'

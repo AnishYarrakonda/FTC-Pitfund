@@ -17,7 +17,7 @@ async function WorkspaceGate({ children }: { children: ReactNode }) {
   const viewer = await pageViewer()
   if (!viewer.team && !viewer.sponsor) redirect(viewer.isAdmin && !viewer.pendingJoin ? '/admin' : '/welcome')
 
-  if (viewer.team?.suspendedAt) {
+  if (viewer.team?.status === 'suspended') {
     return (
       <SuspendedNotice title={`Team ${viewer.team.number} is suspended`}>
         Your team can&apos;t pitch or edit its profile while it&apos;s suspended, and its public page is hidden.

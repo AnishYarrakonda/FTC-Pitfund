@@ -3,13 +3,15 @@ import { describe, expect, it } from 'vitest'
 
 import { audit, listAuditEvents } from '@/lib/server/audit'
 import { accountDeletionBlocker, updateProfile } from '@/lib/server/data/account'
-import { listNotifications, markAllNotificationsRead, markNotificationRead } from '@/lib/server/data/notifications'
+import { listNotifications, markNotificationRead } from '@/lib/server/data/notifications'
 import { getDb } from '@/lib/server/db'
-import { notifyAdmins, notifySponsor, notifyTeam, notifyUsers } from '@/lib/server/notify'
+import { notifyAdmins, notifySponsor, notifyTeam, notifyUsers, resolveNotifications } from '@/lib/server/notify'
 import { notifications } from '@/lib/server/schema'
 import { loadViewer } from '@/lib/server/viewer'
 import { safeNext } from '@/lib/shared/sign-in'
 import { requestOrigin } from '@/lib/shared/request-origin'
+
+import { subjectKey } from '@/lib/shared/notifications'
 
 import { addSponsorMember, addTeamMember, createSponsor, createTeam, createUser, dbTest } from './helpers/db'
 
@@ -19,20 +21,20 @@ describe('notifications', () => {
     dbTest(async () => {
       const team = await createTeam()
       const [a, b, outsider] = [await createUser(), await createUser(), await createUser()]
-      await addTeamMember(team.id, a.id)
-      await addTeamMember(team.id, b.id)
-      expect(await notifyTeam(team.id, { type: 't', title: 'Hello team' }, { exceptUserId: a.id })).toBe(1)
+      await addTeamMember(team.id, a.id, 'owner')
+      await addTeamMember(team.id, b.id, 'editor')
+      expect(await notifyTeam(team.id, { type: 'team.join_request', title: 'Hello team' }, { exceptUserId: a.id })).toBe(1)
 
       const sponsor = await createSponsor()
       await addSponsorMember(sponsor.id, outsider.id)
-      expect(await notifySponsor(sponsor.id, { type: 's', title: 'Hello company', href: '/inbox' })).toBe(1)
+      expect(await notifySponsor(sponsor.id, { type: 'pitch.received', title: 'Hello company', href: '/inbox' })).toBe(1)
       expect(await notifyUsers([a.id, a.id], { type: 'u', title: 'Just you' })).toBe(1)
       await createUser({ isAdmin: true })
-      expect(await notifyAdmins({ type: 'a', title: 'Admins' })).toBeGreaterThanOrEqual(1)
+      expect(await notifyAdmins({ type: 'admin.pitch_submitted', title: 'Admins' })).toBeGreaterThanOrEqual(1)
 
       const viewerB = (await loadViewer(b.id))!
       const viewerOutsider = (await loadViewer(outsider.id))!
-      expect(viewerB.unreadCount).toBe(1)
+      expect(viewerB.actionCount).toBe(1)
       const [mine] = await listNotifications(viewerB)
       expect(mine.title).toBe('Hello team')
 
@@ -43,8 +45,44 @@ describe('notifications', () => {
 
       expect(await markNotificationRead(viewerB, mine.id)).toBe(1)
       expect(await markNotificationRead(viewerB, mine.id)).toBe(0)
-      expect((await loadViewer(b.id))!.unreadCount).toBe(0)
-      expect(await markAllNotificationsRead(viewerOutsider)).toBe(1)
+      expect((await loadViewer(b.id))!.actionCount).toBe(0)
+    }),
+  )
+
+  it(
+    'only count work: news is stored but never reaches the bell',
+    dbTest(async () => {
+      const team = await createTeam()
+      const person = await createUser()
+      await addTeamMember(team.id, person.id)
+      // "Someone joined" is news: it is written (email is only ever a copy of it) but it is not
+      // something the coach has to do, so the badge stays at zero.
+      await notifyTeam(team.id, { type: 'team.member_joined', title: 'Sam Patel joined' })
+      expect((await loadViewer(person.id))!.actionCount).toBe(0)
+      expect(await getDb().select().from(notifications).where(eq(notifications.userId, person.id))).toHaveLength(1)
+
+      await notifyTeam(team.id, { type: 'pitch.sent_back', title: 'Changes requested' })
+      expect((await loadViewer(person.id))!.actionCount).toBe(1)
+    }),
+  )
+
+  it(
+    'clear an action item for everyone once the thing it points at is handled',
+    dbTest(async () => {
+      const team = await createTeam()
+      const [owner, editor] = [await createUser(), await createUser()]
+      await addTeamMember(team.id, owner.id, 'owner')
+      await addTeamMember(team.id, editor.id, 'editor')
+      const subject = subjectKey('join', crypto.randomUUID())
+      await notifyTeam(team.id, { type: 'team.join_request', title: 'Sam wants to join', subjectKey: subject })
+      expect((await loadViewer(owner.id))!.actionCount).toBe(1)
+      expect((await loadViewer(editor.id))!.actionCount).toBe(1)
+
+      // The owner decides the request; it stops being work for the other coach too, without them
+      // having to open the bell.
+      expect(await resolveNotifications(subject)).toBe(2)
+      expect((await loadViewer(owner.id))!.actionCount).toBe(0)
+      expect((await loadViewer(editor.id))!.actionCount).toBe(0)
     }),
   )
 })

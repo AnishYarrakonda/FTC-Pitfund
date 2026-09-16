@@ -11,7 +11,7 @@ import type { PitchStatus } from '@/lib/shared/types'
 export type InboxRowData = {
   id: string
   status: PitchStatus
-  team: { number: number; name: string; logoUrl: string | null; verified: boolean; city: string | null; state: string | null; summary: string | null }
+  team: { number: number; name: string; logoUrl: string | null; verified: boolean; location: string | null; summary: string | null }
   ask: string | null
   receivedAt: Date | string
   respondedAt: Date | string | null

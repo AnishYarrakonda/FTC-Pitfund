@@ -61,19 +61,23 @@ describe('public team page', () => {
   it(
     'returns public fields only, and nothing for suspended or missing teams',
     dbTest(async () => {
-      const team = await createTeam({ summary: 'We build robots.', website: 'https://example.org', verifiedAt: new Date(), pdfPath: 't/deck.pdf', pdfPages: 2, pdfBytes: 10, pdfUpdatedAt: new Date() })
+      const team = await createTeam({ summary: 'We build robots.', website: 'https://example.org', status: 'approved', pdfPath: 't/deck.pdf', pdfPages: 2, pdfBytes: 10, pdfUpdatedAt: new Date() })
       const coach = await createUser({ name: 'Private Coach Name', phone: '(512) 555-0100', email: `private-${crypto.randomUUID()}@pitfund.test` })
       await addTeamMember(team.id, coach.id)
 
       const page = await queryPublicTeam(team.number)
-      expect(Object.keys(page!).sort()).toEqual(['city', 'deck', 'id', 'logoUrl', 'name', 'number', 'state', 'summary', 'verified', 'website'])
+      expect(Object.keys(page!).sort()).toEqual(['deck', 'id', 'instagram', 'location', 'logoUrl', 'name', 'number', 'summary', 'verified', 'website'])
       expect(page).toMatchObject({ verified: true, deck: { pages: 2 } })
       const serialized = JSON.stringify(page)
       for (const secret of [coach.name, coach.email, '555-0100']) expect(serialized).not.toContain(secret)
 
-      const suspended = await createTeam({ suspendedAt: new Date() })
+      const suspended = await createTeam({ status: 'suspended', suspendedAt: new Date() })
       expect(await queryPublicTeam(suspended.number)).toBeNull()
       expect(await queryPublicTeam(999_999_999)).toBeNull()
+      // A team that hasn't been approved has no page at all, so claiming a number gets you nothing.
+      for (const status of ['draft', 'pending', 'rejected'] as const) {
+        expect(await queryPublicTeam((await createTeam({ status })).number)).toBeNull()
+      }
       expect((await queryPublicTeam((await createTeam()).number))!.deck).toBeNull()
     }),
   )

@@ -25,16 +25,32 @@ describe('website normalization', () => {
   })
 
   it('the profile schema normalizes and explains', () => {
-    const ok = teamProfileSchema.parse({ name: ' Exodius ', city: 'Austin', state: 'TX', summary: 'Two\n\nlines', website: 'exodiusftc.com' })
-    expect(ok).toEqual({ name: 'Exodius', city: 'Austin', state: 'TX', summary: 'Two lines', website: 'https://exodiusftc.com' })
-    const bad = teamProfileSchema.safeParse({ name: '', city: 'A', state: 'B', summary: 'x'.repeat(161), website: 'nope' })
+    const ok = teamProfileSchema.parse({
+      name: ' Exodius ',
+      location: '  Austin,   Texas, USA ',
+      summary: 'Two\n\nlines',
+      website: 'exodiusftc.com',
+      instagram: 'https://www.instagram.com/exodiusftc/?hl=en',
+    })
+    expect(ok).toEqual({
+      name: 'Exodius',
+      location: 'Austin, Texas, USA',
+      summary: 'Two lines',
+      website: 'https://exodiusftc.com',
+      instagram: 'exodiusftc',
+    })
+    const bad = teamProfileSchema.safeParse({ name: '', location: '', summary: 'x'.repeat(161), website: 'nope', instagram: 'not a handle!' })
     expect(bad.success).toBe(false)
     expect(z.flattenError(bad.error!).fieldErrors).toMatchObject({
       name: ['Enter your team name'],
+      location: ['Enter where your team is based'],
       summary: ['Keep the summary to 160 characters'],
       website: ['Enter a website like exodiusftc.com'],
+      instagram: ['Enter an Instagram handle like @exodiusftc'],
     })
-    expect(createTeamSchema.safeParse({ number: '31579', name: 'Exodius', city: 'Austin', state: 'TX', source: 'matched', adult: false, terms: true }).success).toBe(false)
+    // An empty Instagram box is not an error; it just means they don't have one.
+    expect(teamProfileSchema.parse({ name: 'E', location: 'Austin', summary: '', website: '', instagram: '' })).toMatchObject({ instagram: null, website: null })
+    expect(createTeamSchema.safeParse({ number: '31579', name: 'Exodius', location: 'Austin, Texas, USA', source: 'matched', adult: false, terms: true }).success).toBe(false)
     expect(reportSchema.parse({ teamNumber: 31579, reason: 'spam', details: '', email: '' })).toMatchObject({ details: null, email: null })
   })
 })
@@ -109,11 +125,17 @@ describe('pitch states for coaches', () => {
   })
 
   it('sign-in sends invite links back to the invite, first-timers to /welcome', () => {
-    const coach = { team: { id: 't' }, sponsor: null, isAdmin: false, pendingJoin: null } as never
+    const coach = { team: { id: 't', status: 'approved' }, sponsor: null, isAdmin: false, pendingJoin: null } as never
     expect(signInDestination(null, '/invite/abc')).toBe('/invite/abc')
     expect(signInDestination({ team: null, sponsor: null, isAdmin: false, pendingJoin: null }, '/pitches')).toBe('/welcome')
     expect(signInDestination(coach, '/team')).toBe('/team')
     expect(signInDestination(coach, null)).toBe('/pitches')
+
+    // A team still behind the review gate ignores ?next: there is nothing in the app to go back to.
+    const draft = { team: { id: 't', status: 'draft' }, sponsor: null, isAdmin: false, pendingJoin: null } as never
+    const waiting = { team: { id: 't', status: 'pending' }, sponsor: null, isAdmin: false, pendingJoin: null } as never
+    expect(signInDestination(draft, '/pitches')).toBe('/welcome/team')
+    expect(signInDestination(waiting, '/pitches')).toBe('/welcome/pending')
     // The landing page's "I coach a team" / "I represent a company" preselects the welcome branch, first run only.
     expect(signInDestination(null, null, 'team')).toBe('/welcome?intent=team')
     expect(signInDestination({ team: null, sponsor: null, isAdmin: false, pendingJoin: null }, null, 'company')).toBe('/welcome?intent=company')
