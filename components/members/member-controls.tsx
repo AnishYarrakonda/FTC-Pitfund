@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, UserPlus } from 'lucide-react'
+import { UserPlus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createContext, use, useState, type FormEvent, type ReactNode } from 'react'
 
@@ -10,35 +10,60 @@ import { Button } from '@/components/ui/button'
 import { ConfirmDialog, Dialog, DialogClose, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { toast } from '@/lib/client/toast'
 import { useAction } from '@/lib/client/use-action'
 import type { Result } from '@/lib/shared/result'
 
 /*
  * The interactive parts of ./members-section.tsx (a server component): each button is its own
- * island, and MembersFeedback shows the in-place confirmation after any of them succeeds.
+ * island. Outcomes are toasts, which decay and can be dismissed — an earlier version wrote a green
+ * line above the list that was never cleared, so it sat there for the rest of the session.
  */
 
 const DELAYED = 'Email delivery is delayed until tomorrow. They’ll get the invite then.'
 
-const Refresh = createContext<(message: string | null) => void>(() => {})
+const Refresh = createContext<(message: string) => void>(() => {})
 
 export function MembersFeedback({ children }: { children: ReactNode }) {
   const router = useRouter()
-  const [notice, setNotice] = useState<string | null>(null)
-  const refresh = (message: string | null) => {
-    setNotice(message)
+  const refresh = (message: string) => {
+    toast.success(message)
     router.refresh()
   }
+  return <Refresh value={refresh}>{children}</Refresh>
+}
+
+/**
+ * Handing the account to someone else. Irreversible from the current owner's side — only the new
+ * owner can hand it back — so it states that plainly (ux-contract rule 7).
+ */
+export function TransferOwnerButton({
+  userId,
+  name,
+  orgLabel,
+  action,
+}: {
+  userId: string
+  name: string
+  /** "the team" or the company's name. */
+  orgLabel: string
+  action: (input: { userId: string }) => Promise<Result<{ name: string }>>
+}) {
+  const refresh = use(Refresh)
   return (
-    <Refresh value={refresh}>
-      {notice ? (
-        <p role="status" className="flex items-start gap-2 text-body text-success">
-          <Check aria-hidden="true" className="mt-[3px] size-4 shrink-0" />
-          <span className="min-w-0 user-text">{notice}</span>
-        </p>
-      ) : null}
-      {children}
-    </Refresh>
+    <ConfirmDialog
+      trigger={
+        <Button variant="ghost" size="sm" className="text-text-secondary">
+          Make owner
+        </Button>
+      }
+      title={`Make ${name} the owner?`}
+      consequence={`${name} will be able to invite and remove people, and you won't. Only they can give it back.`}
+      confirmLabel="Make owner"
+      pendingLabel="Transferring…"
+      onConfirm={() => action({ userId })}
+      onConfirmed={(data) => refresh(`${data.name} now owns ${orgLabel}.`)}
+    />
   )
 }
 

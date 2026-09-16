@@ -4,7 +4,7 @@ import { updateTag } from 'next/cache'
 import { after } from 'next/server'
 import { z } from 'zod'
 
-import { requireApprovedSponsor, requireSponsorMember, requireViewer } from '@/lib/server/authz'
+import { requireSponsorMember, requireSponsorOwner, requireSponsorSetup, requireViewer } from '@/lib/server/authz'
 import { TAGS } from '@/lib/server/cache-tags'
 import {
   confirmDefaultQuestions,
@@ -14,6 +14,7 @@ import {
   finalizeCompanyLogo,
   leaveCompany,
   removeCompanyMember,
+  transferCompanyOwnership,
   saveCompanyQuestions,
   updateCompanyProfile,
 } from '@/lib/server/data/company'
@@ -47,38 +48,39 @@ export const createCompanyAction = defineAction(
       await notifyAdmins({ type: 'sponsor.created', title: `${company.name} is waiting for approval`, body: `${input.yourName} · ${input.jobTitle}`, href: `/admin/companies/${company.id}` })
       return company
     })
-    // Straight to the profile and questions: that's what approval waits on (plan §12: ≤ 4 screens).
-    return { redirectTo: '/company' }
+    // Straight to the profile and questions: that's what the review looks at, and the company is a
+    // draft until it sends itself for review.
+    return { redirectTo: '/welcome/company' }
   },
   { conflict: CREATE_COMPANY_CONFLICTS },
 )
 
 export const saveCompanyProfile = defineAction(companyProfileSchema, async (input) => {
-  const viewer = await requireSponsorMember()
+  const viewer = await requireSponsorSetup()
   const profile = await inTransaction(() => updateCompanyProfile(viewer, input))
   invalidateCompany(profile.id)
   return profile
 })
 
 export const saveQuestions = defineAction(questionsSchema, async ({ questions }) => {
-  const viewer = await requireSponsorMember()
+  const viewer = await requireSponsorSetup()
   const profile = await inTransaction(() => saveCompanyQuestions(viewer, questions))
   invalidateCompany(profile.id)
   return profile
 })
 
 export const keepDefaultQuestions = defineAction(z.object({}), async () => {
-  const viewer = await requireSponsorMember()
+  const viewer = await requireSponsorSetup()
   return inTransaction(() => confirmDefaultQuestions(viewer))
 })
 
 export const createCompanyUploadUrl = defineAction(z.object({ imageType: z.enum(['image/webp', 'image/jpeg']) }), async ({ imageType }) => {
-  const viewer = await requireSponsorMember()
+  const viewer = await requireSponsorSetup()
   return createCompanyUpload(viewer, imageType === 'image/jpeg' ? 'jpg' : 'webp')
 })
 
 export const saveCompanyLogo = defineAction(z.object({ path: z.string().min(1).max(300) }), async ({ path }) => {
-  const viewer = await requireSponsorMember()
+  const viewer = await requireSponsorSetup()
   const result = await inTransaction(() => finalizeCompanyLogo(viewer, path))
   after(() => discard('public', result.replaced))
   invalidateCompany(viewer.sponsor.id)
@@ -104,7 +106,7 @@ async function sendCompanyInvite(viewer: Viewer & { sponsor: NonNullable<Viewer[
 }
 
 export const inviteCompanyMember = defineAction(inviteSchema, async ({ email }) => {
-  const viewer = await requireApprovedSponsor()
+  const viewer = await requireSponsorOwner()
   const result = await inTransaction(async () => {
     const { invite, token } = await createInvite(viewer, inviteOrgFor(viewer, 'sponsor'), email)
     const sent = await sendCompanyInvite(viewer, invite, token)
@@ -115,7 +117,7 @@ export const inviteCompanyMember = defineAction(inviteSchema, async ({ email }) 
 })
 
 export const resendCompanyInvite = defineAction(z.object({ inviteId: z.uuid() }), async ({ inviteId }) => {
-  const viewer = await requireApprovedSponsor()
+  const viewer = await requireSponsorOwner()
   const result = await inTransaction(async () => {
     const { invite, token } = await resendInvite(viewer, inviteOrgFor(viewer, 'sponsor'), inviteId)
     const sent = await sendCompanyInvite(viewer, invite, token)
@@ -126,12 +128,12 @@ export const resendCompanyInvite = defineAction(z.object({ inviteId: z.uuid() })
 })
 
 export const revokeCompanyInvite = defineAction(z.object({ inviteId: z.uuid() }), async ({ inviteId }) => {
-  const viewer = await requireSponsorMember()
+  const viewer = await requireSponsorOwner()
   return inTransaction(() => revokeInvite(viewer, inviteOrgFor(viewer, 'sponsor'), inviteId))
 })
 
 export const removeCompanyMemberAction = defineAction(z.object({ userId: z.uuid() }), async ({ userId }) => {
-  const viewer = await requireSponsorMember()
+  const viewer = await requireSponsorOwner()
   return inTransaction(async () => {
     const removed = await removeCompanyMember(viewer, userId)
     await notifyUsers([userId], {
@@ -141,6 +143,20 @@ export const removeCompanyMemberAction = defineAction(z.object({ userId: z.uuid(
       href: '/welcome',
     })
     return removed
+  })
+})
+
+export const transferCompanyOwnershipAction = defineAction(z.object({ userId: z.uuid() }), async ({ userId }) => {
+  const viewer = await requireSponsorOwner()
+  return inTransaction(async () => {
+    const r = await transferCompanyOwnership(viewer, userId)
+    await notifyUsers([userId], {
+      type: 'sponsor.ownership_transferred',
+      title: `You now own ${viewer.sponsor.name}`,
+      body: 'You can invite coworkers and remove people.',
+      href: '/company#members',
+    })
+    return r
   })
 })
 
