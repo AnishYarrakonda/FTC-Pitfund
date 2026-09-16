@@ -18,7 +18,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import { authUsers } from 'drizzle-orm/supabase'
 
-import { PITCH_STATUSES, SPONSOR_STATUSES, SUPPORT_TYPES } from '@/lib/shared/types'
+import { ORG_ROLES, ORG_STATUSES, PITCH_STATUSES, SUPPORT_TYPES } from '@/lib/shared/types'
 
 /*
  * The whole v2 schema (plan §4). Row-level security is enabled on every table with ZERO
@@ -46,7 +46,8 @@ export const joinRequestStatus = pgEnum('join_request_status', [
   'declined',
   'cancelled',
 ])
-export const sponsorStatus = pgEnum('sponsor_status', SPONSOR_STATUSES)
+export const orgStatus = pgEnum('org_status', ORG_STATUSES)
+export const orgRole = pgEnum('org_role', ORG_ROLES)
 export const supportType = pgEnum('support_type', SUPPORT_TYPES)
 export const inviteKind = pgEnum('invite_kind', ['team', 'sponsor'])
 export const pitchStatus = pgEnum('pitch_status', PITCH_STATUSES)
@@ -107,10 +108,13 @@ export const teams = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     number: integer('number').notNull(),
     name: text('name').notNull(),
-    city: text('city'),
-    state: text('state'),
+    /** One free-text line ("Austin, Texas, USA", "Kuala Lumpur, Malaysia"): FTC is not a US-only program. */
+    location: text('location'),
+    /** From the FIRST record, for admin review only. Never displayed; `location` is what people read. */
     country: text('country'),
     website: text('website'),
+    /** Stored as a bare handle, without the leading "@". */
+    instagram: text('instagram'),
     summary: text('summary'),
     logoPath: text('logo_path'),
     logoBytes: integer('logo_bytes'),
@@ -122,18 +126,29 @@ export const teams = pgTable(
     pdfUpdatedAt: ts('pdf_updated_at'),
     mediaConsentAt: ts('media_consent_at'),
     recordStatus: recordStatus('record_status').notNull().default('unchecked'),
-    verifiedAt: ts('verified_at'),
-    verifiedBy: uuid('verified_by').references(() => users.id, { onDelete: 'set null' }),
+    /** The gate: only an `approved` team reaches the app. See lib/shared/types.ts. */
+    status: orgStatus('status').notNull().default('draft'),
+    /** Proof the person coaches this team (a FIRST Dashboard screenshot). Private bucket, admin eyes only. */
+    proofPath: text('proof_path'),
+    proofBytes: integer('proof_bytes'),
+    proofUploadedAt: ts('proof_uploaded_at'),
+    submittedAt: ts('submitted_at'),
+    /** Why an admin rejected it, shown back to the coach. Mirrors sponsors.status_note. */
+    statusNote: text('status_note'),
+    decidedBy: uuid('decided_by').references(() => users.id, { onDelete: 'set null' }),
+    decidedAt: ts('decided_at'),
     suspendedAt: ts('suspended_at'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
     uniqueIndex('teams_number_key').on(t.number),
-    index('teams_verified_at_idx').on(t.verifiedAt),
+    index('teams_status_idx').on(t.status),
     index('teams_name_idx').on(sql`lower(${t.name})`),
     check('teams_number_positive', sql`${t.number} > 0`),
     check('teams_summary_length', sql`${t.summary} is null or char_length(${t.summary}) <= 160`),
+    check('teams_location_length', sql`${t.location} is null or char_length(${t.location}) <= 120`),
+    check('teams_instagram_length', sql`${t.instagram} is null or char_length(${t.instagram}) <= 30`),
     check('teams_pdf_pages_range', sql`${t.pdfPages} is null or ${t.pdfPages} between 1 and 5`),
     check('teams_pdf_bytes_range', sql`${t.pdfBytes} is null or ${t.pdfBytes} between 1 and 10485760`),
   ],
@@ -148,12 +163,17 @@ export const teamMembers = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    role: orgRole('role').notNull().default('editor'),
     createdAt: createdAt(),
   },
   (t) => [
     primaryKey({ columns: [t.teamId, t.userId] }),
     // One team per user.
     uniqueIndex('team_members_user_key').on(t.userId),
+    // Exactly one owner per team, enforced here so no race can produce two or zero.
+    uniqueIndex('team_members_owner_key')
+      .on(t.teamId)
+      .where(sql`${t.role} = 'owner'`),
   ],
 ).enableRLS()
 
@@ -197,10 +217,11 @@ export const sponsors = pgTable(
     about: text('about'),
     supportTypes: supportType('support_types').array().notNull().default(sql`'{}'::support_type[]`),
     questions: jsonb('questions').$type<SponsorQuestion[]>().notNull().default([]),
-    status: sponsorStatus('status').notNull().default('pending'),
+    status: orgStatus('status').notNull().default('draft'),
     statusNote: text('status_note'),
     decidedBy: uuid('decided_by').references(() => users.id, { onDelete: 'set null' }),
     decidedAt: ts('decided_at'),
+    submittedAt: ts('submitted_at'),
     applicantTitle: text('applicant_title'),
     applicantLinkedin: text('applicant_linkedin'),
     createdAt: createdAt(),
@@ -222,12 +243,17 @@ export const sponsorMembers = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    role: orgRole('role').notNull().default('editor'),
     createdAt: createdAt(),
   },
   (t) => [
     primaryKey({ columns: [t.sponsorId, t.userId] }),
     // One company per user.
     uniqueIndex('sponsor_members_user_key').on(t.userId),
+    // Exactly one owner per company, enforced here so no race can produce two or zero.
+    uniqueIndex('sponsor_members_owner_key')
+      .on(t.sponsorId)
+      .where(sql`${t.role} = 'owner'`),
   ],
 ).enableRLS()
 
@@ -336,10 +362,19 @@ export const notifications = pgTable(
     title: text('title').notNull(),
     body: text('body'),
     href: text('href'),
+    /**
+     * What this notification is *about* ("join:<id>", "pitch:<id>"). An action item is cleared when the
+     * thing is handled — by anyone on the org, not just whoever happened to click the bell — so the
+     * resolver matches on this rather than on the row id. Null for pure history.
+     */
+    subjectKey: text('subject_key'),
     readAt: ts('read_at'),
     createdAt: createdAt(),
   },
-  (t) => [index('notifications_user_idx').on(t.userId, t.readAt, t.createdAt.desc())],
+  (t) => [
+    index('notifications_user_idx').on(t.userId, t.readAt, t.createdAt.desc()),
+    index('notifications_subject_idx').on(t.subjectKey).where(sql`${t.subjectKey} is not null`),
+  ],
 ).enableRLS()
 
 export const emailOutbox = pgTable(
@@ -425,4 +460,5 @@ export type Invite = typeof invites.$inferSelect
 export type Notification = typeof notifications.$inferSelect
 export type EmailOutboxRow = typeof emailOutbox.$inferSelect
 export type PitchStatus = (typeof pitchStatus.enumValues)[number]
-export type SponsorStatus = (typeof sponsorStatus.enumValues)[number]
+export type OrgStatus = (typeof orgStatus.enumValues)[number]
+export type OrgRole = (typeof orgRole.enumValues)[number]

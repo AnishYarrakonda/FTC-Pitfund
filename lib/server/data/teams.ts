@@ -1,9 +1,10 @@
 import 'server-only'
 
-import { and, asc, count, desc, eq, isNull, ne, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm'
 
 import { SUPPORT_EMAIL } from '@/lib/shared/brand'
 import { DECK_MESSAGES } from '@/lib/shared/team'
+import type { OrgRole, OrgStatus } from '@/lib/shared/types'
 import type { Viewer } from '@/lib/shared/viewer'
 
 import type { TeamViewer } from '../authz'
@@ -17,6 +18,7 @@ import {
   assertOwnStagingPath,
   createStagingUpload,
   discard,
+  publishPrivate,
   publishVerified,
   readReceipt,
   readStaged,
@@ -37,13 +39,13 @@ export type WelcomeLookup =
   | FtcLookup
   | {
       status: 'on_pitfund'
-      team: { id: string; number: number; name: string; city: string | null; state: string | null; logoUrl: string | null; suspended: boolean }
+      team: { id: string; number: number; name: string; location: string | null; logoUrl: string | null; suspended: boolean }
     }
 
 /** "Is this your team?": already on FTC Pitfund, or what FIRST records say. Never throws for outages. */
 export async function lookupTeamNumber(number: number, options: Parameters<typeof lookupFtcTeam>[1] = {}): Promise<WelcomeLookup> {
   const [existing] = await getDb()
-    .select({ id: teams.id, number: teams.number, name: teams.name, city: teams.city, state: teams.state, logoPath: teams.logoPath, suspendedAt: teams.suspendedAt })
+    .select({ id: teams.id, number: teams.number, name: teams.name, location: teams.location, logoPath: teams.logoPath, suspendedAt: teams.suspendedAt })
     .from(teams)
     .where(eq(teams.number, number))
     .limit(1)
@@ -59,8 +61,7 @@ export async function lookupTeamNumber(number: number, options: Parameters<typeo
 export type CreateTeamData = {
   number: number
   name: string
-  city: string
-  state: string
+  location: string
   country?: string | null
   source: 'matched' | 'manual' | 'unchecked'
 }
@@ -83,9 +84,10 @@ export async function createTeam(viewer: Viewer, input: CreateTeamData) {
 
   const [team] = await db
     .insert(teams)
-    .values({ number: input.number, name: input.name, city: input.city, state: input.state, country, recordStatus })
+    .values({ number: input.number, name: input.name, location: input.location, country, recordStatus })
     .returning({ id: teams.id, number: teams.number, name: teams.name })
-  await db.insert(teamMembers).values({ teamId: team.id, userId: viewer.id })
+  // Whoever creates the team owns it. Everyone who joins later is an editor until it's handed over.
+  await db.insert(teamMembers).values({ teamId: team.id, userId: viewer.id, role: 'owner' })
   await db
     .update(users)
     .set({ acceptedTermsAt: sql`coalesce(${users.acceptedTermsAt}, now())` })
@@ -105,15 +107,18 @@ export type TeamProfile = {
   id: string
   number: number
   name: string
-  city: string | null
-  state: string | null
+  location: string | null
   country: string | null
   website: string | null
+  instagram: string | null
   summary: string | null
   logoUrl: string | null
   deck: { url: string; downloadUrl: string; pages: number; bytes: number; thumbUrl: string | null; updatedAt: Date } | null
   recordStatus: 'matched' | 'manual' | 'unchecked'
-  verifiedAt: Date | null
+  status: OrgStatus
+  statusNote: string | null
+  hasProof: boolean
+  submittedAt: Date | null
   createdAt: Date
 }
 
@@ -123,10 +128,10 @@ function toProfile(row: typeof teams.$inferSelect): TeamProfile {
     id: row.id,
     number: row.number,
     name: row.name,
-    city: row.city,
-    state: row.state,
+    location: row.location,
     country: row.country,
     website: row.website,
+    instagram: row.instagram,
     summary: row.summary,
     logoUrl: publicUrl(row.logoPath),
     deck:
@@ -141,7 +146,10 @@ function toProfile(row: typeof teams.$inferSelect): TeamProfile {
           }
         : null,
     recordStatus: row.recordStatus,
-    verifiedAt: row.verifiedAt,
+    status: row.status,
+    statusNote: row.statusNote,
+    hasProof: Boolean(row.proofPath),
+    submittedAt: row.submittedAt,
     createdAt: row.createdAt,
   }
 }
@@ -154,7 +162,7 @@ export async function getTeamProfile(viewer: TeamViewer): Promise<TeamProfile> {
 
 export async function updateTeamProfile(
   viewer: TeamViewer,
-  input: { name: string; city: string; state: string; summary: string | null; website: string | null },
+  input: { name: string; location: string; summary: string | null; website: string | null; instagram: string | null },
 ) {
   const [row] = await getDb().update(teams).set(input).where(eq(teams.id, viewer.team.id)).returning()
   if (!row) throw new AppError('NOT_FOUND', "That team doesn't exist or you're not on it.")
@@ -185,14 +193,25 @@ export async function getTeamSetup(viewer: TeamViewer) {
 
 // ─── Members ────────────────────────────────────────────────────────────────────────────
 
-export type TeamMemberRow = { userId: string; name: string; email: string; avatarUrl: string | null; joinedAt: Date }
+export type TeamMemberRow = { userId: string; name: string; email: string; avatarUrl: string | null; role: OrgRole; joinedAt: Date }
 
 export async function listTeamMembers(viewer: TeamViewer): Promise<TeamMemberRow[]> {
   return getDb()
-    .select({ userId: users.id, name: users.name, email: users.email, avatarUrl: users.avatarUrl, joinedAt: teamMembers.createdAt })
+    .select({ userId: users.id, name: users.name, email: users.email, avatarUrl: users.avatarUrl, role: teamMembers.role, joinedAt: teamMembers.createdAt })
     .from(teamMembers)
     .innerJoin(users, eq(users.id, teamMembers.userId))
     .where(eq(teamMembers.teamId, viewer.team.id))
+    // Owner first, then by how long they've been on the team.
+    .orderBy(asc(sql`case when ${teamMembers.role} = 'owner' then 0 else 1 end`), asc(teamMembers.createdAt))
+}
+
+/** Everyone on a team who can still receive email about it. Mirrors companyRecipients. */
+export async function teamRecipients(teamId: string) {
+  return getDb()
+    .select({ id: users.id, email: users.email, name: users.name })
+    .from(teamMembers)
+    .innerJoin(users, eq(users.id, teamMembers.userId))
+    .where(and(eq(teamMembers.teamId, teamId), isNull(users.suspendedAt)))
     .orderBy(asc(teamMembers.createdAt))
 }
 
@@ -204,11 +223,16 @@ async function otherMemberCount(teamId: string, userId: string) {
   return Number(row?.n ?? 0)
 }
 
+/**
+ * Only the owner reaches here (requireTeamOwner), and the owner can't be removed by anybody — so the
+ * coach who set the team up can never be pushed off their own team. To hand it over they transfer
+ * ownership first, which is deliberate and reversible only by the new owner.
+ */
 export async function removeTeamMember(viewer: TeamViewer, userId: string) {
   if (userId === viewer.id) throw new AppError('VALIDATION', 'To leave the team yourself, use Leave team.')
   const rows = await getDb()
     .delete(teamMembers)
-    .where(and(eq(teamMembers.teamId, viewer.team.id), eq(teamMembers.userId, userId)))
+    .where(and(eq(teamMembers.teamId, viewer.team.id), eq(teamMembers.userId, userId), ne(teamMembers.role, 'owner')))
     .returning({ userId: teamMembers.userId })
   if (!rows[0]) throw new AppError('NOT_FOUND', 'That person isn’t on your team anymore.')
   const [person] = await getDb().select({ name: users.name, email: users.email }).from(users).where(eq(users.id, userId))
@@ -218,17 +242,48 @@ export async function removeTeamMember(viewer: TeamViewer, userId: string) {
 
 export async function leaveTeam(viewer: TeamViewer) {
   const db = getDb()
-  // Lock the team's membership so two last members can't leave at the same moment.
+  // Lock the team's membership so two people can't leave at the same moment.
   await db.execute(sql`select 1 from ${teams} where ${teams.id} = ${viewer.team.id} for update`)
-  if ((await otherMemberCount(viewer.team.id, viewer.id)) === 0) {
+  if (viewer.team.role === 'owner') {
+    const others = await otherMemberCount(viewer.team.id, viewer.id)
+    // An owner never just walks away: the team would be left with nobody who can run it.
     throw new AppError(
       'CONFLICT',
-      `You’re the only member of Team ${viewer.team.number}. Invite another coach first, or email ${SUPPORT_EMAIL} to delete the team.`,
+      others === 0
+        ? `You own Team ${viewer.team.number} and you’re its only member. Invite another coach and make them the owner first, or email ${SUPPORT_EMAIL} to delete the team.`
+        : `You own Team ${viewer.team.number}. Make another coach the owner before you leave.`,
     )
   }
   await db.delete(teamMembers).where(and(eq(teamMembers.teamId, viewer.team.id), eq(teamMembers.userId, viewer.id)))
   await audit({ actorId: viewer.id, action: 'team.member_left', entityType: 'team', entityId: viewer.team.id, data: { userId: viewer.id } })
   return { teamId: viewer.team.id }
+}
+
+/**
+ * Hand the account to another member. Demote and promote in one statement each inside the caller's
+ * transaction: the partial unique index allows only one owner per team, so doing it in the other
+ * order (promote, then demote) would fail on the index.
+ */
+export async function transferTeamOwnership(viewer: TeamViewer, userId: string) {
+  if (userId === viewer.id) throw new AppError('VALIDATION', 'You already own this team.')
+  const db = getDb()
+  await db.execute(sql`select 1 from ${teams} where ${teams.id} = ${viewer.team.id} for update`)
+  const [target] = await db
+    .select({ userId: teamMembers.userId, name: users.name, email: users.email })
+    .from(teamMembers)
+    .innerJoin(users, eq(users.id, teamMembers.userId))
+    .where(and(eq(teamMembers.teamId, viewer.team.id), eq(teamMembers.userId, userId)))
+  if (!target) throw new AppError('NOT_FOUND', 'That person isn’t on your team.')
+  await db
+    .update(teamMembers)
+    .set({ role: 'editor' })
+    .where(and(eq(teamMembers.teamId, viewer.team.id), eq(teamMembers.userId, viewer.id)))
+  await db
+    .update(teamMembers)
+    .set({ role: 'owner' })
+    .where(and(eq(teamMembers.teamId, viewer.team.id), eq(teamMembers.userId, userId)))
+  await audit({ actorId: viewer.id, action: 'team.ownership_transferred', entityType: 'team', entityId: viewer.team.id, data: { to: userId } })
+  return { userId, name: target.name.trim() || target.email }
 }
 
 // ─── Join requests ──────────────────────────────────────────────────────────────────────
@@ -370,4 +425,62 @@ export async function finalizeTeamLogo(viewer: TeamViewer, stagingPath: string) 
   const [row] = await getDb().update(teams).set({ logoPath, logoBytes: bytes.byteLength }).where(eq(teams.id, viewer.team.id)).returning()
   await audit({ actorId: viewer.id, action: 'team.logo_updated', entityType: 'team', entityId: viewer.team.id })
   return { profile: toProfile(row), replaced: [before?.logoPath], published: [logoPath] }
+}
+
+/**
+ * The verification screenshot. Unlike the logo and deck this is published into the PRIVATE
+ * `verification` bucket: it is a picture of a third-party dashboard with people's names on it, and
+ * only an admin ever sees it, through a short-lived signed URL.
+ */
+export async function finalizeTeamProof(viewer: TeamViewer, stagingPath: string) {
+  const prefix = teamPrefix(viewer.team.id)
+  assertOwnStagingPath(stagingPath, prefix)
+  const bytes = await readStaged(stagingPath)
+  const kind = verifyImageBytes(bytes, 'proof')
+  const [before] = await getDb().select({ proofPath: teams.proofPath }).from(teams).where(eq(teams.id, viewer.team.id))
+  const proofPath = await publishPrivate(BUCKETS.verification, prefix, 'proof', bytes, kind)
+  await discard('staging', [stagingPath])
+  const [row] = await getDb()
+    .update(teams)
+    .set({ proofPath, proofBytes: bytes.byteLength, proofUploadedAt: new Date() })
+    .where(eq(teams.id, viewer.team.id))
+    .returning()
+  await audit({ actorId: viewer.id, action: 'team.proof_uploaded', entityType: 'team', entityId: viewer.team.id })
+  return { profile: toProfile(row), replaced: [before?.proofPath], published: [proofPath] }
+}
+
+// ─── Review ─────────────────────────────────────────────────────────────────────────────
+
+/** What is still missing before a team can be sent for review. Empty means it's ready. */
+export function submitBlockers(profile: Pick<TeamProfile, 'location' | 'summary' | 'logoUrl' | 'deck' | 'hasProof'>): string[] {
+  const blockers: string[] = []
+  if (!profile.location?.trim()) blockers.push('Say where your team is based')
+  if (!profile.summary?.trim()) blockers.push('Add a one-line summary')
+  if (!profile.logoUrl) blockers.push('Add your team logo')
+  if (!profile.deck) blockers.push('Upload your sponsorship deck')
+  if (!profile.hasProof) blockers.push('Upload proof that you coach this team')
+  return blockers
+}
+
+export const SUBMIT_TEAM_CONFLICTS = {
+  teams_number_key: 'That team is already on FTC Pitfund.',
+}
+
+export async function submitTeamForReview(viewer: TeamViewer) {
+  const profile = await getTeamProfile(viewer)
+  const blockers = submitBlockers(profile)
+  if (blockers.length > 0) {
+    throw new AppError('VALIDATION', `Finish your setup first: ${blockers[0].toLowerCase()}.`)
+  }
+  const now = new Date()
+  const [row] = await getDb()
+    .update(teams)
+    // Only a draft or a rejected team can be submitted, so a double-click can't re-submit a team
+    // that is already in the queue and reset its place in it.
+    .set({ status: 'pending', submittedAt: now, statusNote: null, updatedAt: now })
+    .where(and(eq(teams.id, viewer.team.id), inArray(teams.status, ['draft', 'rejected'])))
+    .returning({ id: teams.id, number: teams.number, name: teams.name })
+  if (!row) throw new AppError('CONFLICT', `Team ${viewer.team.number} has already been sent for review.`)
+  await audit({ actorId: viewer.id, action: 'team.submitted', entityType: 'team', entityId: row.id })
+  return row
 }

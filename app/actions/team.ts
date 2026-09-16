@@ -5,7 +5,7 @@ import { after } from 'next/server'
 import { z } from 'zod'
 
 import { audit } from '@/lib/server/audit'
-import { requireTeamMember, requireViewer } from '@/lib/server/authz'
+import { requireTeamMember, requireTeamOwner, requireTeamSetup, requireViewer } from '@/lib/server/authz'
 import { TAGS } from '@/lib/server/cache-tags'
 import {
   checkStagedDeck,
@@ -17,10 +17,14 @@ import {
   finalizeDeck,
   finalizeTeamLogo,
   JOIN_REQUEST_CONFLICTS,
+  finalizeTeamProof,
   leaveTeam,
   lookupTeamNumber,
   removeTeamMember,
   requestToJoinTeam,
+  submitTeamForReview,
+  SUBMIT_TEAM_CONFLICTS,
+  transferTeamOwnership,
   updateTeamProfile,
 } from '@/lib/server/data/teams'
 import { simulated } from '@/lib/server/dev'
@@ -57,7 +61,8 @@ export const createTeamAction = defineAction(
     const viewer = await requireViewer()
     const team = await inTransaction(() => createTeam(viewer, input))
     updateTag(TAGS.teamNumber(team.number))
-    return { teamId: team.id, redirectTo: '/pitches' }
+    // A new team is a draft: it finishes its setup page and sends itself for review before it can pitch.
+    return { teamId: team.id, redirectTo: '/welcome/team' }
   },
   { conflict: CREATE_TEAM_CONFLICTS },
 )
@@ -90,7 +95,7 @@ export const requestToJoin = defineAction(
 )
 
 export const saveTeamProfile = defineAction(teamProfileSchema, async (input) => {
-  const viewer = await requireTeamMember()
+  const viewer = await requireTeamSetup()
   const profile = await inTransaction(() => updateTeamProfile(viewer, input))
   updateTag(TAGS.team(profile.id))
   return profile
@@ -101,20 +106,20 @@ export const saveTeamProfile = defineAction(teamProfileSchema, async (input) => 
 export const createUploadUrl = defineAction(
   z.object({ purpose: z.enum(['deck', 'thumb', 'logo']), imageType: z.enum(['image/webp', 'image/jpeg']).optional() }),
   async ({ purpose, imageType }) => {
-    const viewer = await requireTeamMember()
+    const viewer = await requireTeamSetup()
     return createTeamUpload(viewer, purpose, imageType === 'image/jpeg' ? 'jpg' : 'webp')
   },
 )
 
 export const checkDeck = defineAction(z.object({ path: z.string().min(1).max(300) }), async ({ path }) => {
-  const viewer = await requireTeamMember()
+  const viewer = await requireTeamSetup()
   return checkStagedDeck(viewer, path)
 })
 
 export const saveDeck = defineAction(
   z.object({ receipt: z.string().min(1).max(2000), thumbPath: z.string().min(1).max(300), consent: z.boolean() }),
   async (input) => {
-    const viewer = await requireTeamMember()
+    const viewer = await requireTeamSetup()
     const result = await inTransaction(() => finalizeDeck(viewer, input))
     after(() => discard('public', result.replaced))
     updateTag(TAGS.team(viewer.team.id))
@@ -123,17 +128,63 @@ export const saveDeck = defineAction(
 )
 
 export const saveLogo = defineAction(z.object({ path: z.string().min(1).max(300) }), async ({ path }) => {
-  const viewer = await requireTeamMember()
+  const viewer = await requireTeamSetup()
   const result = await inTransaction(() => finalizeTeamLogo(viewer, path))
   after(() => discard('public', result.replaced))
   updateTag(TAGS.team(viewer.team.id))
   return result.profile
 })
 
+/** The screenshot showing this person is on the team's roster. Goes to the private bucket. */
+export const saveProof = defineAction(z.object({ path: z.string().min(1).max(300) }), async ({ path }) => {
+  const viewer = await requireTeamSetup()
+  const result = await inTransaction(() => finalizeTeamProof(viewer, path))
+  after(() => discard('verification', result.replaced))
+  return result.profile
+})
+
+// ─── Review ─────────────────────────────────────────────────────────────────────────────
+
+export const submitTeam = defineAction(
+  z.object({ confirm: z.literal('submit') }),
+  async () => {
+    const viewer = await requireTeamSetup()
+    const result = await inTransaction(async () => {
+      const team = await submitTeamForReview(viewer)
+      await notifyAdmins({
+        type: 'admin.team_submitted',
+        title: `Team ${team.number} asked to join`,
+        body: team.name,
+        href: `/admin/teams/${team.id}`,
+        subjectKey: subjectKey('team', team.id),
+      })
+      return team
+    })
+    // No instant admin email: submitted teams go out in the daily digest, like pending companies.
+    return { redirectTo: '/welcome/pending', teamNumber: result.number }
+  },
+  { conflict: SUBMIT_TEAM_CONFLICTS },
+)
+
+export const transferOwnership = defineAction(z.object({ userId: z.uuid() }), async ({ userId }) => {
+  const viewer = await requireTeamOwner()
+  const result = await inTransaction(async () => {
+    const r = await transferTeamOwnership(viewer, userId)
+    await notifyUsers([userId], {
+      type: 'team.ownership_transferred',
+      title: `You now own ${teamLabel(viewer.team)}`,
+      body: 'You can invite coaches, approve requests to join and remove people.',
+      href: '/team#members',
+    })
+    return r
+  })
+  return result
+})
+
 // ─── Members ────────────────────────────────────────────────────────────────────────────
 
 export const removeMember = defineAction(z.object({ userId: z.uuid() }), async ({ userId }) => {
-  const viewer = await requireTeamMember()
+  const viewer = await requireTeamOwner()
   const removed = await inTransaction(async () => {
     const r = await removeTeamMember(viewer, userId)
     await notifyUsers([userId], {
@@ -159,7 +210,7 @@ export const leaveMyTeam = defineAction(z.object({ confirm: z.literal('leave') }
 export const decideJoin = defineAction(
   z.object({ requestId: z.uuid(), decision: z.enum(['approve', 'decline']) }),
   async ({ requestId, decision }) => {
-    const viewer = await requireTeamMember()
+    const viewer = await requireTeamOwner()
     const result = await inTransaction(async () => {
       const r = await decideJoinRequest(viewer, requestId, decision)
       const approved = decision === 'approve'

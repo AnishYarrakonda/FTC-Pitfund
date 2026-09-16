@@ -3,7 +3,7 @@ import 'server-only'
 import { and, asc, count, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 
 import { questionsFor, type Question } from '@/lib/shared/questions'
-import type { PitchStatus, SponsorStatus, SupportType } from '@/lib/shared/types'
+import type { PitchStatus, OrgStatus, SupportType } from '@/lib/shared/types'
 import type { Viewer } from '@/lib/shared/viewer'
 
 import { audit } from '../audit'
@@ -11,8 +11,9 @@ import { getDb } from '../db'
 import { lookupFtcTeam } from '../ftc-records'
 import { AppError } from '../result'
 import { auditEvents, ftcTeamCache, pitches, reports, sponsorMembers, sponsors, teamMembers, teams, users } from '../schema'
-import { publicUrl } from '../storage'
+import { publicUrl, signedProofUrl } from '../storage'
 import { companyRecipients } from './company'
+import { teamRecipients } from './teams'
 
 /*
  * Admin actions on companies, teams, reports and people (prompt 3, scope D). Every function takes
@@ -36,7 +37,7 @@ export type AdminCompany = {
   supportTypes: SupportType[]
   questions: Question[]
   usesDefaultQuestions: boolean
-  status: SponsorStatus
+  status: OrgStatus
   statusNote: string | null
   decidedByName: string | null
   decidedAt: Date | null
@@ -94,7 +95,16 @@ export async function getCompanyForAdmin(_admin: Viewer, sponsorId: string): Pro
   }
 }
 
-async function setCompanyStatus(admin: Viewer, sponsorId: string, from: SponsorStatus[], to: SponsorStatus, note: string | null, action: string, now: Date) {
+/** Said back to an admin whose decision lost a race with someone else's. */
+const ORG_STATE_PHRASE: Record<OrgStatus, string> = {
+  draft: 'hasn’t been submitted for review yet',
+  pending: 'is waiting for approval',
+  approved: 'is already approved',
+  rejected: 'was already rejected',
+  suspended: 'is already suspended',
+}
+
+async function setCompanyStatus(admin: Viewer, sponsorId: string, from: OrgStatus[], to: OrgStatus, note: string | null, action: string, now: Date) {
   const [row] = await getDb()
     .update(sponsors)
     .set({ status: to, statusNote: note, decidedBy: admin.id, decidedAt: now, updatedAt: now })
@@ -103,8 +113,7 @@ async function setCompanyStatus(admin: Viewer, sponsorId: string, from: SponsorS
   if (!row) {
     const [current] = await getDb().select({ name: sponsors.name, status: sponsors.status }).from(sponsors).where(eq(sponsors.id, sponsorId))
     if (!current) throw new AppError('NOT_FOUND', "That company doesn't exist anymore.")
-    const state = { pending: 'is waiting for approval', approved: 'is already approved', rejected: 'was already rejected', suspended: 'is already suspended' }[current.status]
-    throw new AppError('CONFLICT', `${current.name} ${state}. Refresh to see its current state.`)
+    throw new AppError('CONFLICT', `${current.name} ${ORG_STATE_PHRASE[current.status]}. Refresh to see its current state.`)
   }
   await audit({ actorId: admin.id, action, entityType: 'sponsor', entityId: sponsorId, data: note ? { note } : {} })
   const members = await companyRecipients(sponsorId)
@@ -129,17 +138,23 @@ export type AdminTeam = {
   id: string
   number: number
   name: string
-  city: string | null
-  state: string | null
+  location: string | null
   country: string | null
   website: string | null
+  instagram: string | null
   summary: string | null
   logoUrl: string | null
   deck: { url: string; pages: number; bytes: number | null; updatedAt: Date | null } | null
+  /** The screenshot the coach uploaded to show they are on this team's roster. Signed, short-lived. */
+  proofUrl: string | null
+  proofUploadedAt: Date | null
   recordStatus: 'matched' | 'manual' | 'unchecked'
   record: { name: string; city: string | null; state: string | null; source: string; fetchedAt: Date } | null
-  verifiedAt: Date | null
-  verifiedByName: string | null
+  status: OrgStatus
+  statusNote: string | null
+  decidedByName: string | null
+  decidedAt: Date | null
+  submittedAt: Date | null
   suspendedAt: Date | null
   createdAt: Date
   members: Array<{ userId: string; name: string; email: string; phone: string | null; joinedAt: Date }>
@@ -152,7 +167,7 @@ export async function getTeamForAdmin(_admin: Viewer, teamId: string): Promise<A
   const [row] = await db
     .select({
       team: teams,
-      verifiedByName: sql<string | null>`(select coalesce(nullif(u.name, ''), u.email) from ${users} u where u.id = "teams"."verified_by")`,
+      decidedByName: sql<string | null>`(select coalesce(nullif(u.name, ''), u.email) from ${users} u where u.id = "teams"."decided_by")`,
       openReports: sql<number>`(select count(*)::int from ${reports} r where r.team_id = "teams"."id" and r.status = 'open')`,
       record: { name: ftcTeamCache.name, city: ftcTeamCache.city, state: ftcTeamCache.state, source: ftcTeamCache.source, fetchedAt: ftcTeamCache.fetchedAt },
     })
@@ -182,17 +197,22 @@ export async function getTeamForAdmin(_admin: Viewer, teamId: string): Promise<A
     id: team.id,
     number: team.number,
     name: team.name,
-    city: team.city,
-    state: team.state,
+    location: team.location,
     country: team.country,
     website: team.website,
+    instagram: team.instagram,
     summary: team.summary,
     logoUrl: publicUrl(team.logoPath),
     deck: deckUrl && team.pdfPages ? { url: deckUrl, pages: team.pdfPages, bytes: team.pdfBytes, updatedAt: team.pdfUpdatedAt } : null,
+    proofUrl: await signedProofUrl(team.proofPath),
+    proofUploadedAt: team.proofUploadedAt,
     recordStatus: team.recordStatus,
     record: row.record?.name ? row.record : null,
-    verifiedAt: team.verifiedAt,
-    verifiedByName: row.verifiedByName,
+    status: team.status,
+    statusNote: team.statusNote,
+    decidedByName: row.decidedByName,
+    decidedAt: team.decidedAt,
+    submittedAt: team.submittedAt,
     suspendedAt: team.suspendedAt,
     createdAt: team.createdAt,
     members: members.map((m) => ({ ...m, name: personName(m) })),
@@ -209,33 +229,31 @@ async function teamRef(teamId: string): Promise<TeamRef> {
   return team
 }
 
-export async function verifyTeam(admin: Viewer, teamId: string, now = new Date()) {
+/**
+ * Teams move through the same gate as companies. The conditional UPDATE is the transition guard: two
+ * admins deciding the same team at once means the second one gets a CONFLICT instead of overwriting.
+ */
+async function setTeamStatus(admin: Viewer, teamId: string, from: OrgStatus[], to: OrgStatus, note: string | null, action: string, now: Date) {
   const [row] = await getDb()
     .update(teams)
-    .set({ verifiedAt: now, verifiedBy: admin.id })
-    .where(and(eq(teams.id, teamId), isNull(teams.verifiedAt)))
-    .returning({ id: teams.id, number: teams.number, name: teams.name })
+    .set({ status: to, statusNote: note, decidedBy: admin.id, decidedAt: now, updatedAt: now })
+    .where(and(eq(teams.id, teamId), inArray(teams.status, from)))
+    .returning({ id: teams.id, number: teams.number, name: teams.name, status: teams.status })
   if (!row) {
-    const team = await teamRef(teamId)
-    throw new AppError('CONFLICT', `Team ${team.number} is already verified.`)
+    const [current] = await getDb().select({ number: teams.number, status: teams.status }).from(teams).where(eq(teams.id, teamId))
+    if (!current) throw new AppError('NOT_FOUND', "That team doesn't exist anymore.")
+    throw new AppError('CONFLICT', `Team ${current.number} ${ORG_STATE_PHRASE[current.status]}. Refresh to see its current state.`)
   }
-  await audit({ actorId: admin.id, action: 'team.verified', entityType: 'team', entityId: teamId })
-  return row
+  await audit({ actorId: admin.id, action, entityType: 'team', entityId: teamId, data: note ? { note } : {} })
+  const members = await teamRecipients(teamId)
+  return { team: row, members }
 }
 
-export async function unverifyTeam(admin: Viewer, teamId: string) {
-  const [row] = await getDb()
-    .update(teams)
-    .set({ verifiedAt: null, verifiedBy: null })
-    .where(and(eq(teams.id, teamId), isNotNull(teams.verifiedAt)))
-    .returning({ id: teams.id, number: teams.number, name: teams.name })
-  if (!row) {
-    const team = await teamRef(teamId)
-    throw new AppError('CONFLICT', `Team ${team.number} isn’t verified.`)
-  }
-  await audit({ actorId: admin.id, action: 'team.unverified', entityType: 'team', entityId: teamId })
-  return row
-}
+export const approveTeam = (admin: Viewer, teamId: string, now = new Date()) =>
+  setTeamStatus(admin, teamId, ['pending', 'rejected'], 'approved', null, 'team.approved', now)
+
+export const rejectTeam = (admin: Viewer, teamId: string, note: string, now = new Date()) =>
+  setTeamStatus(admin, teamId, ['pending'], 'rejected', note, 'team.rejected', now)
 
 /**
  * Suspend a team: its public page disappears, its members can't pitch (authz), and its pitches that

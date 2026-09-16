@@ -45,9 +45,11 @@ export async function buildDigest(now = new Date()): Promise<DigestContent | nul
 
   const [newTeams, companies, [counts]] = await Promise.all([
     db
-      .select({ id: teams.id, number: teams.number, name: teams.name, city: teams.city, state: teams.state, total: sql<number>`count(*) over ()::int` })
+      .select({ id: teams.id, number: teams.number, name: teams.name, location: teams.location, total: sql<number>`count(*) over ()::int` })
       .from(teams)
-      .where(and(gt(teams.createdAt, since), isNull(teams.verifiedAt), isNull(teams.suspendedAt)))
+      // Teams waiting on a decision, not every team that signed up: a draft nobody submitted is not
+      // the admin's work yet.
+      .where(and(gt(teams.createdAt, since), eq(teams.status, 'pending'), isNull(teams.suspendedAt)))
       .orderBy(desc(teams.createdAt))
       .limit(LIST_LIMIT),
     db

@@ -18,11 +18,12 @@ export type PublicTeam = {
   id: string
   number: number
   name: string
-  city: string | null
-  state: string | null
+  location: string | null
   website: string | null
+  instagram: string | null
   summary: string | null
   logoUrl: string | null
+  /** Always true here — only approved teams have a public page — but outsiders don't know that. */
   verified: boolean
   deck: { url: string; downloadUrl: string; pages: number; thumbUrl: string | null; updatedAt: Date } | null
 }
@@ -46,7 +47,7 @@ export async function listPublicTeamPages(): Promise<{ number: number; updatedAt
   return getDb()
     .select({ number: teams.number, updatedAt: teams.updatedAt })
     .from(teams)
-    .where(isNull(teams.suspendedAt))
+    .where(and(eq(teams.status, 'approved'), isNull(teams.suspendedAt)))
     .orderBy(asc(teams.number))
 }
 
@@ -57,19 +58,20 @@ export async function queryPublicTeam(number: number): Promise<PublicTeam | null
       id: teams.id,
       number: teams.number,
       name: teams.name,
-      city: teams.city,
-      state: teams.state,
+      location: teams.location,
       website: teams.website,
+      instagram: teams.instagram,
       summary: teams.summary,
       logoPath: teams.logoPath,
       pdfPath: teams.pdfPath,
       pdfPages: teams.pdfPages,
       pdfThumbPath: teams.pdfThumbPath,
       pdfUpdatedAt: teams.pdfUpdatedAt,
-      verifiedAt: teams.verifiedAt,
     })
     .from(teams)
-    .where(and(eq(teams.number, number), isNull(teams.suspendedAt)))
+    // Only an approved team has a public page: a draft or rejected one must not be reachable at a
+    // guessable URL, or impersonating a team would still get you a page with that team's number on it.
+    .where(and(eq(teams.number, number), eq(teams.status, 'approved'), isNull(teams.suspendedAt)))
     .limit(1)
 
   if (!row) return null
@@ -79,12 +81,12 @@ export async function queryPublicTeam(number: number): Promise<PublicTeam | null
     id: row.id,
     number: row.number,
     name: row.name,
-    city: row.city,
-    state: row.state,
+    location: row.location,
     website: row.website,
+    instagram: row.instagram,
     summary: row.summary,
     logoUrl: publicUrl(row.logoPath),
-    verified: Boolean(row.verifiedAt),
+    verified: true,
     deck:
       deckUrl && row.pdfPages && row.pdfUpdatedAt
         ? {

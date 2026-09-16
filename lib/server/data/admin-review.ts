@@ -3,7 +3,7 @@ import 'server-only'
 import { and, asc, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm'
 
 import { formatAsk, type PitchViewData } from '@/lib/shared/pitch'
-import type { PitchStatus, SponsorStatus } from '@/lib/shared/types'
+import type { PitchStatus, OrgStatus } from '@/lib/shared/types'
 import type { Viewer } from '@/lib/shared/viewer'
 
 import { audit } from '../audit'
@@ -31,7 +31,7 @@ export async function reviewCounts(): Promise<ReviewCounts> {
     select
       (select count(*)::int from ${pitches} where status = 'in_review') as pitches,
       (select count(*)::int from ${sponsors} where status = 'pending') as companies,
-      (select count(*)::int from ${teams} where verified_at is null and suspended_at is null) as teams,
+      (select count(*)::int from ${teams} where status = 'pending' and suspended_at is null) as teams,
       (select count(*)::int from ${reports} where status = 'open') as reports
   `)
   return { pitches: Number(row.pitches), companies: Number(row.companies), teams: Number(row.teams), reports: Number(row.reports) }
@@ -43,7 +43,7 @@ export type QueuePitch = {
   id: string
   submittedAt: Date
   team: { number: number; name: string; logoUrl: string | null; verified: boolean }
-  company: { name: string; logoUrl: string | null; status: SponsorStatus }
+  company: { name: string; logoUrl: string | null; status: OrgStatus }
   resubmission: boolean
 }
 
@@ -61,7 +61,7 @@ export async function listPitchQueue(params: PageParams): Promise<Page<QueuePitc
       id: pitches.id,
       cursor: sql<string>`${pitches.submittedAt}::text`,
       submittedAt: pitches.submittedAt,
-      team: { number: teams.number, name: teams.name, logoPath: teams.logoPath, verifiedAt: teams.verifiedAt },
+      team: { number: teams.number, name: teams.name, logoPath: teams.logoPath, status: teams.status },
       company: { name: sponsors.name, logoPath: sponsors.logoPath, status: sponsors.status },
       resubmission: sql<boolean>`exists (select 1 from audit_events e where e.entity_type = 'pitch' and e.entity_id = "pitches"."id" and e.action = 'pitch.sent_back')`,
       record: sql<{ name: string; city: string | null; state: string | null } | null>`(select json_build_object('name', c.name, 'city', c.city, 'state', c.state) from ftc_team_cache c where c.number = "teams"."number")`,
@@ -79,7 +79,7 @@ export async function listPitchQueue(params: PageParams): Promise<Page<QueuePitc
     items: page.items.map((r) => ({
       id: r.id,
       submittedAt: r.submittedAt ?? new Date(0),
-      team: { number: r.team.number, name: r.team.name, logoUrl: publicUrl(r.team.logoPath), verified: Boolean(r.team.verifiedAt) },
+      team: { number: r.team.number, name: r.team.name, logoUrl: publicUrl(r.team.logoPath), verified: r.team.status === 'approved' },
       company: { name: r.company.name, logoUrl: publicUrl(r.company.logoPath), status: r.company.status },
       resubmission: Boolean(r.resubmission),
     })),
@@ -121,9 +121,21 @@ export async function listPendingCompanies(params: PageParams): Promise<Page<Que
   return { ...page, items: page.items.map(({ cursor: _cursor, logoPath, ...r }) => ({ ...r, logoUrl: publicUrl(logoPath) })) }
 }
 
-export type QueueTeam = { id: string; number: number; name: string; city: string | null; state: string | null; logoUrl: string | null; recordStatus: 'matched' | 'manual' | 'unchecked'; hasDeck: boolean; createdAt: Date }
+export type QueueTeam = {
+  id: string
+  number: number
+  name: string
+  location: string | null
+  logoUrl: string | null
+  recordStatus: 'matched' | 'manual' | 'unchecked'
+  hasDeck: boolean
+  hasProof: boolean
+  submittedAt: Date | null
+  createdAt: Date
+}
 
-export async function listUnverifiedTeams(params: PageParams): Promise<Page<QueueTeam>> {
+/** Teams that have sent themselves for review and are waiting on a decision, oldest wait first. */
+export async function listPendingTeams(params: PageParams): Promise<Page<QueueTeam>> {
   const k = keyset<{ cursor: string; id: string }>({
     key: sql`(${teams.createdAt}, ${teams.id})`,
     columns: [sql`${teams.createdAt}`, sql`${teams.id}`],
@@ -138,19 +150,23 @@ export async function listUnverifiedTeams(params: PageParams): Promise<Page<Queu
       cursor: sql<string>`${teams.createdAt}::text`,
       number: teams.number,
       name: teams.name,
-      city: teams.city,
-      state: teams.state,
+      location: teams.location,
       logoPath: teams.logoPath,
       recordStatus: teams.recordStatus,
       hasDeck: sql<boolean>`${teams.pdfPath} is not null`,
+      hasProof: sql<boolean>`${teams.proofPath} is not null`,
+      submittedAt: teams.submittedAt,
       createdAt: teams.createdAt,
     })
     .from(teams)
-    .where(and(isNull(teams.verifiedAt), isNull(teams.suspendedAt), k.condition))
+    .where(and(eq(teams.status, 'pending'), isNull(teams.suspendedAt), k.condition))
     .orderBy(...k.orderBy)
     .limit(k.limit)
   const page = k.page(rows)
-  return { ...page, items: page.items.map(({ cursor: _cursor, logoPath, ...r }) => ({ ...r, hasDeck: Boolean(r.hasDeck), logoUrl: publicUrl(logoPath) })) }
+  return {
+    ...page,
+    items: page.items.map(({ cursor: _cursor, logoPath, ...r }) => ({ ...r, hasDeck: Boolean(r.hasDeck), hasProof: Boolean(r.hasProof), logoUrl: publicUrl(logoPath) })),
+  }
 }
 
 export type OpenReport = {
@@ -224,13 +240,13 @@ export type PitchReview = {
     members: Array<{ name: string; email: string }>
     otherPitches: Array<{ id: string; companyName: string; status: PitchStatus }>
   }
-  company: { id: string; name: string; website: string; logoUrl: string | null; status: SponsorStatus; memberCount: number; questionCount: number }
+  company: { id: string; name: string; website: string; logoUrl: string | null; status: OrgStatus; memberCount: number; questionCount: number }
   /** Why Approve & send is blocked, if it is. */
   approvalBlocker: string | null
   queue: { position: number | null; total: number; previousId: string | null; nextId: string | null }
 }
 
-export function approvalBlocker(team: { number: number; suspended: boolean }, company: { name: string; status: SponsorStatus }): string | null {
+export function approvalBlocker(team: { number: number; suspended: boolean }, company: { name: string; status: OrgStatus }): string | null {
   if (company.status !== 'approved') {
     const state = company.status === 'pending' ? 'isn’t approved yet' : company.status === 'rejected' ? 'wasn’t approved' : 'is suspended'
     return `${company.name} ${state}, so it can’t receive pitches.`
@@ -297,7 +313,7 @@ export async function getPitchReview(_admin: Viewer, pitchId: string): Promise<P
       id: team.id,
       number: team.number,
       name: team.name,
-      verified: Boolean(team.verifiedAt),
+      verified: team.status === 'approved',
       suspended: Boolean(team.suspendedAt),
       createdAt: team.createdAt,
       recordStatus: team.recordStatus,
@@ -368,7 +384,7 @@ async function lockForDecision(pitchId: string) {
     .select({
       pitch: pitches,
       reviewer: sql<string | null>`(select coalesce(nullif(u.name, ''), u.email) from ${users} u where u.id = "pitches"."reviewed_by")`,
-      team: { id: teams.id, number: teams.number, name: teams.name, city: teams.city, state: teams.state, summary: teams.summary, suspendedAt: teams.suspendedAt, verifiedAt: teams.verifiedAt },
+      team: { id: teams.id, number: teams.number, name: teams.name, location: teams.location, summary: teams.summary, suspendedAt: teams.suspendedAt, status: teams.status },
       company: { id: sponsors.id, name: sponsors.name, status: sponsors.status },
     })
     .from(pitches)

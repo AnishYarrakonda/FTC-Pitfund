@@ -37,7 +37,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { TimeText } from '@/components/ui/time-text'
 import { useAction } from '@/lib/client/use-action'
-import { EMAIL_STATUS, PITCH_STATUS, SPONSOR_STATUS } from '@/lib/shared/labels'
+import { EMAIL_STATUS, PITCH_STATUS, ORG_STATUS } from '@/lib/shared/labels'
 import { err, type Result } from '@/lib/shared/result'
 
 import { CoachSections } from './coach-sections'
@@ -495,7 +495,7 @@ function StatusSection() {
         </Specimen>
         <Specimen label="Company and email statuses">
           <div className="flex flex-wrap gap-x-5 gap-y-3">
-            {Object.values(SPONSOR_STATUS).map((s) => (
+            {Object.values(ORG_STATUS).map((s) => (
               <StatusBadge key={s.label} {...s} />
             ))}
             {Object.values(EMAIL_STATUS).map((s) => (

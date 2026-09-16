@@ -5,14 +5,14 @@ import { useCallback, useState, type ReactNode } from 'react'
 import { SponsorProfile } from '@/components/sponsors/sponsor-profile'
 import { SponsorRow } from '@/components/sponsors/sponsor-summary'
 import type { Question } from '@/lib/shared/questions'
-import type { SponsorStatus, SupportType } from '@/lib/shared/types'
+import type { OrgStatus, SupportType } from '@/lib/shared/types'
 
 import { CompanyProfileForm, draftWebsite, toCompanyDraft, type CompanyDraft, type CompanyProfileValues } from './company-profile-form'
 import { QuestionsEditor } from './questions-editor'
 
 export type CompanyEditorProfile = CompanyProfileValues & {
   id: string
-  status: SponsorStatus
+  status: OrgStatus
   customQuestions: Question[]
   questions: Question[]
   usesDefaultQuestions: boolean

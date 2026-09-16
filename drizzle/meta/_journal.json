@@ -29,6 +29,20 @@
       "when": 1789407151294,
       "tag": "0003_outbox_dismissed",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789588279563,
+      "tag": "0004_coach_feedback_a",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789588337266,
+      "tag": "0005_coach_feedback_b",
+      "breakpoints": true
     }
   ]
 }

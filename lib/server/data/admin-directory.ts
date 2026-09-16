@@ -2,7 +2,7 @@ import 'server-only'
 
 import { and, eq, or, sql, type SQL } from 'drizzle-orm'
 
-import type { SponsorStatus } from '@/lib/shared/types'
+import type { OrgStatus } from '@/lib/shared/types'
 
 import { getDb } from '../db'
 import { sponsorMembers, sponsors, teamMembers, teams, users } from '../schema'
@@ -21,10 +21,9 @@ export type DirectoryTeam = {
   id: string
   number: number
   name: string
-  city: string | null
-  state: string | null
+  location: string | null
   logoUrl: string | null
-  verified: boolean
+  status: OrgStatus
   suspended: boolean
   members: number
   pitches: number
@@ -52,10 +51,9 @@ export async function searchTeams(q: string, params: PageParams): Promise<Page<D
       id: teams.id,
       number: teams.number,
       name: teams.name,
-      city: teams.city,
-      state: teams.state,
+      location: teams.location,
       logoPath: teams.logoPath,
-      verifiedAt: teams.verifiedAt,
+      status: teams.status,
       suspendedAt: teams.suspendedAt,
       members: sql<number>`(select count(*)::int from team_members m where m.team_id = "teams"."id")`,
       pitches: sql<number>`(select count(*)::int from pitches p where p.team_id = "teams"."id" and p.status <> 'draft')`,
@@ -68,10 +66,9 @@ export async function searchTeams(q: string, params: PageParams): Promise<Page<D
   const page = k.page(rows)
   return {
     ...page,
-    items: page.items.map(({ logoPath, verifiedAt, suspendedAt, ...r }) => ({
+    items: page.items.map(({ logoPath, suspendedAt, ...r }) => ({
       ...r,
       logoUrl: publicUrl(logoPath),
-      verified: Boolean(verifiedAt),
       suspended: Boolean(suspendedAt),
       members: Number(r.members),
       pitches: Number(r.pitches),
@@ -84,7 +81,7 @@ export type DirectoryCompany = {
   name: string
   website: string
   logoUrl: string | null
-  status: SponsorStatus
+  status: OrgStatus
   members: number
   pitches: number
   createdAt: Date

@@ -59,6 +59,36 @@ export function teamLabel(team: { number: number; name: string }) {
   return `Team ${team.number} · ${team.name}`
 }
 
-export function placeLabel(team: { city?: string | null; state?: string | null }) {
-  return [team.city, team.state].filter(Boolean).join(', ')
+/**
+ * Where a team is, as one line. FTC runs worldwide, so this is free text the team writes itself
+ * ("Austin, Texas, USA", "Kuala Lumpur, Malaysia") rather than a city/state pair that only makes
+ * sense in the United States.
+ */
+export function placeLabel(team: { location?: string | null }) {
+  return team.location?.trim() ?? ''
+}
+
+export const MAX_LOCATION_LENGTH = 120
+export const MAX_INSTAGRAM_LENGTH = 30
+
+/**
+ * Accepts what people actually paste — "@exodiusftc", "exodiusftc",
+ * "https://instagram.com/exodiusftc/", "www.instagram.com/exodiusftc?hl=en" — and stores the bare
+ * handle. Returns null for empty input and undefined when it isn't an Instagram handle at all.
+ */
+export function normalizeInstagram(input: string): string | null | undefined {
+  const raw = input.trim()
+  if (!raw) return null
+  let handle = raw
+  const url = raw.replace(/^https?:\/\//i, '').replace(/^www\./i, '')
+  if (/^instagram\.com\//i.test(url)) handle = url.slice('instagram.com/'.length)
+  handle = handle.split(/[/?#]/)[0] ?? ''
+  handle = handle.replace(/^@/, '')
+  // Instagram handles are letters, digits, periods and underscores, up to 30 characters.
+  if (!/^[A-Za-z0-9._]{1,30}$/.test(handle)) return undefined
+  return handle
+}
+
+export function instagramUrl(handle: string) {
+  return `https://instagram.com/${handle}`
 }

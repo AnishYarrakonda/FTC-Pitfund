@@ -19,6 +19,8 @@ import PitchRejectedEmail, { pitchRejectedSchema, pitchRejectedSubject } from '.
 import PitchSentBackEmail, { pitchSentBackSchema, pitchSentBackSubject } from './pitch-sent-back'
 import PitchWithdrawnEmail, { pitchWithdrawnSchema, pitchWithdrawnSubject } from './pitch-withdrawn'
 import SponsorApprovedEmail, { sponsorApprovedSchema, sponsorApprovedSubject } from './sponsor-approved'
+import TeamApprovedEmail, { teamApprovedSchema, teamApprovedSubject } from './team-approved'
+import TeamRejectedEmail, { teamRejectedSchema, teamRejectedSubject } from './team-rejected'
 import SponsorInviteEmail, { sponsorInviteSchema, sponsorInviteSubject } from './sponsor-invite'
 import SponsorRejectedEmail, { sponsorRejectedSchema, sponsorRejectedSubject } from './sponsor-rejected'
 import TeamInviteEmail, { teamInviteSchema, teamInviteSubject } from './team-invite'
@@ -62,6 +64,8 @@ const registry = {
   'pitch-sent-back': { schema: pitchSentBackSchema, subject: pitchSentBackSubject, component: PitchSentBackEmail, sensitive: false },
   'pitch-rejected': { schema: pitchRejectedSchema, subject: pitchRejectedSubject, component: PitchRejectedEmail, sensitive: false },
   'sponsor-approved': { schema: sponsorApprovedSchema, subject: sponsorApprovedSubject, component: SponsorApprovedEmail, sensitive: false },
+  'team-approved': { schema: teamApprovedSchema, subject: teamApprovedSubject, component: TeamApprovedEmail, sensitive: false },
+  'team-rejected': { schema: teamRejectedSchema, subject: teamRejectedSubject, component: TeamRejectedEmail, sensitive: false },
   'sponsor-rejected': { schema: sponsorRejectedSchema, subject: sponsorRejectedSubject, component: SponsorRejectedEmail, sensitive: false },
   'sponsor-invite': {
     schema: sponsorInviteSchema,

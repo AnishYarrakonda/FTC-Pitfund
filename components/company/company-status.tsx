@@ -5,11 +5,11 @@ import { Banner } from '@/components/ui/feedback'
 import { SUPPORT_EMAIL } from '@/lib/shared/brand'
 import { cn } from '@/lib/shared/cn'
 import { companyChecklist, companyStatusCopy } from '@/lib/shared/company'
-import type { SponsorStatus } from '@/lib/shared/types'
+import type { OrgStatus } from '@/lib/shared/types'
 
 /* The company's review state (pending / rejected) and its setup checklist, on /inbox and /company. */
 
-export function CompanyStatusBanner({ status, name, note, className }: { status: SponsorStatus; name: string; note: string | null; className?: string }) {
+export function CompanyStatusBanner({ status, name, note, className }: { status: OrgStatus; name: string; note: string | null; className?: string }) {
   if (status === 'pending') {
     return (
       <Banner tone="info" title="Your company is under review" className={className}>
