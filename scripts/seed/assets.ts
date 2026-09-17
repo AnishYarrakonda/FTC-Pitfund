@@ -285,3 +285,17 @@ export async function generateDeckPdf(deck: DeckContent): Promise<Uint8Array> {
   }
   return pdf.save({ useObjectStreams: true })
 }
+
+/** A wide (non-square) PNG for upload tests: the logo cropper and the verification screenshot. */
+export function generateWideImage(w = 1200, h = 500): Uint8Array {
+  const px = new Uint8Array(w * h * 3)
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 3
+      // Three vertical bands, so which part was kept is obvious in a screenshot.
+      const band = x < w / 3 ? [220, 60, 60] : x < (2 * w) / 3 ? [30, 150, 90] : [40, 60, 210]
+      px.set(band, i)
+    }
+  }
+  return encodePng(w, h, px)
+}

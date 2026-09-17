@@ -65,7 +65,7 @@ export const SEED = {
     /** Partial answers, and Summit changed its questions after the draft started. */
     exodiusDraft: seedPitchId(31579, 'Summit Fabrication'),
     exodiusWithdrawn: seedPitchId(31579, 'Lakeshore Medical Devices'),
-    /** Voltage Vultures (coach-unverified) draft: another team's draft. */
+    /** Voltage Vultures (coach2) draft: another team's draft. */
     voltageDraft: seedPitchId(24890, 'Northpeak Software'),
     // The `sponsor` persona's inbox (Brightline Engineering).
     voltageToBrightlineSent: seedPitchId(24890, 'Brightline Engineering'),

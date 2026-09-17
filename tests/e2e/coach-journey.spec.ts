@@ -56,12 +56,13 @@ test('a new coach goes from sign-in to a submitted pitch, withdraws it, and can 
   await page.getByRole('checkbox', { name: /I’m 18 or older and I coach/ }).click()
   await page.getByRole('checkbox', { name: /I accept the Terms/ }).click()
   await page.getByRole('button', { name: 'Create team' }).click()
-  await page.waitForURL('**/pitches')
-  await expect(page.getByRole('link', { name: 'Upload your sponsorship deck' })).toBeVisible()
+  // A new team is a draft: it lands on its setup page, not in the app.
+  await expect(page.getByRole('heading', { name: `Tell us about Team ${number}` })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Send for review' })).toBeDisabled()
 
   // ─── Deck upload ───────────────────────────────────────────────────────────────────────
   // File inputs only react once React has hydrated the page.
-  await page.goto('/team', { waitUntil: 'networkidle' })
+  await page.goto('/welcome/team', { waitUntil: 'networkidle' })
   const deck = page.locator('#deck')
   const fileInput = deck.locator('input[type=file]')
   await fileInput.setInputFiles(path.join(FIXTURES, 'deck-8-pages.pdf'))
@@ -94,9 +95,13 @@ test('a new coach goes from sign-in to a submitted pitch, withdraws it, and can 
   await page.getByRole('button', { name: 'Save profile' }).click()
   await expect(page.locator('#profile').getByText('Saved', { exact: true })).toBeVisible()
 
-  const [team] = await db()`select id, pdf_pages, record_status, media_consent_at from teams where number = ${number}`
-  expect(team).toMatchObject({ pdf_pages: 3, record_status: 'matched' })
+  const [team] = await db()`select id, pdf_pages, record_status, media_consent_at, status from teams where number = ${number}`
+  expect(team).toMatchObject({ pdf_pages: 3, record_status: 'matched', status: 'draft' })
   expect(team.media_consent_at).not.toBeNull()
+
+  // The review itself is covered end to end by acceptance.spec.ts and isolation.spec.ts; this test
+  // is about pitching, so approve the team directly and get on with it.
+  await db()`update teams set status = 'approved', decided_at = now() where number = ${number}`
 
   // ─── Directory → composer ──────────────────────────────────────────────────────────────
   await page.goto('/sponsors')
@@ -145,7 +150,10 @@ test.describe('failure states', () => {
     const email = `e2e-fail-${Date.now()}@pitfund.test`
     await signInAsNewCoach(page, email)
 
-    const simulate = (value: string) => context.addCookies([{ name: 'pitfund-simulate', value, url: page.url() }])
+    // Path "/" explicitly: deriving it from page.url() scopes the cookie to whatever directory the
+    // page happens to be in, so it silently stops being sent after navigating elsewhere.
+    const simulate = (value: string) =>
+      context.addCookies([{ name: 'pitfund-simulate', value, domain: new URL(page.url()).hostname, path: '/' }])
     const stopSimulating = () => context.clearCookies({ name: 'pitfund-simulate' })
     await simulate('ftc-timeout')
     const number = 700_000 + Math.floor(Math.random() * 99_999)
@@ -156,12 +164,13 @@ test.describe('failure states', () => {
     // The form moves focus to Team name on the next frame; typing before that lands in the wrong field.
     await expect(page.getByLabel('Team name')).toBeFocused()
     await page.getByLabel('Team name').fill('Offline Robotics')
-    await page.getByLabel('City').fill('Austin')
-    await page.getByLabel('State or region').fill('TX')
+    await page.getByLabel('Location').fill('Austin, Texas, USA')
     await page.getByRole('checkbox', { name: /I’m 18 or older and I coach/ }).click()
     await page.getByRole('checkbox', { name: /I accept the Terms/ }).click()
     await page.getByRole('button', { name: 'Create team' }).click()
-    await page.waitForURL('**/pitches')
+    await expect(page.getByRole('heading', { name: `Tell us about Team ${number}` })).toBeVisible()
+    // Pitching is what the rest of this test is about; the review is covered elsewhere.
+    await db()`update teams set status = 'approved', decided_at = now() where number = ${number}`
     const [team] = await db()`select record_status from teams where number = ${number}`
     expect(team.record_status).toBe('unchecked')
 

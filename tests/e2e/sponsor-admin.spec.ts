@@ -46,7 +46,7 @@ test('admin sends back, the coach resubmits, the admin approves, the company con
   test.setTimeout(180_000)
   const started = Date.now()
   const admin = await as(browser, 'admin')
-  const coach = await as(browser, 'coach-unverified')
+  const coach = await as(browser, 'coach2')
   const company = await as(browser, 'sponsor2')
   const brightline = await as(browser, 'sponsor')
 
@@ -62,7 +62,7 @@ test('admin sends back, the coach resubmits, the admin approves, the company con
   await sendBack.getByRole('button', { name: 'Send back' }).click()
   await expect(admin.page.getByText(/Sent back · Team 24890 was told/)).toBeVisible()
   await admin.page.waitForURL((url) => !url.pathname.endsWith(VOLTAGE_TO_CEDAR))
-  await waitForEmail('coach-unverified@pitfund.test', /Changes requested on your pitch to Cedar Valley Credit Union/, started)
+  await waitForEmail('coach2@pitfund.test', /Changes requested on your pitch to Cedar Valley Credit Union/, started)
 
   // ─── Coach: sees the note, edits, resubmits ───────────────────────────────────────────
   await coach.page.goto(`/pitches/${VOLTAGE_TO_CEDAR}`)
@@ -83,7 +83,7 @@ test('admin sends back, the coach resubmits, the admin approves, the company con
   await (await decideOnPage(admin.page)).click()
   await expect(admin.page.getByText(/Sent to Cedar Valley Credit Union · 1 person notified/)).toBeVisible()
   await waitForEmail('sponsor2@pitfund.test', /New pitch from Team 24890 · Voltage Vultures/, started)
-  await waitForEmail('coach-unverified@pitfund.test', /Your pitch to Cedar Valley Credit Union was sent/, started)
+  await waitForEmail('coach2@pitfund.test', /Your pitch to Cedar Valley Credit Union was sent/, started)
 
   // ─── Company: Interested → Connected; the coach sees the company's contact ────────────
   await company.page.goto('/inbox')
@@ -94,8 +94,8 @@ test('admin sends back, the coach resubmits, the admin approves, the company con
   await expect(connect.getByText(/We’ll share your name, title and email with Team 24890 · Voltage Vultures, and theirs with you./)).toBeVisible()
   await connect.getByRole('button', { name: 'Share contact details' }).click()
   await expect(company.page.getByRole('heading', { name: 'You’re connected with Team 24890 · Voltage Vultures' })).toBeVisible()
-  await expect(company.page.getByRole('link', { name: 'coach-unverified@pitfund.test' })).toBeVisible()
-  await waitForEmail('coach-unverified@pitfund.test', /Cedar Valley Credit Union is interested in Team 24890/, started)
+  await expect(company.page.getByRole('link', { name: 'coach2@pitfund.test' })).toBeVisible()
+  await waitForEmail('coach2@pitfund.test', /Cedar Valley Credit Union is interested in Team 24890/, started)
   await waitForEmail('sponsor2@pitfund.test', /You’re connected with Team 24890/, started)
 
   await coach.page.goto(`/pitches/${VOLTAGE_TO_CEDAR}`)
@@ -112,7 +112,7 @@ test('admin sends back, the coach resubmits, the admin approves, the company con
   await expect(brightline.page.getByText('Marked not a fit. Team 24890 · Voltage Vultures has been notified.')).toBeVisible()
   const notAFitGroup = brightline.page.locator('section', { has: brightline.page.getByRole('heading', { name: /^Not a fit/ }) })
   await expect(notAFitGroup.getByText('Voltage Vultures')).toBeVisible()
-  await waitForEmail('coach-unverified@pitfund.test', /Brightline Engineering isn’t a fit this time/, started)
+  await waitForEmail('coach2@pitfund.test', /Brightline Engineering isn’t a fit this time/, started)
   await coach.page.goto(`/pitches/${SEED.pitches.voltageToBrightlineSent}`)
   await expect(coach.page.getByText('Outside our region').first()).toBeVisible()
 
@@ -126,11 +126,10 @@ test('a pending company is invisible to coaches until an admin approves it', asy
   const admin = await as(browser, 'admin')
   const pending = await as(browser, 'sponsor-pending')
 
+  await pending.page.goto('/welcome/pending')
+  await expect(pending.page.getByRole('heading', { name: /We’re checking Atlas Components/ })).toBeVisible()
   await pending.page.goto('/inbox')
-  await expect(pending.page.getByText('Your company is under review', { exact: true })).toBeVisible()
-  await pending.page.goto('/company')
-  await expect(pending.page.getByRole('button', { name: /Invite by email/ })).toBeDisabled()
-  await expect(pending.page.getByText('You can invite coworkers once Atlas Components is approved.')).toBeVisible()
+  await pending.page.waitForURL('**/welcome/pending')
 
   await coach.page.goto(`/sponsors/${SEED.atlasPending}`)
   await expect(coach.page.getByRole('heading', { name: 'We couldn\'t find that page' })).toBeVisible()
@@ -145,6 +144,10 @@ test('a pending company is invisible to coaches until an admin approves it', asy
   await expect(admin.page.getByText(/Atlas Components is approved · 1 person emailed/)).toBeVisible()
   await waitForEmail('sponsor-pending@pitfund.test', /Atlas Components is approved on FTC Pitfund/, started)
 
+  // Approval lets it into the app as well as into the directory.
+  await pending.page.goto('/inbox')
+  await expect(pending.page.getByRole('heading', { name: 'Pitches', level: 1 })).toBeVisible()
+
   await coach.page.goto(`/sponsors/${SEED.atlasPending}`)
   await expect(coach.page.getByRole('heading', { name: 'Atlas Components' })).toBeVisible()
   await coach.page.goto('/sponsors?q=Atlas')
@@ -156,7 +159,7 @@ test('a pending company is invisible to coaches until an admin approves it', asy
   for (const p of [coach, admin, pending]) await p.close()
 })
 
-test('a new company signs up and lands on its profile, under review', async ({ browser }) => {
+test('a new company signs up and lands on its setup page as a draft', async ({ browser }) => {
   const person = await as(browser, 'sponsor-new')
   await person.page.goto('/welcome/company', { waitUntil: 'networkidle' })
   await person.page.getByRole('button', { name: 'Create company' }).click()
@@ -171,9 +174,10 @@ test('a new company signs up and lands on its profile, under review', async ({ b
   await expect(person.page.getByText('Enter a LinkedIn link like linkedin.com/in/your-name')).toBeVisible()
   await person.page.getByLabel('Your LinkedIn profile').fill('linkedin.com/in/riley-newco')
   await person.page.getByRole('button', { name: 'Create company' }).click()
-  await person.page.waitForURL('**/company')
-  await expect(person.page.getByText('Your company is under review', { exact: true })).toBeVisible()
-  await expect(person.page.getByRole('heading', { name: 'Set up your company profile' })).toBeVisible()
+  // A new company is a draft on its setup page: it fills this in and sends it for review itself.
+  await person.page.waitForURL('**/welcome/company')
+  await expect(person.page.getByRole('heading', { name: /Tell us about Riverbend Robotics Fund/ })).toBeVisible()
+  await expect(person.page.getByRole('button', { name: 'Send for review' })).toBeDisabled()
   expect(person.problems).toEqual([])
   await person.close()
 })

@@ -20,6 +20,10 @@ import { PublicPreview } from './public-preview'
 
 export const metadata: Metadata = { title: 'Team' }
 
+// The guard redirects an org that isn't approved yet, so this route can't be validated as instant —
+// the same reason the workspace layout opts out.
+export const instant = false
+
 export default async function TeamPage() {
   const viewer = await guardPage(() => requireApprovedTeam())
   const [profile, members, invites, requests] = await Promise.all([

@@ -26,7 +26,7 @@ const IN_PROGRESS: PitchStatus[] = ['draft', 'in_review', 'changes_requested', '
  * A withdrawn pitch frees the slot (plan §1 rule 8), so it counts as "not yet pitched" — the coach
  * can start again. Everything else that reached a conclusion counts as pitched for this season.
  */
-export function filterOf(status: PitchStatus): Exclude<PitchFilter, 'all' | 'not_pitched'> | null {
+function filterOf(status: PitchStatus): Exclude<PitchFilter, 'all' | 'not_pitched'> | null {
   if (status === 'withdrawn') return null
   return IN_PROGRESS.includes(status) ? 'in_progress' : 'pitched'
 }

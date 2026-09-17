@@ -53,6 +53,14 @@ Anish does not click through the app. Agents verify everything with these comman
 - `tests/e2e/keyboard-journeys.spec.ts`: sign-in, composer and company response with Tab/Enter/Space/arrows/Esc only
   (focus trap and focus return in every dialog). `tests/e2e/mobile.spec.ts`: taps at 375 px on the production build; every
   control used must be ≥ 32 px tall, on screen and not covered where a finger lands.
+- **Signing up no longer lands in the app.** A new team or company is a `draft` on its setup page and reaches the
+  workspace only once an admin approves it, so any test that signs up and then does something has to either go through
+  the admin UI (`tests/e2e/acceptance.spec.ts`) or approve directly (`update teams set status = 'approved'`) when the
+  review isn't what it's testing. Personas `coach-pending` and `sponsor-pending` sit in that waiting state.
+- Workspace pages export `instant = false`: their guards redirect an org that isn't approved, and a redirect can't be
+  validated as instant. Without it every such page logs a console error, which the QA gate counts as a failure.
+- A simulation cookie must be added with `path: '/'`. Deriving the path from `page.url()` silently scopes it to whatever
+  directory the page was in, so it stops being sent after the next navigation.
 - Running a second checkout's `npm run setup` restarts the shared local Supabase stack with that checkout's hook secret, so
   auth emails fail here ("signInWithOtp failed 500"). Re-run `npm run setup` in this checkout to take it back.
 - `npm run screenshots:marketing` regenerates `public/marketing/*.webp` from the seeded production build.

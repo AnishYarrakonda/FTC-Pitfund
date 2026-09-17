@@ -75,7 +75,6 @@ export function placeLabel(team: { location?: string | null }) {
 }
 
 export const MAX_LOCATION_LENGTH = 120
-export const MAX_INSTAGRAM_LENGTH = 30
 
 /**
  * Accepts what people actually paste — "@exodiusftc", "exodiusftc",

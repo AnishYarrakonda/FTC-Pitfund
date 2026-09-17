@@ -30,7 +30,8 @@ export function Toaster() {
   )
 
   // Fetch the code once the page is idle (after load, so it isn't first-load JS): a toast that
-  // reports a lost connection must still be able to show.
+  // reports a lost connection must still be able to show, and a dynamic import can't be fetched
+  // once the connection is gone. Every module the first toast needs has to be listed here.
   useEffect(() => {
     const prefetch = () => {
       void import('./sonner-toaster')

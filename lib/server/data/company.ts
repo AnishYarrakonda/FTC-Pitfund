@@ -252,8 +252,6 @@ export async function transferCompanyOwnership(viewer: SponsorViewer, userId: st
   return { userId, name: target.name.trim() || target.email }
 }
 
-export const SUBMIT_COMPANY_CONFLICTS = {}
-
 /** Send a company for review. Mirrors submitTeamForReview; the checklist is the blocker list. */
 export async function submitCompanyForReview(viewer: SponsorViewer) {
   const profile = await getCompanyProfile(viewer)

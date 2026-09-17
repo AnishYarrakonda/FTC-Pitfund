@@ -20,6 +20,10 @@ import { SUPPORT_EMAIL } from '@/lib/shared/brand'
 
 export const metadata: Metadata = { title: 'Company' }
 
+// The guard redirects an org that isn't approved yet, so this route can't be validated as instant —
+// the same reason the workspace layout opts out.
+export const instant = false
+
 export default async function CompanyPage() {
   const viewer = await guardPage(() => requireApprovedSponsor())
   const [profile, members, invites] = await Promise.all([

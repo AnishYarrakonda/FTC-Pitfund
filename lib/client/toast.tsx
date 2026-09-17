@@ -34,7 +34,9 @@ export function registerToasterHost(load: () => Promise<void>) {
 
 async function load() {
   if (host && !hostReady) hostReady = host()
-  const [{ toast }, { ToastContent }] = await Promise.all([import('sonner'), import('@/components/ui/toast-content'), hostReady])
+  // ToastContent comes from the toaster's own chunk (components/ui/sonner-toaster.tsx re-exports
+  // it), so mounting the toaster is the only fetch the first toast needs.
+  const [{ toast }, { ToastContent }] = await Promise.all([import('sonner'), import('@/components/ui/sonner-toaster'), hostReady])
   return { toast, ToastContent }
 }
 

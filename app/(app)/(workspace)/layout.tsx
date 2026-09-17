@@ -6,6 +6,11 @@ import { pageViewer } from '@/lib/server/page-guards'
 import { gatePathFor } from '@/lib/shared/viewer'
 
 /* Team and company workspaces: a person with no org goes to /welcome (admins to /admin). */
+
+// This shell redirects (no org, or an org still waiting for review), so it can't be validated as
+// instant — same reason as app/(app)/layout.tsx.
+export const instant = false
+
 export default function WorkspaceLayout({ children }: { children: ReactNode }) {
   return (
     <Suspense>

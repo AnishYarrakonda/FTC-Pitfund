@@ -19,6 +19,10 @@ import { setupChecklist } from '@/lib/shared/team'
 
 export const metadata: Metadata = { title: 'Pitches' }
 
+// The guard redirects an org that isn't approved yet, so this route can't be validated as instant —
+// the same reason the workspace layout opts out.
+export const instant = false
+
 export default async function PitchesPage() {
   const viewer = await guardPage(() => requireApprovedTeam())
   const [rows, setup] = await Promise.all([listTeamPitches(viewer), getTeamSetup(viewer)])

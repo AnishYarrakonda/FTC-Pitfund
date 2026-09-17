@@ -26,12 +26,6 @@ export const ACTIONABLE_TYPES = [
   'admin.report_opened',
 ] as const
 
-export type ActionableType = (typeof ACTIONABLE_TYPES)[number]
-
-export function isActionable(type: string): type is ActionableType {
-  return (ACTIONABLE_TYPES as readonly string[]).includes(type)
-}
-
 /**
  * What a notification is *about*, so it can be cleared by the event that resolves it rather than by
  * a click. `subjectKey('join', requestId)` on the notification and the same key passed to

@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { generateDeckPdf } from './assets'
+import { generateDeckPdf, generateWideImage } from './assets'
 
 /*
  * PDF files for upload tests, written to tests/.fixtures (gitignored) on every seed:
@@ -9,6 +9,7 @@ import { generateDeckPdf } from './assets'
  *   deck-8-pages.pdf   rejected: more than 5 pages
  *   deck-corrupt.pdf   rejected: starts like a PDF but isn't one
  *   not-a-pdf.pdf      rejected: an HTML file renamed to .pdf
+ *   logo.png           a wide image, for the logo cropper and the verification screenshot
  */
 const PDF_FIXTURES_DIR = path.resolve(process.cwd(), 'tests/.fixtures')
 
@@ -24,4 +25,6 @@ export async function writePdfFixtures() {
   for (let i = 16; i < corrupt.length; i++) corrupt[i] = (i * 7919) % 251
   writeFileSync(path.join(PDF_FIXTURES_DIR, 'deck-corrupt.pdf'), corrupt)
   writeFileSync(path.join(PDF_FIXTURES_DIR, 'not-a-pdf.pdf'), '<!doctype html><title>Not a PDF</title>')
+  // Deliberately not square, so the cropper has something to crop.
+  writeFileSync(path.join(PDF_FIXTURES_DIR, 'logo.png'), generateWideImage())
 }

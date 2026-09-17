@@ -21,6 +21,10 @@ import { InboxActions } from './inbox-actions'
 
 export const metadata: Metadata = { title: 'Pitch' }
 
+// The guard redirects an org that isn't approved yet, so this route can't be validated as instant —
+// the same reason the workspace layout opts out.
+export const instant = false
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export default async function InboxPitchPage({ params }: PageProps<'/inbox/[id]'>) {

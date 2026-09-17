@@ -43,6 +43,8 @@ export type TeamFixture = {
   instagram?: string
   /** Defaults to true; `false` seeds a team with no logo. */
   logo?: boolean
+  /** Defaults to 'approved'. 'pending' seeds a team sitting in the review queue. */
+  status?: 'approved' | 'pending'
 }
 
 const member = (slug: string, name: string) => ({ email: `member-${slug}@pitfund.test`, name })
@@ -74,7 +76,7 @@ export const TEAMS: TeamFixture[] = [
     pages: 2,
     summary: 'A second-year team from a Title I high school, focused on getting every student to a competition.',
     website: null,
-    members: ['coach-unverified'],
+    members: ['coach2'],
     recordStatus: 'matched',
   },
   {
@@ -90,6 +92,22 @@ export const TEAMS: TeamFixture[] = [
     website: 'https://example.org/geargrinders',
     members: [member('gear', 'Marcus Hill'), member('gear2', 'Dana Whitfield')],
     recordStatus: 'matched',
+  },
+  {
+    // Waiting in the admin review queue: coach-pending sees /welcome/pending, admins see it under Teams.
+    status: 'pending',
+    number: 29551,
+    name: 'Copper Circuit',
+    city: 'Lisbon',
+    state: 'Portugal',
+    color: '#B45309',
+    shape: 'bars',
+    verified: false,
+    pages: 2,
+    summary: 'First-year team from a state school in Lisbon, building its first competition robot.',
+    website: null,
+    members: ['coach-pending'],
+    recordStatus: 'manual',
   },
   {
     number: 20443,

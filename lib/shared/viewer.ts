@@ -48,10 +48,6 @@ export function viewerOrg(viewer: Pick<Viewer, 'team' | 'sponsor'>): ViewerOrg |
   return viewer.team ?? viewer.sponsor ?? null
 }
 
-export function isOwner(viewer: Pick<Viewer, 'team' | 'sponsor'>): boolean {
-  return viewerOrg(viewer)?.role === 'owner'
-}
-
 /**
  * Where an org that hasn't been approved yet has to go. `draft` means they never finished the setup
  * page; anything else means they are waiting on, or were refused by, an admin.

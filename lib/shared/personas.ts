@@ -7,10 +7,11 @@ export const PERSONAS = [
   { key: 'admin', name: 'Avery Admin', description: 'FTC Pitfund admin, no team or company', home: '/admin' },
   { key: 'coach-new', name: 'Noah Newcoach', description: 'Signed in, no team yet', home: '/welcome' },
   { key: 'coach', name: 'Maya Chen', description: 'Verified team with pitches in every state', home: '/pitches' },
-  { key: 'coach-unverified', name: 'Jordan Reyes', description: 'Team not verified yet', home: '/pitches' },
+  { key: 'coach2', name: 'Jordan Reyes', description: 'A second approved team (isolation)', home: '/pitches' },
+  { key: 'coach-pending', name: 'Ellis Vance', description: 'Team waiting for review', home: '/welcome/pending' },
   { key: 'coach-joiner', name: 'Sam Patel', description: 'Asked to join a team, waiting', home: '/welcome' },
   { key: 'sponsor-new', name: 'Riley Newco', description: 'Signed in, no company yet', home: '/welcome' },
-  { key: 'sponsor-pending', name: 'Priya Shah', description: 'Company waiting for approval', home: '/inbox' },
+  { key: 'sponsor-pending', name: 'Priya Shah', description: 'Company waiting for review', home: '/welcome/pending' },
   { key: 'sponsor', name: 'Daniel Brooks', description: 'Approved company with an inbox', home: '/inbox' },
   { key: 'sponsor2', name: 'Elena Garcia', description: 'A second approved company (isolation)', home: '/inbox' },
 ] as const

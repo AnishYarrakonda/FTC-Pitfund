@@ -170,38 +170,42 @@ export const QA_ROUTES: QaRoute[] = [
     ],
   },
   { name: 'welcome-company', path: '/welcome/company', personas: ['sponsor-new'], budget: 'authed' },
+  // The review gate: a team and a company that have sent themselves in and are waiting.
+  { name: 'welcome-pending', path: '/welcome/pending', personas: ['coach-pending', 'sponsor-pending'], budget: 'authed' },
+  { name: 'welcome-team-setup', path: '/welcome/team', personas: ['coach-pending'], budget: 'authed' },
+  { name: 'welcome-company-setup', path: '/welcome/company', personas: ['sponsor-pending'], budget: 'authed' },
 
   // Team workspace
-  { name: 'pitches', path: '/pitches', personas: ['coach', 'coach-unverified'], budget: 'authed' },
+  { name: 'pitches', path: '/pitches', personas: ['coach', 'coach2'], budget: 'authed' },
   { name: 'pitch-matched', path: `/pitches/${SEED.pitches.exodiusMatched}`, personas: ['coach'], budget: 'authed' },
   { name: 'pitch-in-review', path: `/pitches/${SEED.pitches.exodiusInReview}`, personas: ['coach'], budget: 'authed' },
   { name: 'pitch-changes', path: `/pitches/${SEED.pitches.exodiusChanges}`, personas: ['coach'], budget: 'authed' },
   { name: 'pitch-declined', path: `/pitches/${SEED.pitches.exodiusDeclined}`, personas: ['coach'], budget: 'authed' },
   { name: 'pitch-withdrawn', path: `/pitches/${SEED.pitches.exodiusWithdrawn}`, personas: ['coach'], budget: 'authed' },
-  { name: 'sponsors', path: '/sponsors', personas: ['coach', 'coach-unverified'], budget: 'authed', interactions: [searchNoResults] },
+  { name: 'sponsors', path: '/sponsors', personas: ['coach', 'coach2'], budget: 'authed', interactions: [searchNoResults] },
   { name: 'sponsor-in-review', path: `/sponsors/${SEED.meridian}`, personas: ['coach'], budget: 'authed' },
-  { name: 'sponsor-start', path: `/sponsors/${SEED.keystone}`, personas: ['coach', 'coach-unverified'], budget: 'authed' },
+  { name: 'sponsor-start', path: `/sponsors/${SEED.keystone}`, personas: ['coach', 'coach2'], budget: 'authed' },
   { name: 'composer-new', path: `/sponsors/${SEED.keystone}/pitch`, personas: ['coach'], budget: 'authed', interactions: [previewTab] },
   { name: 'composer-draft', path: `/sponsors/${SEED.summit}/pitch`, personas: ['coach'], budget: 'authed', interactions: [previewTab] },
   { name: 'composer-resubmit', path: `/sponsors/${SEED.northpeak}/pitch`, personas: ['coach'], budget: 'authed' },
   {
     name: 'team',
     path: '/team',
-    personas: ['coach', 'coach-unverified'],
+    personas: ['coach', 'coach2'],
     budget: 'authed',
     interactions: [uploadStage('hold'), uploadStage('fail')],
   },
 
   // Company workspace
-  { name: 'inbox', path: '/inbox', personas: ['sponsor', 'sponsor-pending', 'sponsor2'], budget: 'authed' },
+  { name: 'inbox', path: '/inbox', personas: ['sponsor', 'sponsor2'], budget: 'authed' },
   { name: 'inbox-new', path: `/inbox/${SEED.pitches.voltageToBrightlineSent}`, personas: ['sponsor'], budget: 'authed', interactions: [notAFitOther] },
   { name: 'inbox-matched', path: `/inbox/${SEED.pitches.exodiusMatched}`, personas: ['sponsor'], budget: 'authed' },
   { name: 'inbox-declined', path: `/inbox/${SEED.pitches.gearToBrightlineDeclined}`, personas: ['sponsor'], budget: 'authed' },
   { name: 'inbox-withdrawn', path: `/inbox/${SEED.pitches.knightsToBrightlineWithdrawn}`, personas: ['sponsor'], budget: 'authed' },
-  { name: 'company', path: '/company', personas: ['sponsor', 'sponsor-pending'], budget: 'authed', interactions: [customizeQuestions] },
+  { name: 'company', path: '/company', personas: ['sponsor'], budget: 'authed', interactions: [customizeQuestions] },
 
   // Shared
-  { name: 'account', path: '/account', personas: ['coach', 'coach-unverified', 'sponsor', 'admin'], budget: 'authed' },
+  { name: 'account', path: '/account', personas: ['coach', 'coach2', 'sponsor', 'admin'], budget: 'authed' },
 
   // Admin
   { name: 'admin-review', path: '/admin', personas: ['admin'], budget: 'authed' },

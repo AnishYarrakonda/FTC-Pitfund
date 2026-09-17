@@ -13,6 +13,10 @@ import { guardPage } from '@/lib/server/page-guards'
 
 export const metadata: Metadata = { title: 'Pitches' }
 
+// The guard redirects a company that isn't approved yet, so this route can't be validated as
+// instant — the same reason the workspace layout opts out.
+export const instant = false
+
 const GROUPS: Array<{ key: keyof InboxGroups; title: string; description: string }> = [
   { key: 'sent', title: 'New', description: 'Waiting for your answer.' },
   { key: 'matched', title: 'Interested', description: 'You’re connected. Contact details are on each pitch.' },

@@ -1,9 +1,10 @@
 import path from 'node:path'
 
-import type { Page } from '@playwright/test'
+import type { Browser, Page } from '@playwright/test'
 import sharp from 'sharp'
 
 import { SEED } from '../../scripts/seed/ids'
+import type { PersonaKey } from '../../lib/shared/personas'
 import { closeTestDb, db } from '../support/db'
 import { authFile } from '../support/session'
 import { expect, test } from '../support/fixtures'
@@ -14,8 +15,9 @@ import { messagesTo, waitForLoginCode } from '../support/mailpit'
  * latency plus the clicks. A "screen" is a distinct page (pathname) the person has to act on; the
  * page that confirms the result isn't counted as a step.
  *
- *   1. A new coach: landing page → submitted first pitch in ≤ 8 screens and under 5 minutes.
- *   2. A new company: sign-up → a complete profile with questions in ≤ 4 screens and under 3 minutes.
+ *   1. A new coach: landing page → submitted first pitch in ≤ 10 screens and under 5 minutes,
+ *      with the admin review in the middle (≤ 6 screens to reach it unaided).
+ *   2. A new company: sign-up → sent for review in ≤ 5 screens and under 3 minutes.
  *   3. The admin approves that pitch from the notification email in 2 clicks.
  */
 
@@ -45,9 +47,14 @@ async function signInWithCode(page: Page, email: string) {
   await page.getByLabel('Sign-in code').fill(await waitForLoginCode(email))
 }
 
+async function pageAs(browser: Browser, persona: PersonaKey): Promise<Page> {
+  const context = await browser.newContext({ storageState: authFile(persona) })
+  return context.newPage()
+}
+
 let submittedPitch: { id: string; number: number } | null = null
 
-test('§12: a new coach goes from the landing page to a submitted pitch in ≤ 8 screens and < 5 minutes', async ({ page, problems }) => {
+test('§12: a new coach reaches a submitted pitch in ≤ 10 screens and < 5 minutes, admin review included', async ({ page, browser, problems }) => {
   test.setTimeout(300_000)
   const email = `e2e-accept-coach-${Date.now()}@pitfund.test`
   const number = 700_000 + Math.floor(Math.random() * 99_999)
@@ -81,27 +88,52 @@ test('§12: a new coach goes from the landing page to a submitted pitch in ≤ 8
   await page.getByRole('checkbox', { name: /I accept the Terms/ }).click()
   await page.getByRole('button', { name: 'Create team' }).click()
 
-  // 5 · Pitches: the setup checklist points at the deck
-  await page.waitForURL('**/pitches')
-  await page.getByRole('link', { name: 'Upload your sponsorship deck' }).click()
-
-  // 6 · Team: deck and summary
-  await page.waitForURL(/\/team(#deck)?$/)
+  // 5 · Setup: everything the review needs, on one page, with the blockers listed up front
+  await expect(page.getByRole('heading', { name: `Tell us about Team ${number}` })).toBeVisible()
   await page.waitForLoadState('networkidle')
+  await page.getByLabel('One-line summary').fill('A second-year Austin team that runs free robotics nights for middle schoolers.')
+  await page.getByRole('button', { name: 'Save profile' }).click()
+  await expect(page.locator('#profile').getByText('Saved', { exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Logo image' }).setInputFiles(path.join(FIXTURES, 'logo.png'))
+  await page.getByRole('button', { name: 'Use photo' }).click()
+  await expect(page.getByText('Logo updated')).toBeVisible({ timeout: 60_000 })
+
+  await page.getByRole('button', { name: 'Proof screenshot' }).setInputFiles(path.join(FIXTURES, 'logo.png'))
+  // The inline status, not the toast that also says so.
+  await expect(page.getByText('Screenshot uploaded', { exact: true })).toBeVisible({ timeout: 60_000 })
+
   const deck = page.locator('#deck')
   await deck.getByRole('checkbox', { name: /I have permission/ }).click()
   await deck.locator('input[type=file]').setInputFiles(path.join(FIXTURES, 'deck-3-pages.pdf'))
   await expect(deck.getByText('Deck updated · visible on your public page')).toBeVisible({ timeout: 60_000 })
-  await page.getByLabel('One-line summary').fill('A second-year Austin team that runs free robotics nights for middle schoolers.')
-  await page.getByRole('button', { name: 'Save profile' }).click()
-  await expect(page.locator('#profile').getByText('Saved', { exact: true })).toBeVisible()
+
+  await expect(page.getByText('Everything we need is here.')).toBeVisible()
+  await page.getByRole('button', { name: 'Send for review' }).click()
+
+  // 6 · Waiting. This is as far as a coach gets on their own: nothing else is reachable.
+  await page.waitForURL('**/welcome/pending')
+  await expect(page.getByRole('heading', { name: `We’re checking Team ${number}` })).toBeVisible()
+  const beforeReview = screens.length
+
+  // An admin approves, which is the step the old flow didn't have.
+  const admin = await pageAs(browser, 'admin')
+  await admin.goto('/admin?tab=teams')
+  await admin.getByRole('link', { name: new RegExp(`Team ${number}`) }).click()
+  await admin.waitForURL(/\/admin\/teams\/[0-9a-f-]{36}$/)
+  await admin.getByRole('button', { name: 'Approve' }).click()
+  await expect(admin.getByText(new RegExp(`Team ${number} is approved`))).toBeVisible()
+  await admin.close()
+
+  // 7 · Pitches
+  await page.goto('/pitches')
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Sponsors' }).click()
 
-  // 7 · Directory
+  // 8 · Directory
   await page.waitForURL('**/sponsors')
   await page.getByRole('button', { name: 'Start pitch to Meridian Machine Works' }).click()
 
-  // 8 · Composer
+  // 9 · Composer
   await page.waitForURL(`**/sponsors/${SEED.meridian}/pitch`)
   await page.getByLabel('Which parts would you want machined, and do you have CAD ready?').locator('visible=true').fill('Two drivetrain side plates. CAD is ready as STEP files.')
   await expect(page.getByText(/Saved · /)).toBeVisible()
@@ -115,8 +147,12 @@ test('§12: a new coach goes from the landing page to a submitted pitch in ≤ 8
   const steps = screens.slice(0, -1)
 
   test.info().annotations.push({ type: 'screens', description: `${steps.length}: ${steps.join(' → ')}` }, { type: 'duration', description: `${Math.round(elapsed / 1000)} s` })
-  console.log(`[§12 coach] ${steps.length} screens (${steps.join(' → ')}) in ${Math.round(elapsed / 1000)} s`)
-  expect(steps.length).toBeLessThanOrEqual(8)
+  console.log(`[§12 coach] ${steps.length} screens (${steps.join(' → ')}) in ${Math.round(elapsed / 1000)} s, ${beforeReview} before review`)
+  // Restated 2026-09-16: the original criterion was ≤ 8 screens, written when a coach could pitch
+  // straight after signing up. Teams are admin-approved now, so the journey has a wait in the
+  // middle. What a coach does unaided — landing to "sent for review" — is still ≤ 6.
+  expect(beforeReview).toBeLessThanOrEqual(6)
+  expect(steps.length).toBeLessThanOrEqual(10)
   expect(elapsed).toBeLessThan(5 * 60_000)
 
   submittedPitch = { id: page.url().split('/').pop()!, number }
@@ -163,7 +199,7 @@ test('§12: the admin approves that pitch from the notification email in 2 click
   await context.close()
 })
 
-test('§12: a new company goes from sign-up to a complete profile with questions in ≤ 4 screens and < 3 minutes', async ({ page, problems }) => {
+test('§12: a new company goes from sign-up to sent for review in ≤ 5 screens and < 3 minutes', async ({ page, problems }) => {
   test.setTimeout(180_000)
   const email = `e2e-accept-company-${Date.now()}@pitfund.test`
   const logo = await sharp({ create: { width: 256, height: 256, channels: 3, background: '#1f6f5c' } }).png().toBuffer()
@@ -195,12 +231,13 @@ test('§12: a new company goes from sign-up to a complete profile with questions
   if (!(await terms.isChecked())) await terms.click()
   await page.getByRole('button', { name: 'Create company' }).click()
 
-  // 4 · Company profile and questions
-  await page.waitForURL('**/company')
+  // 4 · Company profile and questions, on the setup page
+  await page.waitForURL('**/welcome/company')
   await page.waitForLoadState('networkidle')
-  await expect(page.getByRole('heading', { name: 'Set up your company profile' })).toBeVisible()
   const profile = page.locator('#profile')
   await profile.locator('input[type=file]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: logo })
+  // Picking a file opens the cropper; the square isn't chosen until "Use photo".
+  await page.getByRole('button', { name: 'Use photo' }).click()
   await expect(profile.getByText('Logo updated')).toBeVisible({ timeout: 30_000 })
   await profile.getByLabel('What we look for').fill('Teams near Lake Travis that build their own parts and run outreach.')
   await profile.getByRole('checkbox', { name: 'Equipment' }).click()
@@ -212,12 +249,18 @@ test('§12: a new company goes from sign-up to a complete profile with questions
   await questions.getByRole('button', { name: 'Add question' }).click()
   await questions.getByLabel('Question').last().fill('Which machining processes does your robot use today?')
   await questions.getByRole('button', { name: 'Save questions' }).click()
-  await expect(page.getByRole('heading', { name: 'Set up your company profile' })).toHaveCount(0, { timeout: 15_000 })
+
+  // Complete: they can send it for review, which is where an unaided company journey ends.
+  await expect(page.getByText('Everything we need is here.')).toBeVisible({ timeout: 15_000 })
+  await page.getByRole('button', { name: 'Send for review' }).click()
+  await page.waitForURL('**/welcome/pending')
   const elapsed = Date.now() - started
 
   test.info().annotations.push({ type: 'screens', description: `${screens.length}: ${screens.join(' → ')}` }, { type: 'duration', description: `${Math.round(elapsed / 1000)} s` })
   console.log(`[§12 company] ${screens.length} screens (${screens.join(' → ')}) in ${Math.round(elapsed / 1000)} s`)
-  expect(screens.length).toBeLessThanOrEqual(4)
+  // Restated 2026-09-16: was ≤ 4 screens to "a complete profile". Companies are reviewed before
+  // teams can see them now, so the journey ends one screen later, at the waiting page.
+  expect(screens.length).toBeLessThanOrEqual(5)
   expect(elapsed).toBeLessThan(3 * 60_000)
   expect(problems).toEqual([])
 })
