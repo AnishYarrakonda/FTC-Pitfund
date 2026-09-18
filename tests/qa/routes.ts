@@ -137,6 +137,20 @@ const cropLogo: QaInteraction = {
   },
 }
 
+/*
+ * A toast with its decay bar part-way through, so the gate screenshots and axes the thing every
+ * action reports through. Sonner pauses the bar on hover, so nothing here touches the toast.
+ */
+const showToast: QaInteraction = {
+  name: 'toast',
+  run: async (page) => {
+    await page.getByRole('button', { name: 'Toast with action' }).click()
+    const toast = page.locator('[data-sonner-toast]')
+    await expect(toast.getByRole('button', { name: 'Retry' })).toBeVisible({ timeout: 20_000 })
+    await expect(toast.locator('.pitfund-toast-decay')).toBeVisible()
+  },
+}
+
 const openFaq: QaInteraction = {
   name: 'faq-open',
   run: async (page) => {
@@ -241,7 +255,7 @@ export const QA_ROUTES: QaRoute[] = [
 
   // Local development tools
   { name: 'dev', path: '/dev', personas: ['anonymous'], server: 'dev' },
-  { name: 'dev-ui', path: '/dev/ui', personas: ['anonymous'], server: 'dev', actionButtons: true },
+  { name: 'dev-ui', path: '/dev/ui', personas: ['anonymous'], server: 'dev', actionButtons: true, interactions: [showToast] },
 ]
 
 export const QA_WIDTHS = [375, 768, 1280] as const

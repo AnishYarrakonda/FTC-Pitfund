@@ -33,7 +33,10 @@ Anish does not click through the app. Agents verify everything with these comman
   (width ≥320 px at desktop, fits viewport, sticky close, focus trap, Esc, focus return), TTFB/LCP/CLS
   budgets on the production build, ActionButton pending ≤100 ms on `/dev/ui`.
 - States reachable only by interaction (a lookup result, a tab, an upload stage) go in the route's
-  `interactions`; each gets its own screenshot `{persona}-{width}[-edge]--{name}.png`.
+  `interactions`; each gets its own screenshot `{persona}-{width}[-edge]--{name}.png`. Two things need an
+  interaction because the automatic dialog sweep can't reach them: the logo cropper (it opens on a file pick,
+  not from an `[aria-haspopup="dialog"]` trigger) and a toast (Sonner's fixed portal is absent from a full-page
+  screenshot, so the interaction's own assertions are the coverage).
 - Output: `qa/screens/{route}/{persona}-{width}[-edge|-empty].png`, `qa/results/*.json`, `qa/report.md`.
 - **Green is not done.** Open the screenshots and judge them against `.claude/rules/ux-contract.md`.
   Crop long pages with a Playwright element screenshot when a full-page image is too tall to read.

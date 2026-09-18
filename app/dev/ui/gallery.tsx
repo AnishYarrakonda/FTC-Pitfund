@@ -777,9 +777,20 @@ function MenusSection() {
           <Button variant="secondary" onClick={() => toast.error('Something went wrong on our side. Reference 3f9a2c1b7e04.')}>
             Error toast
           </Button>
+          {/*
+            A minute long so the decay bar can actually be watched draining, and so it is still up
+            while the QA gate runs axe over the page with a toast open. (Sonner renders it in a
+            fixed portal, which a full-page screenshot doesn't capture, so the gate's assertions are
+            what cover it.) In the app the same toast lives for ten seconds (lib/client/toast.tsx).
+          */}
           <Button
             variant="secondary"
-            onClick={() => toast.error("Couldn't reach FTC Pitfund. Check your connection.", { action: { label: 'Retry', onClick: () => toast.success('Reconnected') } })}
+            onClick={() =>
+              toast.error("Couldn't reach FTC Pitfund. Check your connection.", {
+                action: { label: 'Retry', onClick: () => toast.success('Reconnected') },
+                duration: 60_000,
+              })
+            }
           >
             Toast with action
           </Button>

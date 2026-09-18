@@ -102,6 +102,11 @@ Fixed without an image pair (each is now guarded by a test or a gate):
 - **The logo cropper escaped the QA gate.** It opens on a file pick, not from an `[aria-haspopup="dialog"]`
   trigger, so the gate's automatic dialog sweep (focus trap, Esc, focus return, axe, width) never reached it.
   `tests/qa/routes.ts` now opens it as a `team` interaction.
+- **Nothing checked a toast.** Every action now reports through one, and no gate had ever opened one. `/dev/ui`
+  gets a `toast` interaction that clicks the specimen and asserts the decay bar and the dismiss button are
+  there, with axe running over the page while it is open; the specimen itself lives for a minute (instead of
+  the app's ten seconds) so the bar can be watched draining. Sonner renders in a fixed portal, which a
+  full-page screenshot doesn't capture, so the assertions are the coverage, not an image.
 - **Emails in the admin people directory** were truncated to "member-…" at 375 px; they now wrap onto up to two lines (`line-clamp-2 break-all`), and member rows put their actions under the name instead of breaking emails mid-word.
 
 ---
