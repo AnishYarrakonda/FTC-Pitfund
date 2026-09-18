@@ -133,7 +133,7 @@ const cropLogo: QaInteraction = {
     await page.getByRole('button', { name: 'Logo image' }).setInputFiles('tests/.fixtures/logo.png')
     const dialog = page.getByRole('dialog', { name: 'Position your logo' })
     await expect(dialog.getByRole('button', { name: 'Use photo' })).toBeVisible({ timeout: 20_000 })
-    await dialog.getByLabel('Zoom').fill('2')
+    await dialog.locator('input[type=range]').fill('2')
   },
 }
 

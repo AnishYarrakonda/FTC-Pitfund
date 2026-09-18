@@ -205,6 +205,19 @@ const samples: Sample[] = [
     data: { teamNumber: 16225, companyName: 'Brightline Manufacturing', note: 'The deck is for a different team number than your account.', pitchUrl: url(`/pitches/${UUID}`) },
   },
   { name: 'pitch-rejected', variant: 'long', data: { teamNumber: 16225, companyName: LONG_NAME, note: long(5000), pitchUrl: url(`/pitches/${UUID}`) } },
+  { name: 'team-approved', variant: 'default', data: { teamNumber: 16225, teamName: 'Exodius', pitchesUrl: url('/pitches') } },
+  { name: 'team-approved', variant: 'long', data: { teamNumber: 16225, teamName: LONG_NAME, pitchesUrl: url('/pitches') } },
+  {
+    name: 'team-rejected',
+    variant: 'default',
+    data: {
+      teamNumber: 16225,
+      teamName: 'Exodius',
+      note: 'The screenshot doesn’t show your name on the roster. Send the FIRST Dashboard page that lists your team’s coaches.',
+      setupUrl: url('/welcome/team'),
+    },
+  },
+  { name: 'team-rejected', variant: 'long', data: { teamNumber: 16225, teamName: LONG_NAME, note: long(5000), setupUrl: url('/welcome/team') } },
   { name: 'sponsor-approved', variant: 'default', data: { companyName: 'Brightline Manufacturing', companyUrl: url('/company') } },
   { name: 'sponsor-approved', variant: 'long', data: { companyName: LONG_NAME, companyUrl: url('/company') } },
   {

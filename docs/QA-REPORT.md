@@ -91,6 +91,17 @@ Fixed without an image pair (each is now guarded by a test or a gate):
   caret by writing an inline style onto every input, and on a slow runner that happened before React hydrated the page.
   `settle()` (`tests/qa/checks.ts`) now waits until every form control is hydrated.
 - **Creating a company** now goes straight to `/company` (profile and questions), so the sign-up path is 4 screens (`app/actions/company.ts`).
+- **The seeded deck poster was a near-blank sheet.** `generateDeckThumbnail` was widened to `THUMB_WIDTH_PX`
+  (1700 px) without scaling the layout it draws, so the header band and text lines stayed at their 300 px
+  coordinates in the corner of a blank page. Every deck card, the team setup page and the public page's first
+  paint showed it. The drawing is now scaled with the canvas (`scripts/seed/assets.ts`).
+- **The verification screenshot was never deleted.** `/welcome/team` tells a coach "we delete it once you're
+  approved", and nothing did. `approveTeam` now clears `proof_path`/`proof_bytes`/`proof_uploaded_at` and returns
+  the path so `approveTeamAction` removes the object from the private bucket; the admin page says the screenshot
+  was deleted on approval instead of reading as a gap. Covered by `tests/unit/admin.test.ts`.
+- **The logo cropper escaped the QA gate.** It opens on a file pick, not from an `[aria-haspopup="dialog"]`
+  trigger, so the gate's automatic dialog sweep (focus trap, Esc, focus return, axe, width) never reached it.
+  `tests/qa/routes.ts` now opens it as a `team` interaction.
 - **Emails in the admin people directory** were truncated to "member-…" at 375 px; they now wrap onto up to two lines (`line-clamp-2 break-all`), and member rows put their actions under the name instead of breaking emails mid-word.
 
 ---
@@ -173,28 +184,33 @@ The QA gate separately screenshots every route at 375 px (and checks overflow, s
 Measured by `npm run perf` on the local production build (budgets in `tests/qa/routes.ts` `BUDGETS`; any miss exits 1,
 and CI runs it on every push). Latest run, after the fixes below:
 
-**First-load JS (gzip, the scripts each route's HTML references; budget ≤ 170 KB):** all 57 QA routes pass. Largest:
-`/company` 166 KB, `/admin/pitches/[id]` 165, `/team` 164, composer 163; `/login` 152, `/t/[number]` 153, `/` 145.
+**First-load JS (gzip, the scripts each route's HTML references; budget ≤ 170 KB):** all 63 QA routes pass. Largest:
+`/company` 167 KB, `/welcome/team` and `/welcome/company` 166, `/admin/pitches/[id]` 165, `/team` 164, composer 163;
+`/login` 152, `/t/[number]` 153, `/welcome/pending` 147, `/` 145. The logo cropper, the toast body and Sonner load on
+first use, so none of them appear here.
 
 **Lighthouse, mobile, applied Slow 4G throttling (150 ms RTT, 1.6 Mbit/s, 4× CPU), median of 3**
 
 | Page | Performance (≥ 90) | Accessibility (≥ 95) | LCP (≤ 2,000 ms) | CLS (≤ 0.05) | TBT |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `/` | 100 | 100 | 1,548 ms | 0 | 23 ms |
-| `/t/31579` | 99 | 100 | 1,181 ms | 0 | 38 ms |
-| `/login` | 100 | 100 | 671 ms | 0 | 21 ms |
+| `/` | 100 | 100 | 1,515 ms | 0 | 14 ms |
+| `/t/31579` | 100 | 100 | 1,175 ms | 0 | 25 ms |
+| `/login` | 100 | 100 | 689 ms | 0 | 34 ms |
 
 **Authed pages (queries per request with `DEBUG_QUERIES=1`; render time on the production build; budgets ≤ 5 queries, p95 ≤ 400 ms)**
 
 | Page | Queries | Render p50 | Render p95 |
 | --- | ---: | ---: | ---: |
-| `/pitches` (coach) | 3 | 14 ms | 16 ms |
-| `/sponsors` (coach) | 2 | 14 ms | 16 ms |
-| `/inbox` (company) | 3 | 13 ms | 15 ms |
-| `/admin` | 3 | 13 ms | 16 ms |
-| `/admin/pitches/[id]` | 5 | 17 ms | 19 ms |
+| `/pitches` (coach) | 3 | 13 ms | 15 ms |
+| `/sponsors` (coach) | 2 | 13 ms | 16 ms |
+| `/inbox` (company) | 3 | 12 ms | 15 ms |
+| `/admin` | 3 | 12 ms | 15 ms |
+| `/admin/pitches/[id]` | 5 | 14 ms | 15 ms |
 
-**Server action latency:** composer autosave (`saveDraftAction`) p50 27 ms, p95 34 ms (budget ≤ 500 ms, excluding `after()` work).
+`/sponsors` stays at 2 queries: the pitch-status chips are counted from data the page already loads, and the
+uncached filtered query only runs when a chip other than **All** is active (3 then, still inside the budget of 5).
+
+**Server action latency:** composer autosave (`saveDraftAction`) p50 30 ms, p95 41 ms (budget ≤ 500 ms, excluding `after()` work).
 **Pending state:** every `ActionButton` on `/dev/ui` shows its pending state within 100 ms (QA gate), and a save on Slow 3G
 acknowledges in ≈ 100 ms (`tests/e2e/fault-injection.spec.ts`). The QA gate also checks TTFB/LCP/CLS on every budgeted route at 1280 px.
 
@@ -352,3 +368,25 @@ It now waits for `load` and treats the quiet network as best-effort. It passed a
 
 GitHub Actions `CI` passed on `rebuild` at `484b88c` (run 34937248942): typecheck, lint, setup, Vitest, build, E2E,
 QA gate, performance budgets, security scan, production dependency audit and knip.
+
+### Re-run after the review-gate round (2026-09-17)
+
+Every gate was run again on `coach-feedback` after admin review, owner/editor roles, decaying toasts, the logo
+cropper, fuzzy directory search, the wider public page, Instagram and free-text location landed.
+
+| Step | Result |
+| --- | --- |
+| `npm run check` | ✓ typecheck, lint (0 warnings), Vitest 144 / 144 in 19 files |
+| `npm run e2e` | ✓ 74 / 74 in 2.9 min, including the §12 timings above |
+| `npm run qa` | ✓ 600 checks, 0 failures (`demo`, `edge`, `empty`), screenshots reviewed (section 2) |
+| `npm run qa:clicks` | ✓ 0 findings, the new chips, cropper controls and Make owner included |
+| `npm run perf` | ✓ every budget met; section 6 carries the numbers |
+| `npm run email:preview` | ✓ every template, including the new `team-approved` and `team-rejected` |
+| `npm run security:scan` | ✓ clean with the non-goal list narrowed from "roles" to "role tiers" |
+| `npm run knip` | ✓ nothing unused |
+
+An earlier full `npm run e2e` on this branch reported three failures (the offline toast, the pending-company
+journey and account deletion) and took 14 minutes instead of 3. All three passed in isolation, and the local
+Supabase stack had stopped by the time the run ended: the machine's Docker daemon died mid-run. Restarted, the
+same suite is 74 / 74. Recorded here because the failure signature — unrelated tests timing out on anything
+that waits for an email, plus a run several times slower than usual — reads like flakiness and isn't.
