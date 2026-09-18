@@ -6,6 +6,8 @@ import { deflateSync } from 'node:zlib'
 
 import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage } from 'pdf-lib'
 
+import { THUMB_WIDTH_PX } from '@/lib/shared/team'
+
 // ─── PNG ────────────────────────────────────────────────────────────────────────────────
 
 const CRC_TABLE = (() => {
@@ -111,16 +113,25 @@ export function generateLogo(color: string, shape: Shape, size = 256): Uint8Arra
   return encodePng(size, size, px)
 }
 
-/** A page-1 thumbnail (300×388, US Letter ratio): white page, colored header, text lines. */
+/**
+ * A page-1 thumbnail in US Letter ratio: white page, colored header, text lines.
+ *
+ * Sized like a real upload (THUMB_WIDTH_PX). A 300px stub used to be stretched across the whole
+ * deck column, so the seeded app looked blurry in a way the real one wasn't.
+ */
 export function generateDeckThumbnail(color: string): Uint8Array {
-  const w = 300
-  const h = 388
+  const w = THUMB_WIDTH_PX
+  const h = Math.round((THUMB_WIDTH_PX * 792) / 612)
   const [r, g, b] = hexToRgb(color)
   const px = new Uint8Array(w * h * 3).fill(255)
+  // The layout below is written for a 300 px page and scaled up, so widening THUMB_WIDTH_PX enlarges
+  // the drawing instead of stranding it in the corner of a blank sheet.
+  const u = w / 300
   const fill = (x0: number, y0: number, x1: number, y1: number, c: [number, number, number]) => {
-    for (let y = Math.max(0, y0); y < Math.min(h, y1); y++) for (let x = Math.max(0, x0); x < Math.min(w, x1); x++) px.set(c, (y * w + x) * 3)
+    for (let y = Math.max(0, Math.round(y0 * u)); y < Math.min(h, Math.round(y1 * u)); y++)
+      for (let x = Math.max(0, Math.round(x0 * u)); x < Math.min(w, Math.round(x1 * u)); x++) px.set(c, (y * w + x) * 3)
   }
-  fill(0, 0, w, 92, [r, g, b])
+  fill(0, 0, 300, 92, [r, g, b])
   fill(24, 30, 170, 44, [255, 255, 255])
   fill(24, 54, 120, 62, [Math.min(255, r + 90), Math.min(255, g + 90), Math.min(255, b + 90)])
   const grey: [number, number, number] = [214, 214, 219]
@@ -277,4 +288,18 @@ export async function generateDeckPdf(deck: DeckContent): Promise<Uint8Array> {
     }
   }
   return pdf.save({ useObjectStreams: true })
+}
+
+/** A wide (non-square) PNG for upload tests: the logo cropper and the verification screenshot. */
+export function generateWideImage(w = 1200, h = 500): Uint8Array {
+  const px = new Uint8Array(w * h * 3)
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 3
+      // Three vertical bands, so which part was kept is obvious in a screenshot.
+      const band = x < w / 3 ? [220, 60, 60] : x < (2 * w) / 3 ? [30, 150, 90] : [40, 60, 210]
+      px.set(band, i)
+    }
+  }
+  return encodePng(w, h, px)
 }

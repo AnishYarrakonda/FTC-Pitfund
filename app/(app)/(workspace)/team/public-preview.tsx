@@ -19,7 +19,7 @@ export function PublicPreview({ profile }: { profile: TeamProfile }) {
           View <ArrowUpRight aria-hidden="true" className="size-3.5" />
         </span>
       </span>
-      <TeamMark name={profile.name} number={profile.number} logoSrc={profile.logoUrl} verified={Boolean(profile.verifiedAt)} meta={placeLabel(profile) || null} size="sm" />
+      <TeamMark name={profile.name} number={profile.number} logoSrc={profile.logoUrl} verified={profile.status === 'approved'} meta={placeLabel(profile) || null} size="sm" />
       {profile.summary ? (
         <span className="text-body text-text-secondary user-text">{profile.summary}</span>
       ) : (

@@ -15,7 +15,7 @@ import { getCompanyForAdmin } from '@/lib/server/data/admin-orgs'
 import { guardPage } from '@/lib/server/page-guards'
 import { AppError } from '@/lib/server/result'
 import { formatDate } from '@/lib/shared/format'
-import { SPONSOR_STATUS } from '@/lib/shared/labels'
+import { ORG_STATUS } from '@/lib/shared/labels'
 import { displayWebsite } from '@/lib/shared/url'
 
 export const metadata: Metadata = { title: 'Company review' }
@@ -33,7 +33,7 @@ export default async function AdminCompanyPage({ params }: PageProps<'/admin/com
     if (e instanceof AppError && e.code === 'NOT_FOUND') notFound()
     throw e
   })
-  const status = SPONSOR_STATUS[company.status]
+  const status = ORG_STATUS[company.status]
   const received = (company.pitchCounts.sent ?? 0) + (company.pitchCounts.matched ?? 0) + (company.pitchCounts.declined ?? 0)
 
   return (

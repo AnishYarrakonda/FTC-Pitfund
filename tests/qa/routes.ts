@@ -123,6 +123,34 @@ const personActionDialog: QaInteraction = {
   },
 }
 
+/*
+ * The logo cropper opens on a file pick rather than from an [aria-haspopup="dialog"] trigger, so the
+ * gate's automatic dialog sweep never reaches it. Open it by hand to get it screenshotted and axed.
+ */
+const cropLogo: QaInteraction = {
+  name: 'logo-cropper',
+  run: async (page) => {
+    await page.getByRole('button', { name: 'Logo image' }).setInputFiles('tests/.fixtures/logo.png')
+    const dialog = page.getByRole('dialog', { name: 'Position your logo' })
+    await expect(dialog.getByRole('button', { name: 'Use photo' })).toBeVisible({ timeout: 20_000 })
+    await dialog.locator('input[type=range]').fill('2')
+  },
+}
+
+/*
+ * A toast with its decay bar part-way through, so the gate screenshots and axes the thing every
+ * action reports through. Sonner pauses the bar on hover, so nothing here touches the toast.
+ */
+const showToast: QaInteraction = {
+  name: 'toast',
+  run: async (page) => {
+    await page.getByRole('button', { name: 'Toast with action' }).click()
+    const toast = page.locator('[data-sonner-toast]')
+    await expect(toast.getByRole('button', { name: 'Retry' })).toBeVisible({ timeout: 20_000 })
+    await expect(toast.locator('.pitfund-toast-decay')).toBeVisible()
+  },
+}
+
 const openFaq: QaInteraction = {
   name: 'faq-open',
   run: async (page) => {
@@ -170,38 +198,42 @@ export const QA_ROUTES: QaRoute[] = [
     ],
   },
   { name: 'welcome-company', path: '/welcome/company', personas: ['sponsor-new'], budget: 'authed' },
+  // The review gate: a team and a company that have sent themselves in and are waiting.
+  { name: 'welcome-pending', path: '/welcome/pending', personas: ['coach-pending', 'sponsor-pending'], budget: 'authed' },
+  { name: 'welcome-team-setup', path: '/welcome/team', personas: ['coach-pending'], budget: 'authed' },
+  { name: 'welcome-company-setup', path: '/welcome/company', personas: ['sponsor-pending'], budget: 'authed' },
 
   // Team workspace
-  { name: 'pitches', path: '/pitches', personas: ['coach', 'coach-unverified'], budget: 'authed' },
+  { name: 'pitches', path: '/pitches', personas: ['coach', 'coach2'], budget: 'authed' },
   { name: 'pitch-matched', path: `/pitches/${SEED.pitches.exodiusMatched}`, personas: ['coach'], budget: 'authed' },
   { name: 'pitch-in-review', path: `/pitches/${SEED.pitches.exodiusInReview}`, personas: ['coach'], budget: 'authed' },
   { name: 'pitch-changes', path: `/pitches/${SEED.pitches.exodiusChanges}`, personas: ['coach'], budget: 'authed' },
   { name: 'pitch-declined', path: `/pitches/${SEED.pitches.exodiusDeclined}`, personas: ['coach'], budget: 'authed' },
   { name: 'pitch-withdrawn', path: `/pitches/${SEED.pitches.exodiusWithdrawn}`, personas: ['coach'], budget: 'authed' },
-  { name: 'sponsors', path: '/sponsors', personas: ['coach', 'coach-unverified'], budget: 'authed', interactions: [searchNoResults] },
+  { name: 'sponsors', path: '/sponsors', personas: ['coach', 'coach2'], budget: 'authed', interactions: [searchNoResults] },
   { name: 'sponsor-in-review', path: `/sponsors/${SEED.meridian}`, personas: ['coach'], budget: 'authed' },
-  { name: 'sponsor-start', path: `/sponsors/${SEED.keystone}`, personas: ['coach', 'coach-unverified'], budget: 'authed' },
+  { name: 'sponsor-start', path: `/sponsors/${SEED.keystone}`, personas: ['coach', 'coach2'], budget: 'authed' },
   { name: 'composer-new', path: `/sponsors/${SEED.keystone}/pitch`, personas: ['coach'], budget: 'authed', interactions: [previewTab] },
   { name: 'composer-draft', path: `/sponsors/${SEED.summit}/pitch`, personas: ['coach'], budget: 'authed', interactions: [previewTab] },
   { name: 'composer-resubmit', path: `/sponsors/${SEED.northpeak}/pitch`, personas: ['coach'], budget: 'authed' },
   {
     name: 'team',
     path: '/team',
-    personas: ['coach', 'coach-unverified'],
+    personas: ['coach', 'coach2'],
     budget: 'authed',
-    interactions: [uploadStage('hold'), uploadStage('fail')],
+    interactions: [uploadStage('hold'), uploadStage('fail'), cropLogo],
   },
 
   // Company workspace
-  { name: 'inbox', path: '/inbox', personas: ['sponsor', 'sponsor-pending', 'sponsor2'], budget: 'authed' },
+  { name: 'inbox', path: '/inbox', personas: ['sponsor', 'sponsor2'], budget: 'authed' },
   { name: 'inbox-new', path: `/inbox/${SEED.pitches.voltageToBrightlineSent}`, personas: ['sponsor'], budget: 'authed', interactions: [notAFitOther] },
   { name: 'inbox-matched', path: `/inbox/${SEED.pitches.exodiusMatched}`, personas: ['sponsor'], budget: 'authed' },
   { name: 'inbox-declined', path: `/inbox/${SEED.pitches.gearToBrightlineDeclined}`, personas: ['sponsor'], budget: 'authed' },
   { name: 'inbox-withdrawn', path: `/inbox/${SEED.pitches.knightsToBrightlineWithdrawn}`, personas: ['sponsor'], budget: 'authed' },
-  { name: 'company', path: '/company', personas: ['sponsor', 'sponsor-pending'], budget: 'authed', interactions: [customizeQuestions] },
+  { name: 'company', path: '/company', personas: ['sponsor'], budget: 'authed', interactions: [customizeQuestions] },
 
   // Shared
-  { name: 'account', path: '/account', personas: ['coach', 'coach-unverified', 'sponsor', 'admin'], budget: 'authed' },
+  { name: 'account', path: '/account', personas: ['coach', 'coach2', 'sponsor', 'admin'], budget: 'authed' },
 
   // Admin
   { name: 'admin-review', path: '/admin', personas: ['admin'], budget: 'authed' },
@@ -223,7 +255,7 @@ export const QA_ROUTES: QaRoute[] = [
 
   // Local development tools
   { name: 'dev', path: '/dev', personas: ['anonymous'], server: 'dev' },
-  { name: 'dev-ui', path: '/dev/ui', personas: ['anonymous'], server: 'dev', actionButtons: true },
+  { name: 'dev-ui', path: '/dev/ui', personas: ['anonymous'], server: 'dev', actionButtons: true, interactions: [showToast] },
 ]
 
 export const QA_WIDTHS = [375, 768, 1280] as const

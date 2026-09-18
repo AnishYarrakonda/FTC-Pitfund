@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, asc, desc, eq, sql, type SQL } from 'drizzle-orm'
+import { and, asc, count, desc, eq, sql, type SQL } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 
 import { questionsFor, type Question } from '@/lib/shared/questions'
@@ -53,7 +53,29 @@ function decodeCursor(value: string | null): Cursor | null {
 
 const escapeLike = (text: string) => text.replace(/[\\%_]/g, (c) => `\\${c}`)
 
-export type DirectoryQuery = { q: string; type: SupportType | null; after: string | null; before: string | null }
+/**
+ * How close a match has to be before it counts.
+ *
+ * This is word_similarity, not similarity: it scores the query against the best-matching run of
+ * words inside the name, so a short query isn't punished for the rest of a long company name
+ * ("keytsone" against "Keystone Robotics Foundation" scores 0.38 this way and 0.15 the other).
+ * Measured against real misspellings in tests/unit/directory-and-public.test.ts — 0.3 accepts a
+ * dropped or transposed letter and rejects words that merely share a few trigrams.
+ */
+const SIMILARITY_THRESHOLD = 0.3
+
+/** While searching, relevance order replaces alphabetical order, so the pager can't be used. */
+export const SEARCH_RESULT_LIMIT = 50
+
+export type PitchFilter = 'all' | 'not_pitched' | 'in_progress' | 'pitched'
+
+export type DirectoryQuery = {
+  q: string
+  after: string | null
+  before: string | null
+  /** Sponsor ids this team has a pitch with, split by what state it is in. Empty when unfiltered. */
+  filter?: { kind: Exclude<PitchFilter, 'all'>; ids: string[] }
+}
 
 export async function listDirectory(params: DirectoryQuery): Promise<DirectoryPage> {
   'use cache'
@@ -69,10 +91,28 @@ export async function queryDirectory(params: DirectoryQuery): Promise<DirectoryP
   const key = sql`(lower(${sponsors.name}), ${sponsors.id})`
   const conditions: SQL[] = [eq(sponsors.status, 'approved')]
   const q = params.q.trim().toLowerCase().slice(0, 100)
-  if (q) conditions.push(sql`lower(${sponsors.name}) like ${`%${escapeLike(q)}%`}`)
-  if (params.type) conditions.push(sql`${params.type}::support_type = any(${sponsors.supportTypes})`)
-  if (after) conditions.push(sql`${key} > (${after[0]}, ${after[1]}::uuid)`)
-  if (before) conditions.push(sql`${key} < (${before[0]}, ${before[1]}::uuid)`)
+
+  // Searching is fuzzy and ranked: company names are easy to mistype ("brightlne", "keystone
+  // robotic"), and an exact substring match turns one wrong letter into an empty page. A prefix
+  // match still wins, then trigram similarity, so the closest name is always first.
+  const similarity = sql<number>`word_similarity(${q}, lower(${sponsors.name}))`
+  const prefix = sql<boolean>`lower(${sponsors.name}) like ${`${escapeLike(q)}%`}`
+  if (q) conditions.push(sql`(lower(${sponsors.name}) like ${`%${escapeLike(q)}%`} or ${similarity} >= ${SIMILARITY_THRESHOLD})`)
+
+  const filter = params.filter
+  if (filter) {
+    if (filter.ids.length === 0) {
+      // "Already pitched" with nothing pitched is an empty page, not every company.
+      if (filter.kind !== 'not_pitched') return { items: [], nextCursor: null, prevCursor: null }
+    } else {
+      const ids = sql`(${sql.join(filter.ids.map((id) => sql`${id}::uuid`), sql`, `)})`
+      conditions.push(filter.kind === 'not_pitched' ? sql`${sponsors.id} not in ${ids}` : sql`${sponsors.id} in ${ids}`)
+    }
+  }
+
+  const paged = !q
+  if (paged && after) conditions.push(sql`${key} > (${after[0]}, ${after[1]}::uuid)`)
+  if (paged && before) conditions.push(sql`${key} < (${before[0]}, ${before[1]}::uuid)`)
 
   const rows = await getDb()
     .select({
@@ -87,8 +127,18 @@ export async function queryDirectory(params: DirectoryQuery): Promise<DirectoryP
     })
     .from(sponsors)
     .where(and(...conditions))
-    .orderBy(...(before ? [desc(sql`lower(${sponsors.name})`), desc(sponsors.id)] : [asc(sql`lower(${sponsors.name})`), asc(sponsors.id)]))
-    .limit(DIRECTORY_PAGE_SIZE + 1)
+    .orderBy(
+      ...(q
+        ? [desc(prefix), desc(similarity), asc(sql`lower(${sponsors.name})`), asc(sponsors.id)]
+        : before
+          ? [desc(sql`lower(${sponsors.name})`), desc(sponsors.id)]
+          : [asc(sql`lower(${sponsors.name})`), asc(sponsors.id)]),
+    )
+    .limit(q ? SEARCH_RESULT_LIMIT : DIRECTORY_PAGE_SIZE + 1)
+
+  if (q) {
+    return { items: rows.map(({ logoPath, ...rest }) => ({ ...rest, logoUrl: publicUrl(logoPath) })), nextCursor: null, prevCursor: null }
+  }
 
   const more = rows.length > DIRECTORY_PAGE_SIZE
   const page = rows.slice(0, DIRECTORY_PAGE_SIZE)
@@ -101,6 +151,15 @@ export async function queryDirectory(params: DirectoryQuery): Promise<DirectoryP
     nextCursor: last && (before ? true : more) ? encodeCursor(last) : null,
     prevCursor: first && (before ? more : Boolean(after)) ? encodeCursor(first) : null,
   }
+}
+
+/** How many approved companies there are, for the "All" chip. */
+export async function countApprovedSponsors(): Promise<number> {
+  'use cache'
+  cacheLife('hours')
+  cacheTag(TAGS.sponsors)
+  const [row] = await getDb().select({ n: count() }).from(sponsors).where(eq(sponsors.status, 'approved'))
+  return Number(row?.n ?? 0)
 }
 
 export type DirectorySponsor = DirectoryItem & { website: string; questions: Question[]; usesDefaultQuestions: boolean }

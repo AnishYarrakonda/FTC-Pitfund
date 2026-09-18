@@ -39,8 +39,12 @@ export type TeamFixture = {
   website: string | null
   members: Array<PersonaKey | { email: string; name: string }>
   recordStatus: 'matched' | 'manual' | 'unchecked'
+  /** Bare handle, without the leading "@". */
+  instagram?: string
   /** Defaults to true; `false` seeds a team with no logo. */
   logo?: boolean
+  /** Defaults to 'approved'. 'pending' seeds a team sitting in the review queue. */
+  status?: 'approved' | 'pending'
 }
 
 const member = (slug: string, name: string) => ({ email: `member-${slug}@pitfund.test`, name })
@@ -49,6 +53,7 @@ export const TEAMS: TeamFixture[] = [
   {
     number: 31579,
     name: 'Exodius',
+    instagram: 'exodiusftc',
     city: 'Austin',
     state: 'TX',
     color: '#1F6F5C',
@@ -71,7 +76,7 @@ export const TEAMS: TeamFixture[] = [
     pages: 2,
     summary: 'A second-year team from a Title I high school, focused on getting every student to a competition.',
     website: null,
-    members: ['coach-unverified'],
+    members: ['coach2'],
     recordStatus: 'matched',
   },
   {
@@ -87,6 +92,22 @@ export const TEAMS: TeamFixture[] = [
     website: 'https://example.org/geargrinders',
     members: [member('gear', 'Marcus Hill'), member('gear2', 'Dana Whitfield')],
     recordStatus: 'matched',
+  },
+  {
+    // Waiting in the admin review queue: coach-pending sees /welcome/pending, admins see it under Teams.
+    status: 'pending',
+    number: 29551,
+    name: 'Copper Circuit',
+    city: 'Lisbon',
+    state: 'Portugal',
+    color: '#B45309',
+    shape: 'bars',
+    verified: false,
+    pages: 2,
+    summary: 'First-year team from a state school in Lisbon, building its first competition robot.',
+    website: null,
+    members: ['coach-pending'],
+    recordStatus: 'manual',
   },
   {
     number: 20443,
@@ -148,8 +169,8 @@ export const TEAMS: TeamFixture[] = [
   {
     number: 25530,
     name: 'Polar Pistons',
-    city: 'Anchorage',
-    state: 'AK',
+    city: 'Kuala Lumpur',
+    state: 'Malaysia',
     color: '#334155',
     shape: 'hex',
     verified: true,
@@ -162,8 +183,8 @@ export const TEAMS: TeamFixture[] = [
   {
     number: 19904,
     name: 'Circuit Sages',
-    city: 'Madison',
-    state: 'WI',
+    city: 'Hamilton',
+    state: 'New Zealand',
     color: '#15803D',
     shape: 'diamond',
     verified: false,
@@ -176,8 +197,8 @@ export const TEAMS: TeamFixture[] = [
   {
     number: 27112,
     name: 'Sprocket Society',
-    city: 'Boston',
-    state: 'MA',
+    city: 'Kraków',
+    state: 'Poland',
     color: '#BE123C',
     shape: 'circle',
     verified: true,

@@ -14,8 +14,8 @@ import {
   suspendTeamAction,
   unsuspendCompanyAction,
   unsuspendTeamAction,
-  unverifyTeamAction,
-  verifyTeamAction,
+  approveTeamAction,
+  rejectTeamAction,
 } from '@/app/actions/admin'
 import { ActionButton } from '@/components/ui/action-button'
 import { Button } from '@/components/ui/button'
@@ -25,13 +25,13 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useAction } from '@/lib/client/use-action'
 import type { Result } from '@/lib/shared/result'
-import type { SponsorStatus } from '@/lib/shared/types'
+import type { OrgStatus } from '@/lib/shared/types'
 
 /* Admin decisions on a company or team page (prompt 3, scope D). */
 
 const delayed = (emailDelayed: boolean, n: number) => (emailDelayed ? 'email delayed until tomorrow' : `${n === 1 ? '1 person' : `${n} people`} emailed`)
 
-export function CompanyDecisions({ sponsorId, name, status }: { sponsorId: string; name: string; status: SponsorStatus }) {
+export function CompanyDecisions({ sponsorId, name, status }: { sponsorId: string; name: string; status: OrgStatus }) {
   const router = useRouter()
   const done = (message: string) => {
     toast.success(message)
@@ -136,55 +136,25 @@ function RejectCompanyDialog({ sponsorId, name, onDone }: { sponsorId: string; n
   )
 }
 
-export function TeamDecisions({ teamId, number, verified, suspended }: { teamId: string; number: number; verified: boolean; suspended: boolean }) {
+export function TeamDecisions({ teamId, number, status, suspended }: { teamId: string; number: number; status: OrgStatus; suspended: boolean }) {
   const router = useRouter()
-  // Verify is optimistic with Undo (plan: reversible actions don't confirm).
-  const [optimisticVerified, setOptimisticVerified] = useState<boolean | null>(null)
-  const shownVerified = optimisticVerified ?? verified
-
-  const verify = async () => {
-    setOptimisticVerified(true)
-    const result = await verifyTeamAction({ teamId }).catch(() => null)
-    if (!result?.ok) {
-      setOptimisticVerified(null)
-      toast.error(result?.ok === false ? result.error.message : 'Couldn’t reach FTC Pitfund. Check your connection.')
-      return
-    }
+  const done = (message: string) => {
+    toast.success(message)
     router.refresh()
-    toast.success(`Team ${number} is verified.`, {
-      action: {
-        label: 'Undo',
-        onClick: () => {
-          setOptimisticVerified(false)
-          void unverifyTeamAction({ teamId }).then((r) => {
-            if (!r.ok) toast.error(r.error.message)
-            router.refresh()
-          })
-        },
-      },
-    })
   }
-
   return (
     <div className="flex flex-wrap gap-2">
-      {shownVerified ? (
+      {status === 'pending' || status === 'rejected' ? (
         <ActionButton
-          variant="secondary"
-          action={() => unverifyTeamAction({ teamId })}
-          pendingLabel="Removing…"
-          onSuccess={() => {
-            setOptimisticVerified(false)
-            toast.success(`Team ${number} is no longer verified.`)
-            router.refresh()
-          }}
+          action={() => approveTeamAction({ teamId })}
+          pendingLabel="Approving…"
+          disabled={suspended}
+          onSuccess={(d) => done(`Team ${d.number} is approved · ${delayed(d.emailDelayed, d.notified)}`)}
         >
-          Unverify
+          Approve
         </ActionButton>
-      ) : (
-        <Button data-action-button="" onClick={() => void verify()} disabled={suspended}>
-          Verify team
-        </Button>
-      )}
+      ) : null}
+      {status === 'pending' ? <RejectTeamDialog teamId={teamId} number={number} onDone={done} /> : null}
       {suspended ? (
         <ConfirmDialog
           trigger={<Button variant="secondary">Unsuspend</Button>}
@@ -218,6 +188,74 @@ export function TeamDecisions({ teamId, number, verified, suspended }: { teamId:
         />
       )}
     </div>
+  )
+}
+
+function RejectTeamDialog({ teamId, number, onDone }: { teamId: string; number: number; onDone: (message: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [note, setNote] = useState('')
+  const { run, pending, error, fieldErrors, reset } = useAction(rejectTeamAction, {
+    errorToast: false,
+    onSuccess: (d) => {
+      setOpen(false)
+      setNote('')
+      onDone(`Team ${d.number} wasn’t approved · ${delayed(d.emailDelayed, d.notified)}`)
+    },
+  })
+  const submit = (e: FormEvent) => {
+    e.preventDefault()
+    void run({ teamId, note })
+  }
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (pending) return
+        if (!next) reset()
+        setOpen(next)
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="secondary">Reject</Button>
+      </DialogTrigger>
+      <DialogContent
+        size="md"
+        title={`Reject Team ${number}?`}
+        description="Its coaches are emailed your note. They can fix what you mention and send the team for review again."
+        dismissible={!pending}
+        footer={
+          <>
+            <DialogClose asChild>
+              <Button variant="secondary" disabled={pending}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="submit" form="reject-team-form" variant="danger" data-action-button="" loading={pending} loadingLabel="Rejecting…">
+              Reject team
+            </Button>
+          </>
+        }
+      >
+        <form id="reject-team-form" noValidate onSubmit={submit} className="grid gap-4">
+          <Field label="Note for the team" required error={fieldErrors.note}>
+            <Textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={2000}
+              minRows={4}
+              maxRows={10}
+              autoFocus
+              placeholder="The screenshot doesn’t show your name on the team roster. Send one from your FIRST Dashboard…"
+            />
+          </Field>
+          {error && !fieldErrors.note ? (
+            <p role="alert" className="text-body text-danger">
+              {error.message}
+            </p>
+          ) : null}
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 

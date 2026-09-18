@@ -36,6 +36,8 @@ describe('action authz matrix', () => {
       const { viewers } = await buildPersonas()
 
       const anyone: Persona[] = ['admin', 'coach-new', 'sponsor-new', 'coach', 'sponsor-pending', 'sponsor', 'sponsor-rejected', 'sponsor-suspended']
+      // Editing what you sent us is allowed in every state except suspended — including while it
+      // waits, so a typo doesn't have to sit in the queue.
       const companyMembers: Persona[] = ['sponsor-pending', 'sponsor', 'sponsor-rejected']
       const approvedCompany: Persona[] = ['sponsor']
       const admins: Persona[] = ['admin']
@@ -49,9 +51,12 @@ describe('action authz matrix', () => {
         ['saveCompanyLogo', () => company.saveCompanyLogo({ path: 'sponsors/x/upload-00000000-0000-4000-8000-000000000000.webp' }), companyMembers],
         ['inviteCompanyMember', () => company.inviteCompanyMember({ email: `matrix-${id()}@example.com` }), approvedCompany],
         ['resendCompanyInvite', () => company.resendCompanyInvite({ inviteId: id() }), approvedCompany],
-        ['revokeCompanyInvite', () => company.revokeCompanyInvite({ inviteId: id() }), companyMembers],
-        ['removeCompanyMemberAction', () => company.removeCompanyMemberAction({ userId: id() }), companyMembers],
-        ['leaveCompanyAction', () => company.leaveCompanyAction({ confirm: 'leave' }), companyMembers],
+        // Changing who is on the account is the owner's, and only once the company is in the app.
+        ['revokeCompanyInvite', () => company.revokeCompanyInvite({ inviteId: id() }), approvedCompany],
+        ['removeCompanyMemberAction', () => company.removeCompanyMemberAction({ userId: id() }), approvedCompany],
+        ['transferCompanyOwnershipAction', () => company.transferCompanyOwnershipAction({ userId: id() }), approvedCompany],
+        // Leaving is every member's, whatever state the company is in.
+        ['leaveCompanyAction', () => company.leaveCompanyAction({ confirm: 'leave' }), ['sponsor-pending', 'sponsor', 'sponsor-rejected']],
         ['respondInterestedAction', () => inbox.respondInterestedAction({ pitchId: id() }), approvedCompany],
         ['respondNotAFitAction', () => inbox.respondNotAFitAction({ pitchId: id(), reason: null, note: null }), approvedCompany],
         ['approvePitchAction', () => admin.approvePitchAction({ pitchId: id() }), admins],
@@ -62,8 +67,8 @@ describe('action authz matrix', () => {
         ['suspendCompanyAction', () => admin.suspendCompanyAction({ sponsorId: id() }), admins],
         ['unsuspendCompanyAction', () => admin.unsuspendCompanyAction({ sponsorId: id() }), admins],
         ['deleteCompanyAction', () => admin.deleteCompanyAction({ sponsorId: id(), confirmName: 'x' }), admins],
-        ['verifyTeamAction', () => admin.verifyTeamAction({ teamId: id() }), admins],
-        ['unverifyTeamAction', () => admin.unverifyTeamAction({ teamId: id() }), admins],
+        ['approveTeamAction', () => admin.approveTeamAction({ teamId: id() }), admins],
+        ['rejectTeamAction', () => admin.rejectTeamAction({ teamId: id(), note: 'No' }), admins],
         ['suspendTeamAction', () => admin.suspendTeamAction({ teamId: id() }), admins],
         ['unsuspendTeamAction', () => admin.unsuspendTeamAction({ teamId: id() }), admins],
         ['recheckTeamAction', () => admin.recheckTeamAction({ teamId: id() }), admins],

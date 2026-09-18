@@ -8,7 +8,7 @@ import { DECK_MESSAGES, MAX_IMAGE_UPLOAD_BYTES, MAX_PDF_BYTES, MAX_PDF_PAGES } f
 
 import { env } from './env'
 import { AppError } from './result'
-import { BUCKETS, createSignedUpload, downloadObject, removeObjects, uploadObject } from './storage'
+import { BUCKETS, type Bucket, createSignedUpload, downloadObject, removeObjects, uploadObject } from './storage'
 
 /*
  * Server-side verification for browser uploads (plan §3.2 "PDF upload", §5 "Files").
@@ -84,7 +84,14 @@ export async function publishVerified(prefix: string, kind: 'logo' | 'deck' | 't
   return path
 }
 
-export async function discard(bucket: 'public' | 'staging', paths: Array<string | null | undefined>) {
+/** The same, into a private bucket, for files that must never be served over a public URL. */
+export async function publishPrivate(bucket: Bucket, prefix: string, kind: 'proof', bytes: Uint8Array, type: { ext: string; contentType: string }) {
+  const path = `${prefix}/${kind}-${crypto.randomUUID()}.${type.ext}`
+  await uploadObject(bucket, path, bytes, type.contentType)
+  return path
+}
+
+export async function discard(bucket: Bucket, paths: Array<string | null | undefined>) {
   try {
     await removeObjects(bucket, paths)
   } catch (e) {

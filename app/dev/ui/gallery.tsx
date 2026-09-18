@@ -37,7 +37,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { TimeText } from '@/components/ui/time-text'
 import { useAction } from '@/lib/client/use-action'
-import { EMAIL_STATUS, PITCH_STATUS, SPONSOR_STATUS } from '@/lib/shared/labels'
+import { EMAIL_STATUS, PITCH_STATUS, ORG_STATUS } from '@/lib/shared/labels'
 import { err, type Result } from '@/lib/shared/result'
 
 import { CoachSections } from './coach-sections'
@@ -495,7 +495,7 @@ function StatusSection() {
         </Specimen>
         <Specimen label="Company and email statuses">
           <div className="flex flex-wrap gap-x-5 gap-y-3">
-            {Object.values(SPONSOR_STATUS).map((s) => (
+            {Object.values(ORG_STATUS).map((s) => (
               <StatusBadge key={s.label} {...s} />
             ))}
             {Object.values(EMAIL_STATUS).map((s) => (
@@ -777,9 +777,20 @@ function MenusSection() {
           <Button variant="secondary" onClick={() => toast.error('Something went wrong on our side. Reference 3f9a2c1b7e04.')}>
             Error toast
           </Button>
+          {/*
+            A minute long so the decay bar can actually be watched draining, and so it is still up
+            while the QA gate runs axe over the page with a toast open. (Sonner renders it in a
+            fixed portal, which a full-page screenshot doesn't capture, so the gate's assertions are
+            what cover it.) In the app the same toast lives for ten seconds (lib/client/toast.tsx).
+          */}
           <Button
             variant="secondary"
-            onClick={() => toast.error("Couldn't reach FTC Pitfund. Check your connection.", { action: { label: 'Retry', onClick: () => toast.success('Reconnected') } })}
+            onClick={() =>
+              toast.error("Couldn't reach FTC Pitfund. Check your connection.", {
+                action: { label: 'Retry', onClick: () => toast.success('Reconnected') },
+                duration: 60_000,
+              })
+            }
           >
             Toast with action
           </Button>

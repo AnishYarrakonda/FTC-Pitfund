@@ -8,18 +8,21 @@ import { asPersona, expect, test } from '../support/fixtures'
 
 test.describe('notifications', () => {
   test.use(asPersona('coach'))
-  test('the bell lists notifications and marks them read optimistically', async ({ page, problems }) => {
+  test('the bell lists only what needs doing, and an item clears when it is done', async ({ page, problems }) => {
     await page.goto('/pitches')
-    const bell = page.getByRole('button', { name: /Notifications, \d+ unread/ })
+    // The badge counts work, not events: "Sam Patel joined the team" is news and never appears here.
+    const bell = page.getByRole('button', { name: /Needs your attention, \d+ items?/ })
     await expect(bell).toBeVisible()
     await bell.click()
-    const panel = page.getByRole('dialog', { name: 'Notifications' })
-    await expect(panel.getByRole('listitem').first()).toBeVisible()
-    await panel.getByRole('button', { name: 'Mark all read' }).click()
-    await expect(page.getByRole('button', { name: 'Notifications', exact: true })).toBeVisible()
-    await page.keyboard.press('Escape')
-    await page.reload()
-    await expect(page.getByRole('button', { name: 'Notifications', exact: true })).toBeVisible()
+    const panel = page.getByRole('dialog', { name: 'Needs your attention' })
+    const first = panel.getByRole('listitem').first()
+    await expect(first).toBeVisible()
+    // There is no "Mark all read": an action item is cleared by doing it, so following the link is
+    // the only way out of the list.
+    await expect(panel.getByRole('button', { name: 'Mark all read' })).toHaveCount(0)
+    await first.getByRole('link').click()
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByRole('button', { name: /^Needs your attention/ })).toBeVisible()
     expect(problems).toEqual([])
   })
 })

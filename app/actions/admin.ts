@@ -20,8 +20,8 @@ import {
   suspendTeam,
   unsuspendCompany,
   unsuspendTeam,
-  unverifyTeam,
-  verifyTeam,
+  approveTeam,
+  rejectTeam,
 } from '@/lib/server/data/admin-orgs'
 import { approvePitch, nextInQueue, rejectPitch, sendBackPitch } from '@/lib/server/data/admin-review'
 import { pitchEmailKey } from '@/lib/server/data/pitches'
@@ -29,18 +29,24 @@ import { dismissEmail, makeEmailDue, requeueEmail } from '@/lib/server/data/syst
 import { scheduleDrain } from '@/lib/server/email/drain'
 import { enqueueEmail, PRIORITY, sendNow } from '@/lib/server/email/outbox'
 import { absoluteUrl } from '@/lib/server/env'
-import { notifySponsor, notifyTeam, notifyUsers } from '@/lib/server/notify'
+import { notifySponsor, notifyTeam, notifyUsers, resolveNotifications } from '@/lib/server/notify'
 import { AppError, defineAction } from '@/lib/server/result'
 import { inTransaction } from '@/lib/server/transaction'
+import { BUCKETS } from '@/lib/server/storage'
 import { discard } from '@/lib/server/uploads'
 import { formatAsk } from '@/lib/shared/pitch'
 import { rejectPitchSchema, reviewNoteSchema, sponsorDecisionSchema } from '@/lib/shared/schemas/company'
 import { pitchIdSchema } from '@/lib/shared/schemas/pitch'
+import { subjectKey } from '@/lib/shared/notifications'
 import { placeLabel } from '@/lib/shared/team'
 
 /* The admin console's decisions (prompt 3, scope D). Every one is audited in its data function. */
 
 const teamIdSchema = z.object({ teamId: z.uuid() })
+const teamDecisionSchema = z.object({
+  teamId: z.uuid(),
+  note: z.string().trim().min(1, 'Write a note the team will see').max(2000, 'Keep the note under 2,000 characters'),
+})
 const sponsorIdSchema = z.object({ sponsorId: z.uuid() })
 const userIdSchema = z.object({ userId: z.uuid() })
 
@@ -84,7 +90,7 @@ export const approvePitchAction = defineAction(pitchIdSchema, async ({ pitchId }
           teamNumber: r.team.number,
           teamName: r.team.name.slice(0, 200),
           place: placeLabel(r.team).slice(0, 200) || null,
-          verified: Boolean(r.team.verifiedAt),
+          verified: r.team.status === 'approved',
           companyName: r.company.name.slice(0, 200),
           summary: r.team.summary?.slice(0, 400) ?? null,
           ask: ask ? [ask, r.pitch.askNote].filter(Boolean).join(': ').slice(0, 700) : null,
@@ -221,18 +227,66 @@ export const deleteCompanyAction = defineAction(z.object({ sponsorId: z.uuid(), 
 
 // ─── Teams ──────────────────────────────────────────────────────────────────────────────
 
-export const verifyTeamAction = defineAction(teamIdSchema, async ({ teamId }) => {
+export const approveTeamAction = defineAction(teamIdSchema, async ({ teamId }) => {
   const admin = await requireAdmin()
-  const team = await inTransaction(() => verifyTeam(admin, teamId))
-  invalidateTeam(team)
-  return team
+  const result = await inTransaction(async () => {
+    const r = await approveTeam(admin, teamId)
+    await notifyTeam(teamId, {
+      type: 'team.approved',
+      title: `Team ${r.team.number} is approved`,
+      body: 'You can now pitch companies on FTC Pitfund.',
+      href: '/pitches',
+    })
+    // The admin queue item is done, for every admin who was shown it.
+    await resolveNotifications(subjectKey('team', teamId))
+    let emailDelayed = false
+    for (const member of r.members) {
+      const sent = await enqueueEmail({
+        to: member.email,
+        template: 'team-approved',
+        data: { teamNumber: r.team.number, teamName: r.team.name.slice(0, 200), pitchesUrl: absoluteUrl('/pitches') },
+        priority: PRIORITY.transactional,
+        dedupeKey: `team:${teamId}:team-approved:${member.id}:${Date.now()}`,
+      })
+      emailDelayed ||= sent.delayed
+    }
+    return { team: r.team, notified: r.members.length, emailDelayed, proofPath: r.proofPath }
+  })
+  invalidateTeam(result.team)
+  // Promised on the upload page: the screenshot is deleted once the team is approved.
+  await discard(BUCKETS.verification, [result.proofPath])
+  await scheduleDrain()
+  return { number: result.team.number, notified: result.notified, emailDelayed: result.emailDelayed }
 })
 
-export const unverifyTeamAction = defineAction(teamIdSchema, async ({ teamId }) => {
+export const rejectTeamAction = defineAction(teamDecisionSchema, async ({ teamId, note }) => {
   const admin = await requireAdmin()
-  const team = await inTransaction(() => unverifyTeam(admin, teamId))
-  invalidateTeam(team)
-  return team
+  const result = await inTransaction(async () => {
+    const r = await rejectTeam(admin, teamId, note)
+    await notifyTeam(teamId, {
+      type: 'team.rejected',
+      title: `Team ${r.team.number} wasn’t approved`,
+      body: note.slice(0, 300),
+      href: '/welcome/pending',
+      subjectKey: subjectKey('team', teamId),
+    })
+    await resolveNotifications(subjectKey('team', teamId))
+    let emailDelayed = false
+    for (const member of r.members) {
+      const sent = await enqueueEmail({
+        to: member.email,
+        template: 'team-rejected',
+        data: { teamNumber: r.team.number, teamName: r.team.name.slice(0, 200), note, setupUrl: absoluteUrl('/welcome/team') },
+        priority: PRIORITY.transactional,
+        dedupeKey: `team:${teamId}:team-rejected:${member.id}:${Date.now()}`,
+      })
+      emailDelayed ||= sent.delayed
+    }
+    return { team: r.team, notified: r.members.length, emailDelayed }
+  })
+  invalidateTeam(result.team)
+  await scheduleDrain()
+  return { number: result.team.number, notified: result.notified, emailDelayed: result.emailDelayed }
 })
 
 export const suspendTeamAction = defineAction(teamIdSchema, async ({ teamId }) => {

@@ -13,17 +13,17 @@ import { Textarea } from '@/components/ui/textarea'
 import { useAction } from '@/lib/client/use-action'
 import { useUnsavedChanges } from '@/lib/client/use-unsaved-changes'
 import type { TeamProfile } from '@/lib/server/data/teams'
-import { MAX_SUMMARY_LENGTH, MAX_TEAM_NAME_LENGTH } from '@/lib/shared/team'
+import { MAX_LOCATION_LENGTH, MAX_SUMMARY_LENGTH, MAX_TEAM_NAME_LENGTH } from '@/lib/shared/team'
 import { displayWebsite } from '@/lib/shared/url'
 
-type Draft = { name: string; city: string; state: string; summary: string; website: string }
+type Draft = { name: string; location: string; summary: string; website: string; instagram: string }
 
-const toDraft = (p: Pick<TeamProfile, 'name' | 'city' | 'state' | 'summary' | 'website'>): Draft => ({
+const toDraft = (p: Pick<TeamProfile, 'name' | 'location' | 'summary' | 'website' | 'instagram'>): Draft => ({
   name: p.name,
-  city: p.city ?? '',
-  state: p.state ?? '',
+  location: p.location ?? '',
   summary: p.summary ?? '',
   website: p.website ? displayWebsite(p.website) : '',
+  instagram: p.instagram ? `@${p.instagram}` : '',
 })
 
 /** Edit the team profile in place, with "Unsaved changes" and a leave warning. */
@@ -76,14 +76,15 @@ export function ProfileForm({ profile }: { profile: TeamProfile }) {
         <Field label="Team name" required error={fieldErrors.name}>
           <Input value={draft.name} onChange={(e) => set('name')(e.target.value)} maxLength={MAX_TEAM_NAME_LENGTH} autoComplete="organization" />
         </Field>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="City" required error={fieldErrors.city}>
-            <Input value={draft.city} onChange={(e) => set('city')(e.target.value)} maxLength={80} autoComplete="address-level2" />
-          </Field>
-          <Field label="State or region" required error={fieldErrors.state}>
-            <Input value={draft.state} onChange={(e) => set('state')(e.target.value)} maxLength={80} autoComplete="address-level1" />
-          </Field>
-        </div>
+        <Field label="Location" hint="Where your team is based, however you'd say it." required error={fieldErrors.location}>
+          <Input
+            value={draft.location}
+            onChange={(e) => set('location')(e.target.value)}
+            maxLength={MAX_LOCATION_LENGTH}
+            autoComplete="address-level2"
+            placeholder="Austin, Texas, USA"
+          />
+        </Field>
         <Field
           label="One-line summary"
           hint="One sentence about your team. It appears on your public page and every pitch."
@@ -104,9 +105,14 @@ export function ProfileForm({ profile }: { profile: TeamProfile }) {
             placeholder="Third-year community team building a reliable robot and free workshops for local students."
           />
         </Field>
-        <Field label="Website" hint="Optional. Your team site or social page." error={fieldErrors.website}>
-          <Input value={draft.website} onChange={(e) => set('website')(e.target.value)} type="url" inputMode="url" placeholder="exodiusftc.com" autoComplete="url" maxLength={300} />
-        </Field>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Website" hint="Optional. Your team site." error={fieldErrors.website}>
+            <Input value={draft.website} onChange={(e) => set('website')(e.target.value)} type="url" inputMode="url" placeholder="exodiusftc.com" autoComplete="url" maxLength={300} />
+          </Field>
+          <Field label="Instagram" hint="Optional. Shown as a link on your public page." error={fieldErrors.instagram}>
+            <Input value={draft.instagram} onChange={(e) => set('instagram')(e.target.value)} inputMode="text" placeholder="@exodiusftc" maxLength={120} />
+          </Field>
+        </div>
 
         {error && !Object.keys(fieldErrors).length ? (
           <p role="alert" className="text-body text-danger">

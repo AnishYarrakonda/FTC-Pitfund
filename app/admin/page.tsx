@@ -12,12 +12,12 @@ import { LinkTabs } from '@/components/ui/link-tabs'
 import { PageContainer, PageHeader } from '@/components/ui/page'
 import { Pagination } from '@/components/ui/table'
 import { requireAdmin } from '@/lib/server/authz'
-import { listOpenReports, listPendingCompanies, listPitchQueue, listUnverifiedTeams, reviewCounts, WAITING_WARNING_MS } from '@/lib/server/data/admin-review'
+import { listOpenReports, listPendingCompanies, listPitchQueue, listPendingTeams, reviewCounts, WAITING_WARNING_MS } from '@/lib/server/data/admin-review'
 import type { Page } from '@/lib/server/data/keyset'
 import { guardPage } from '@/lib/server/page-guards'
 import { cn } from '@/lib/shared/cn'
 import { formatRelative, formatWaiting, pluralize } from '@/lib/shared/format'
-import { SPONSOR_STATUS } from '@/lib/shared/labels'
+import { ORG_STATUS } from '@/lib/shared/labels'
 import { placeLabel, reportReasonLabel } from '@/lib/shared/team'
 import { displayWebsite } from '@/lib/shared/url'
 
@@ -45,7 +45,7 @@ export default async function AdminReviewPage({ searchParams }: PageProps<'/admi
 
   const [counts, list] = await Promise.all([
     reviewCounts(),
-    tab === 'pitches' ? listPitchQueue(page) : tab === 'companies' ? listPendingCompanies(page) : tab === 'teams' ? listUnverifiedTeams(page) : listOpenReports(page),
+    tab === 'pitches' ? listPitchQueue(page) : tab === 'companies' ? listPendingCompanies(page) : tab === 'teams' ? listPendingTeams(page) : listOpenReports(page),
   ])
   const hrefFor = (t: Tab, cursor: { after?: string; before?: string } = {}) => {
     const sp = new URLSearchParams()
@@ -113,7 +113,7 @@ export default async function AdminReviewPage({ searchParams }: PageProps<'/admi
                         </Link>
                         <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 pl-[52px] sm:pl-0">
                           {p.resubmission ? <StatusBadge label="Resubmitted" tone="info" /> : null}
-                          {p.company.status !== 'approved' ? <StatusBadge label={`Company ${SPONSOR_STATUS[p.company.status].label.toLowerCase()}`} tone="warning" /> : null}
+                          {p.company.status !== 'approved' ? <StatusBadge label={`Company ${ORG_STATUS[p.company.status].label.toLowerCase()}`} tone="warning" /> : null}
                           <span className={cn('text-small tabular', late ? 'font-medium text-warning' : 'text-text-tertiary')}>{formatWaiting(p.submittedAt, now)}</span>
                         </div>
                       </li>
@@ -139,7 +139,7 @@ export default async function AdminReviewPage({ searchParams }: PageProps<'/admi
                       </li>
                     ))
                   : tab === 'teams'
-                    ? (list as Awaited<ReturnType<typeof listUnverifiedTeams>>).items.map((t) => (
+                    ? (list as Awaited<ReturnType<typeof listPendingTeams>>).items.map((t) => (
                         <li key={t.id} className="relative flex min-w-0 flex-col gap-2 px-4 py-4 transition-colors duration-120 hover:bg-canvas sm:flex-row sm:items-center sm:gap-6 sm:px-5">
                           <Link href={`/admin/teams/${t.id}`} className="flex min-w-0 flex-1 items-center gap-2 after:absolute after:inset-0">
                             <TeamMark name={t.name} number={t.number} logoSrc={t.logoUrl} meta={placeLabel(t) || null} />

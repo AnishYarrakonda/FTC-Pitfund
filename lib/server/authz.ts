@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { SUPPORT_EMAIL } from '@/lib/shared/brand'
+import type { OrgStatus } from '@/lib/shared/types'
 import type { Viewer, ViewerSponsor, ViewerTeam } from '@/lib/shared/viewer'
 
 import { AppError } from './result'
@@ -49,10 +50,49 @@ export async function requireTeamMember(options: GuardOptions & { teamId?: strin
   if (options.teamId && options.teamId !== team.id) {
     throw new AppError('NOT_FOUND', "That team doesn't exist or you're not on it.")
   }
-  if (team.suspendedAt) {
+  if (team.status === 'suspended') {
     throw new AppError('FORBIDDEN', `Team ${team.number} is suspended. Contact ${SUPPORT_EMAIL}.`)
   }
   return viewer as TeamViewer
+}
+
+/**
+ * The gate every org passes before it reaches the app. Both kinds use the same words because they go
+ * through the same review — a coach and a company employee see the same wait.
+ */
+function assertApproved(org: { name: string; status: OrgStatus }, label: string): void {
+  if (org.status === 'approved') return
+  if (org.status === 'draft') {
+    throw new AppError('FORBIDDEN', `Finish setting up ${label} and send it for review first.`)
+  }
+  if (org.status === 'pending') {
+    throw new AppError('FORBIDDEN', `${label} is waiting to be reviewed. You can do this once it's approved.`)
+  }
+  if (org.status === 'rejected') {
+    throw new AppError('FORBIDDEN', `${label} wasn't approved on FTC Pitfund. Contact ${SUPPORT_EMAIL}.`)
+  }
+  throw new AppError('FORBIDDEN', `${label} is suspended. Contact ${SUPPORT_EMAIL}.`)
+}
+
+const teamLabelOf = (team: ViewerTeam) => `Team ${team.number}`
+
+/** A team that has been approved: everything in the workspace requires this. */
+export async function requireApprovedTeam(options: GuardOptions & { teamId?: string } = {}): Promise<TeamViewer> {
+  const viewer = await requireTeamMember(options)
+  assertApproved(viewer.team, teamLabelOf(viewer.team))
+  return viewer
+}
+
+/**
+ * The one member who owns the account. Only they change who is on it, so a coach who joins later
+ * can't remove the coach who created the team.
+ */
+export async function requireTeamOwner(options: GuardOptions = {}): Promise<TeamViewer> {
+  const viewer = await requireApprovedTeam(options)
+  if (viewer.team.role !== 'owner') {
+    throw new AppError('FORBIDDEN', 'Only the team owner can do that.')
+  }
+  return viewer
 }
 
 export async function requireSponsorMember(
@@ -73,15 +113,16 @@ export async function requireSponsorMember(
   return viewer as SponsorViewer
 }
 
-export async function requireApprovedSponsor(
-  options: GuardOptions & { sponsorId?: string } = {},
-): Promise<SponsorViewer> {
+export async function requireApprovedSponsor(options: GuardOptions & { sponsorId?: string } = {}): Promise<SponsorViewer> {
   const viewer = await requireSponsorMember(options)
-  if (viewer.sponsor.status === 'pending') {
-    throw new AppError('FORBIDDEN', `${viewer.sponsor.name} is waiting for approval. You can do this once it's approved.`)
-  }
-  if (viewer.sponsor.status !== 'approved') {
-    throw new AppError('FORBIDDEN', `${viewer.sponsor.name} isn't approved on FTC Pitfund. Contact ${SUPPORT_EMAIL}.`)
+  assertApproved(viewer.sponsor, viewer.sponsor.name)
+  return viewer
+}
+
+export async function requireSponsorOwner(options: GuardOptions = {}): Promise<SponsorViewer> {
+  const viewer = await requireApprovedSponsor(options)
+  if (viewer.sponsor.role !== 'owner') {
+    throw new AppError('FORBIDDEN', 'Only the company owner can do that.')
   }
   return viewer
 }

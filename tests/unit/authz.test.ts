@@ -3,9 +3,12 @@ import { describe, expect, it } from 'vitest'
 import {
   requireAdmin,
   requireApprovedSponsor,
+  requireApprovedTeam,
   requireNoOrg,
   requireSponsorMember,
+  requireSponsorOwner,
   requireTeamMember,
+  requireTeamOwner,
   requireViewer,
 } from '@/lib/server/authz'
 import { AppError } from '@/lib/server/result'
@@ -22,24 +25,70 @@ import { buildPersonas, dbTest } from './helpers/db'
 
 type Outcome = 'ok' | 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND' | 'CONFLICT'
 
-type Guard = 'viewer' | 'admin' | 'teamMember' | 'sponsorMember' | 'approvedSponsor' | 'noOrg'
+type Guard =
+  | 'viewer'
+  | 'admin'
+  | 'teamMember'
+  | 'approvedTeam'
+  | 'teamOwner'
+  | 'sponsorMember'
+  | 'approvedSponsor'
+  | 'sponsorOwner'
+  | 'noOrg'
 
+/**
+ * Every guard against every persona. The three that matter most:
+ *   - an org that hasn't been approved yet reaches its setup page and nothing else, so nobody can
+ *     claim a team number and start pitching as that team;
+ *   - an editor can do everything except change who is on the account;
+ *   - a rejected org can edit again (to fix what was wrong) but still can't use the app.
+ */
 const MATRIX: Record<string, Record<Guard, Outcome>> = {
-  anonymous: { viewer: 'UNAUTHORIZED', admin: 'UNAUTHORIZED', teamMember: 'UNAUTHORIZED', sponsorMember: 'UNAUTHORIZED', approvedSponsor: 'UNAUTHORIZED', noOrg: 'UNAUTHORIZED' },
-  admin: { viewer: 'ok', admin: 'ok', teamMember: 'FORBIDDEN', sponsorMember: 'FORBIDDEN', approvedSponsor: 'FORBIDDEN', noOrg: 'ok' },
-  'admin-suspended': { viewer: 'FORBIDDEN', admin: 'FORBIDDEN', teamMember: 'FORBIDDEN', sponsorMember: 'FORBIDDEN', approvedSponsor: 'FORBIDDEN', noOrg: 'FORBIDDEN' },
-  'coach-new': { viewer: 'ok', admin: 'FORBIDDEN', teamMember: 'FORBIDDEN', sponsorMember: 'FORBIDDEN', approvedSponsor: 'FORBIDDEN', noOrg: 'ok' },
-  coach: { viewer: 'ok', admin: 'FORBIDDEN', teamMember: 'ok', sponsorMember: 'FORBIDDEN', approvedSponsor: 'FORBIDDEN', noOrg: 'CONFLICT' },
-  'coach-unverified': { viewer: 'ok', admin: 'FORBIDDEN', teamMember: 'ok', sponsorMember: 'FORBIDDEN', approvedSponsor: 'FORBIDDEN', noOrg: 'CONFLICT' },
-  'coach-joiner': { viewer: 'ok', admin: 'FORBIDDEN', teamMember: 'FORBIDDEN', sponsorMember: 'FORBIDDEN', approvedSponsor: 'FORBIDDEN', noOrg: 'ok' },
-  'coach-suspended-team': { viewer: 'ok', admin: 'FORBIDDEN', teamMember: 'FORBIDDEN', sponsorMember: 'FORBIDDEN', approvedSponsor: 'FORBIDDEN', noOrg: 'CONFLICT' },
-  'sponsor-new': { viewer: 'ok', admin: 'FORBIDDEN', teamMember: 'FORBIDDEN', sponsorMember: 'FORBIDDEN', approvedSponsor: 'FORBIDDEN', noOrg: 'ok' },
-  'sponsor-pending': { viewer: 'ok', admin: 'FORBIDDEN', teamMember: 'FORBIDDEN', sponsorMember: 'ok', approvedSponsor: 'FORBIDDEN', noOrg: 'CONFLICT' },
-  sponsor: { viewer: 'ok', admin: 'FORBIDDEN', teamMember: 'FORBIDDEN', sponsorMember: 'ok', approvedSponsor: 'ok', noOrg: 'CONFLICT' },
-  sponsor2: { viewer: 'ok', admin: 'FORBIDDEN', teamMember: 'FORBIDDEN', sponsorMember: 'ok', approvedSponsor: 'ok', noOrg: 'CONFLICT' },
-  'sponsor-rejected': { viewer: 'ok', admin: 'FORBIDDEN', teamMember: 'FORBIDDEN', sponsorMember: 'ok', approvedSponsor: 'FORBIDDEN', noOrg: 'CONFLICT' },
-  'sponsor-suspended': { viewer: 'ok', admin: 'FORBIDDEN', teamMember: 'FORBIDDEN', sponsorMember: 'FORBIDDEN', approvedSponsor: 'FORBIDDEN', noOrg: 'CONFLICT' },
-  'suspended-user': { viewer: 'FORBIDDEN', admin: 'FORBIDDEN', teamMember: 'FORBIDDEN', sponsorMember: 'FORBIDDEN', approvedSponsor: 'FORBIDDEN', noOrg: 'FORBIDDEN' },
+  anonymous: row('UNAUTHORIZED'),
+  admin: { ...row('FORBIDDEN'), viewer: 'ok', admin: 'ok', noOrg: 'ok' },
+  'admin-suspended': row('FORBIDDEN'),
+  'coach-new': { ...row('FORBIDDEN'), viewer: 'ok', noOrg: 'ok' },
+  coach: { ...row('FORBIDDEN'), viewer: 'ok', teamMember: 'ok', approvedTeam: 'ok', teamOwner: 'ok', noOrg: 'CONFLICT' },
+  'coach-editor': { ...row('FORBIDDEN'), viewer: 'ok', teamMember: 'ok', approvedTeam: 'ok', noOrg: 'CONFLICT' },
+  'coach-draft': { ...row('FORBIDDEN'), viewer: 'ok', teamMember: 'ok', noOrg: 'CONFLICT' },
+  'coach-pending': { ...row('FORBIDDEN'), viewer: 'ok', teamMember: 'ok', noOrg: 'CONFLICT' },
+  'coach-joiner': { ...row('FORBIDDEN'), viewer: 'ok', noOrg: 'ok' },
+  'coach-suspended-team': { ...row('FORBIDDEN'), viewer: 'ok', noOrg: 'CONFLICT' },
+  'sponsor-new': { ...row('FORBIDDEN'), viewer: 'ok', noOrg: 'ok' },
+  'sponsor-pending': { ...row('FORBIDDEN'), viewer: 'ok', sponsorMember: 'ok', noOrg: 'CONFLICT' },
+  sponsor: {
+    ...row('FORBIDDEN'),
+    viewer: 'ok',
+    sponsorMember: 'ok',
+    approvedSponsor: 'ok',
+    sponsorOwner: 'ok',
+    noOrg: 'CONFLICT',
+  },
+  sponsor2: {
+    ...row('FORBIDDEN'),
+    viewer: 'ok',
+    sponsorMember: 'ok',
+    approvedSponsor: 'ok',
+    sponsorOwner: 'ok',
+    noOrg: 'CONFLICT',
+  },
+  'sponsor-rejected': { ...row('FORBIDDEN'), viewer: 'ok', sponsorMember: 'ok', noOrg: 'CONFLICT' },
+  'sponsor-suspended': { ...row('FORBIDDEN'), viewer: 'ok', noOrg: 'CONFLICT' },
+  'suspended-user': row('FORBIDDEN'),
+}
+
+function row(outcome: Outcome): Record<Guard, Outcome> {
+  return {
+    viewer: outcome,
+    admin: outcome,
+    teamMember: outcome,
+    approvedTeam: outcome,
+    teamOwner: outcome,
+    sponsorMember: outcome,
+    approvedSponsor: outcome,
+    sponsorOwner: outcome,
+    noOrg: outcome,
+  }
 }
 
 async function outcome(run: () => Promise<unknown>): Promise<Outcome> {
@@ -64,8 +113,11 @@ describe('authz matrix', () => {
           viewer: await outcome(() => requireViewer({ viewer })),
           admin: await outcome(() => requireAdmin({ viewer })),
           teamMember: await outcome(() => requireTeamMember({ viewer })),
+          approvedTeam: await outcome(() => requireApprovedTeam({ viewer })),
+          teamOwner: await outcome(() => requireTeamOwner({ viewer })),
           sponsorMember: await outcome(() => requireSponsorMember({ viewer })),
           approvedSponsor: await outcome(() => requireApprovedSponsor({ viewer })),
+          sponsorOwner: await outcome(() => requireSponsorOwner({ viewer })),
           noOrg: await outcome(() => requireNoOrg({ viewer })),
         }
       }
@@ -78,12 +130,12 @@ describe('authz matrix', () => {
     dbTest(async () => {
       const { viewers, teams, sponsors } = await buildPersonas()
       // A coach asking for another team's id, and a sponsor for another company's, get NOT_FOUND.
-      expect(await outcome(() => requireTeamMember({ viewer: viewers.coach, teamId: teams.unverifiedTeam.id }))).toBe('NOT_FOUND')
-      expect(await outcome(() => requireTeamMember({ viewer: viewers.coach, teamId: teams.verifiedTeam.id }))).toBe('ok')
+      expect(await outcome(() => requireTeamMember({ viewer: viewers.coach, teamId: teams.draftTeam.id }))).toBe('NOT_FOUND')
+      expect(await outcome(() => requireTeamMember({ viewer: viewers.coach, teamId: teams.approvedTeam.id }))).toBe('ok')
       expect(await outcome(() => requireSponsorMember({ viewer: viewers.sponsor2, sponsorId: sponsors.approved.id }))).toBe('NOT_FOUND')
       expect(await outcome(() => requireApprovedSponsor({ viewer: viewers.sponsor, sponsorId: sponsors.approved.id }))).toBe('ok')
       // Someone with no team asking for a specific team id also gets NOT_FOUND, not FORBIDDEN.
-      expect(await outcome(() => requireTeamMember({ viewer: viewers['coach-new'], teamId: teams.verifiedTeam.id }))).toBe('NOT_FOUND')
+      expect(await outcome(() => requireTeamMember({ viewer: viewers['coach-new'], teamId: teams.approvedTeam.id }))).toBe('NOT_FOUND')
     }),
   )
 
@@ -91,11 +143,11 @@ describe('authz matrix', () => {
     'the viewer query loads membership, join request and unread count in one row',
     dbTest(async () => {
       const { viewers, teams, sponsors, users } = await buildPersonas()
-      expect(viewers.coach.team?.id).toBe(teams.verifiedTeam.id)
+      expect(viewers.coach.team?.id).toBe(teams.approvedTeam.id)
       expect(viewers.coach.sponsor).toBeNull()
       expect(viewers.sponsor.sponsor).toMatchObject({ id: sponsors.approved.id, status: 'approved' })
-      expect(viewers['coach-joiner'].pendingJoin).toMatchObject({ teamId: teams.verifiedTeam.id, teamNumber: teams.verifiedTeam.number })
-      expect(viewers['coach-new']).toMatchObject({ team: null, sponsor: null, pendingJoin: null, unreadCount: 0 })
+      expect(viewers['coach-joiner'].pendingJoin).toMatchObject({ teamId: teams.approvedTeam.id, teamNumber: teams.approvedTeam.number })
+      expect(viewers['coach-new']).toMatchObject({ team: null, sponsor: null, pendingJoin: null, actionCount: 0 })
       expect(await loadViewer(crypto.randomUUID())).toBeNull()
 
       expect(homeFor(viewers.coach)).toBe('/pitches')

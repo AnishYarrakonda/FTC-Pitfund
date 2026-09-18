@@ -1,5 +1,5 @@
 import type { Question } from './questions'
-import type { SponsorStatus } from './types'
+import type { OrgStatus } from './types'
 
 /* Company (sponsor) rules and copy shared by the server and the browser (prompt 3). */
 
@@ -59,7 +59,7 @@ export function normalizeLinkedin(input: string): string | null {
   return href.length <= 300 ? href : null
 }
 
-export function companyStatusCopy(status: SponsorStatus, name: string) {
+export function companyStatusCopy(status: OrgStatus, name: string) {
   switch (status) {
     case 'pending':
       return `Your company is under review. Teams can’t see ${name} until it’s approved, usually within 1–2 days. We’ll email you. Meanwhile, set up your profile and questions.`

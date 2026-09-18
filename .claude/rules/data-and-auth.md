@@ -24,11 +24,22 @@
 ## Authorization
 - Always `require*` from `lib/server/authz.ts`, then pass the viewer into data functions.
 - Suspended users, teams and companies are blocked inside the guards.
-- A pending company can edit its profile but is invisible to coaches; `requireApprovedSponsor` for anything outward.
+- **Both orgs pass the same gate**: `org_status` is `draft → pending → approved | rejected`, and only
+  `approved` reaches the workspace. `requireTeamMember` / `requireSponsorMember` mean "on it and not
+  suspended" and cover the setup page; `requireApprovedTeam` / `requireApprovedSponsor` are what every
+  workspace page and action uses. `app/(app)/(workspace)/layout.tsx` redirects the rest to /welcome.
+- **One owner per org**, enforced by a partial unique index on the membership tables.
+  `requireTeamOwner` / `requireSponsorOwner` front invites, removals and ownership transfer; the data
+  functions also refuse to delete an owner, so the guard isn't the only thing protecting them.
+  Transfer demotes before promoting — the other order violates the index.
+- A team's verification screenshot lives in the private `verification` bucket and is read only through
+  `signedProofUrl` (15 minutes). It must never be served publicly, and `approveTeam` clears the row and
+  hands the path back so `approveTeamAction` deletes the object — the upload page promises that.
 - Contact snapshots (`pitches.team_contact`, `sponsor_contact`) are read only for `matched` pitches, only by the two orgs.
 - Tests: `tests/unit/authz.test.ts` is the guard × persona matrix. Extend it when adding a guard or persona.
 
 ## Local accounts
 Personas `admin, coach-new, coach, coach-unverified, coach-joiner, sponsor-new, sponsor-pending, sponsor,
-sponsor2` at `{persona}@pitfund.test`. Sign in with one click at `/dev` or `GET /api/dev/sign-in?persona=`.
+sponsor2` at `{persona}@pitfund.test`. The unit-test persona set (`tests/unit/helpers/db.ts`) additionally
+covers draft/pending teams and both roles. Sign in with one click at `/dev` or `GET /api/dev/sign-in?persona=`.
 `/dev/*` is a 404 unless `NODE_ENV !== 'production'` and Supabase is `127.0.0.1`/`localhost`.

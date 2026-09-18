@@ -4,7 +4,7 @@ import { updateTag } from 'next/cache'
 import { after } from 'next/server'
 import { z } from 'zod'
 
-import { requireApprovedSponsor, requireSponsorMember, requireViewer } from '@/lib/server/authz'
+import { requireSponsorMember, requireSponsorOwner, requireViewer } from '@/lib/server/authz'
 import { TAGS } from '@/lib/server/cache-tags'
 import {
   confirmDefaultQuestions,
@@ -14,6 +14,8 @@ import {
   finalizeCompanyLogo,
   leaveCompany,
   removeCompanyMember,
+  submitCompanyForReview,
+  transferCompanyOwnership,
   saveCompanyQuestions,
   updateCompanyProfile,
 } from '@/lib/server/data/company'
@@ -23,6 +25,7 @@ import { enqueueEmail, PRIORITY } from '@/lib/server/email/outbox'
 import { absoluteUrl } from '@/lib/server/env'
 import { notifyAdmins, notifySponsor, notifyUsers } from '@/lib/server/notify'
 import { defineAction } from '@/lib/server/result'
+import { subjectKey } from '@/lib/shared/notifications'
 import { inTransaction } from '@/lib/server/transaction'
 import { discard } from '@/lib/server/uploads'
 import { formatDate } from '@/lib/shared/format'
@@ -41,14 +44,12 @@ export const createCompanyAction = defineAction(
   createCompanySchema,
   async (input) => {
     const viewer = await requireViewer()
-    await inTransaction(async () => {
-      const company = await createCompany(viewer, input)
-      // No instant admin email: pending companies are in the daily digest (plan §5 "Jobs").
-      await notifyAdmins({ type: 'sponsor.created', title: `${company.name} is waiting for approval`, body: `${input.yourName} · ${input.jobTitle}`, href: `/admin/companies/${company.id}` })
-      return company
-    })
-    // Straight to the profile and questions: that's what approval waits on (plan §12: ≤ 4 screens).
-    return { redirectTo: '/company' }
+    // Nothing reaches the admin queue yet: a draft nobody submitted isn't work. submitCompany does
+    // that once they've actually filled it in.
+    await inTransaction(() => createCompany(viewer, input))
+    // Straight to the profile and questions: that's what the review looks at, and the company is a
+    // draft until it sends itself for review.
+    return { redirectTo: '/welcome/company' }
   },
   { conflict: CREATE_COMPANY_CONFLICTS },
 )
@@ -104,7 +105,7 @@ async function sendCompanyInvite(viewer: Viewer & { sponsor: NonNullable<Viewer[
 }
 
 export const inviteCompanyMember = defineAction(inviteSchema, async ({ email }) => {
-  const viewer = await requireApprovedSponsor()
+  const viewer = await requireSponsorOwner()
   const result = await inTransaction(async () => {
     const { invite, token } = await createInvite(viewer, inviteOrgFor(viewer, 'sponsor'), email)
     const sent = await sendCompanyInvite(viewer, invite, token)
@@ -115,7 +116,7 @@ export const inviteCompanyMember = defineAction(inviteSchema, async ({ email }) 
 })
 
 export const resendCompanyInvite = defineAction(z.object({ inviteId: z.uuid() }), async ({ inviteId }) => {
-  const viewer = await requireApprovedSponsor()
+  const viewer = await requireSponsorOwner()
   const result = await inTransaction(async () => {
     const { invite, token } = await resendInvite(viewer, inviteOrgFor(viewer, 'sponsor'), inviteId)
     const sent = await sendCompanyInvite(viewer, invite, token)
@@ -126,12 +127,12 @@ export const resendCompanyInvite = defineAction(z.object({ inviteId: z.uuid() })
 })
 
 export const revokeCompanyInvite = defineAction(z.object({ inviteId: z.uuid() }), async ({ inviteId }) => {
-  const viewer = await requireSponsorMember()
+  const viewer = await requireSponsorOwner()
   return inTransaction(() => revokeInvite(viewer, inviteOrgFor(viewer, 'sponsor'), inviteId))
 })
 
 export const removeCompanyMemberAction = defineAction(z.object({ userId: z.uuid() }), async ({ userId }) => {
-  const viewer = await requireSponsorMember()
+  const viewer = await requireSponsorOwner()
   return inTransaction(async () => {
     const removed = await removeCompanyMember(viewer, userId)
     await notifyUsers([userId], {
@@ -141,6 +142,36 @@ export const removeCompanyMemberAction = defineAction(z.object({ userId: z.uuid(
       href: '/welcome',
     })
     return removed
+  })
+})
+
+export const submitCompany = defineAction(z.object({ confirm: z.literal('submit') }), async () => {
+  const viewer = await requireSponsorMember()
+  const company = await inTransaction(async () => {
+    const row = await submitCompanyForReview(viewer)
+    await notifyAdmins({
+      type: 'admin.company_submitted',
+      title: `${row.name} asked to join`,
+      href: `/admin/companies/${row.id}`,
+      subjectKey: subjectKey('sponsor', row.id),
+    })
+    return row
+  })
+  // No instant admin email: pending companies are in the daily digest.
+  return { redirectTo: '/welcome/pending', name: company.name }
+})
+
+export const transferCompanyOwnershipAction = defineAction(z.object({ userId: z.uuid() }), async ({ userId }) => {
+  const viewer = await requireSponsorOwner()
+  return inTransaction(async () => {
+    const r = await transferCompanyOwnership(viewer, userId)
+    await notifyUsers([userId], {
+      type: 'sponsor.ownership_transferred',
+      title: `You now own ${viewer.sponsor.name}`,
+      body: 'You can invite coworkers and remove people.',
+      href: '/company#members',
+    })
+    return r
   })
 })
 

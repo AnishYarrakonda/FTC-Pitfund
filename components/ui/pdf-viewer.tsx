@@ -207,7 +207,7 @@ export function PdfPlaceholderPages({
     <div key={i} className="relative overflow-hidden rounded-dialog border border-border bg-surface" style={{ aspectRatio: `1 / ${LETTER_RATIO}` }}>
       {i === 0 && thumbnailSrc ? (
         // Through the image optimizer: same origin as the page (no extra connection before it paints) and sized to the column.
-        <Image src={thumbnailSrc} alt="" fill sizes="(min-width: 760px) 720px, calc(100vw - 32px)" preload={priority} fetchPriority={priority ? 'high' : undefined} className="object-cover object-top" />
+        <Image src={thumbnailSrc} alt="" fill sizes="(min-width: 880px) 820px, calc(100vw - 32px)" preload={priority} fetchPriority={priority ? 'high' : undefined} className="object-cover object-top" />
       ) : (
         // A page-shaped skeleton: faint text lines on white, not a grey slab.
         <div aria-hidden="true" className="absolute inset-x-[10%] top-[9%] grid animate-pulse gap-3">

@@ -34,7 +34,7 @@ export async function applyEdge(world: World) {
         name: long(60, number === 31579 ? 'Exodius' : 'Robotics'),
         summary: long(160, 'Summary'),
         website: `https://example.org/${long(300, 'path')}`,
-        city: long(80, 'Llanfairpwllgwyngyll'),
+        location: long(120, 'Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch'),
       })
       .where(eq(teams.id, id))
   }

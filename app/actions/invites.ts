@@ -2,7 +2,7 @@
 
 import { z } from 'zod'
 
-import { requireTeamMember, requireViewer } from '@/lib/server/authz'
+import { requireTeamOwner, requireViewer } from '@/lib/server/authz'
 import { acceptInvite, ACCEPT_INVITE_CONFLICTS, createInvite, inviteOrgFor, resendInvite, revokeInvite } from '@/lib/server/data/invites'
 import { scheduleDrain } from '@/lib/server/email/drain'
 import { enqueueEmail, PRIORITY } from '@/lib/server/email/outbox'
@@ -37,7 +37,7 @@ async function sendTeamInvite(viewer: Viewer & { team: NonNullable<Viewer['team'
 }
 
 export const inviteTeamMember = defineAction(inviteSchema, async ({ email }) => {
-  const viewer = await requireTeamMember()
+  const viewer = await requireTeamOwner()
   const result = await inTransaction(async () => {
     const { invite, token } = await createInvite(viewer, inviteOrgFor(viewer, 'team'), email)
     const sent = await sendTeamInvite(viewer, invite, token)
@@ -48,7 +48,7 @@ export const inviteTeamMember = defineAction(inviteSchema, async ({ email }) => 
 })
 
 export const resendTeamInvite = defineAction(z.object({ inviteId: z.uuid() }), async ({ inviteId }) => {
-  const viewer = await requireTeamMember()
+  const viewer = await requireTeamOwner()
   const result = await inTransaction(async () => {
     const { invite, token } = await resendInvite(viewer, inviteOrgFor(viewer, 'team'), inviteId)
     const sent = await sendTeamInvite(viewer, invite, token)
@@ -59,7 +59,7 @@ export const resendTeamInvite = defineAction(z.object({ inviteId: z.uuid() }), a
 })
 
 export const revokeTeamInvite = defineAction(z.object({ inviteId: z.uuid() }), async ({ inviteId }) => {
-  const viewer = await requireTeamMember()
+  const viewer = await requireTeamOwner()
   return inTransaction(() => revokeInvite(viewer, inviteOrgFor(viewer, 'team'), inviteId))
 })
 

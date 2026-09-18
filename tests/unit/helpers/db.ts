@@ -1,8 +1,10 @@
 import { sql } from 'drizzle-orm'
+import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 
 import { getDb, withRollback } from '@/lib/server/db'
 import { sponsorMembers, sponsors, teamJoinRequests, teamMembers, teams, users } from '@/lib/server/schema'
 import { loadViewer } from '@/lib/server/viewer'
+import type { OrgRole } from '@/lib/shared/types'
 
 /*
  * Integration-test helpers. Every test body runs inside `withRollback`, so nothing a test
@@ -28,7 +30,7 @@ export async function createUser(overrides: Partial<typeof users.$inferInsert> =
 export async function createTeam(overrides: Partial<typeof teams.$inferInsert> = {}) {
   const [row] = await getDb()
     .insert(teams)
-    .values({ number: rand(), name: 'Test Team', city: 'Austin', state: 'TX', country: 'USA', ...overrides })
+    .values({ number: rand(), name: 'Test Team', location: 'Austin, Texas, USA', country: 'USA', status: 'approved', ...overrides })
     .returning()
   return row
 }
@@ -41,12 +43,25 @@ export async function createSponsor(overrides: Partial<typeof sponsors.$inferIns
   return row
 }
 
-export async function addTeamMember(teamId: string, userId: string) {
-  await getDb().insert(teamMembers).values({ teamId, userId })
+/**
+ * Mirrors what really happens: the first person on an org owns it, everyone after is an editor.
+ * Pass a role explicitly when a test is about the difference between the two.
+ */
+export async function addTeamMember(teamId: string, userId: string, role?: OrgRole) {
+  const resolved = role ?? ((await countOwners(teamMembers.teamId, teamMembers.role, teamId)) === 0 ? 'owner' : 'editor')
+  await getDb().insert(teamMembers).values({ teamId, userId, role: resolved })
 }
 
-export async function addSponsorMember(sponsorId: string, userId: string) {
-  await getDb().insert(sponsorMembers).values({ sponsorId, userId })
+export async function addSponsorMember(sponsorId: string, userId: string, role?: OrgRole) {
+  const resolved = role ?? ((await countOwners(sponsorMembers.sponsorId, sponsorMembers.role, sponsorId)) === 0 ? 'owner' : 'editor')
+  await getDb().insert(sponsorMembers).values({ sponsorId, userId, role: resolved })
+}
+
+async function countOwners(orgColumn: AnyPgColumn, roleColumn: AnyPgColumn, orgId: string) {
+  const [row] = await getDb().execute<{ n: number }>(
+    sql`select count(*)::int as n from ${orgColumn.table} where ${orgColumn} = ${orgId} and ${roleColumn} = 'owner'`,
+  )
+  return Number(row?.n ?? 0)
 }
 
 /**
@@ -54,9 +69,10 @@ export async function addSponsorMember(sponsorId: string, userId: string) {
  * plus the states the authz matrix must cover (suspended user/team, rejected/suspended company).
  */
 export async function buildPersonas() {
-  const verifiedTeam = await createTeam({ verifiedAt: new Date() })
-  const unverifiedTeam = await createTeam()
-  const suspendedTeam = await createTeam({ suspendedAt: new Date() })
+  const approvedTeam = await createTeam({ status: 'approved' })
+  const draftTeam = await createTeam({ status: 'draft' })
+  const pendingTeam = await createTeam({ status: 'pending' })
+  const suspendedTeam = await createTeam({ status: 'suspended', suspendedAt: new Date() })
   const approved = await createSponsor({ status: 'approved' })
   const approved2 = await createSponsor({ status: 'approved' })
   const pending = await createSponsor({ status: 'pending' })
@@ -66,7 +82,9 @@ export async function buildPersonas() {
   const admin = await createUser({ isAdmin: true })
   const coachNew = await createUser()
   const coach = await createUser()
-  const coachUnverified = await createUser()
+  const coachDraft = await createUser()
+  const coachPending = await createUser()
+  const coachEditor = await createUser()
   const coachJoiner = await createUser()
   const coachSuspendedTeam = await createUser()
   const sponsorNew = await createUser()
@@ -78,10 +96,12 @@ export async function buildPersonas() {
   const suspendedUser = await createUser({ suspendedAt: new Date() })
   const adminSuspended = await createUser({ isAdmin: true, suspendedAt: new Date() })
 
-  await addTeamMember(verifiedTeam.id, coach.id)
-  await addTeamMember(unverifiedTeam.id, coachUnverified.id)
-  await addTeamMember(suspendedTeam.id, coachSuspendedTeam.id)
-  await getDb().insert(teamJoinRequests).values({ teamId: verifiedTeam.id, userId: coachJoiner.id })
+  await addTeamMember(approvedTeam.id, coach.id, 'owner')
+  await addTeamMember(approvedTeam.id, coachEditor.id, 'editor')
+  await addTeamMember(draftTeam.id, coachDraft.id, 'owner')
+  await addTeamMember(pendingTeam.id, coachPending.id, 'owner')
+  await addTeamMember(suspendedTeam.id, coachSuspendedTeam.id, 'owner')
+  await getDb().insert(teamJoinRequests).values({ teamId: approvedTeam.id, userId: coachJoiner.id })
   await addSponsorMember(pending.id, sponsorPending.id)
   await addSponsorMember(approved.id, sponsor.id)
   await addSponsorMember(approved2.id, sponsor2.id)
@@ -92,7 +112,9 @@ export async function buildPersonas() {
     admin,
     'coach-new': coachNew,
     coach,
-    'coach-unverified': coachUnverified,
+    'coach-draft': coachDraft,
+    'coach-pending': coachPending,
+    'coach-editor': coachEditor,
     'coach-joiner': coachJoiner,
     'coach-suspended-team': coachSuspendedTeam,
     'sponsor-new': sponsorNew,
@@ -111,7 +133,7 @@ export async function buildPersonas() {
   return {
     users,
     viewers,
-    teams: { verifiedTeam, unverifiedTeam, suspendedTeam },
+    teams: { approvedTeam, draftTeam, pendingTeam, suspendedTeam },
     sponsors: { approved, approved2, pending, rejected, suspendedCo },
   }
 }

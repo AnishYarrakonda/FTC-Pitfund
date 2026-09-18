@@ -54,7 +54,9 @@ test('a coach asks to join Exodius from team setup and a member approves', async
   const requests = coach.getByRole('region', { name: 'Join requests' })
   await expect(requests.getByText('Sam Patel (coach-joiner@pitfund.test) wants to join')).toBeVisible()
   await requests.getByRole('button', { name: 'Approve' }).click()
-  await expect(requests.getByText('Sam Patel joined the team.')).toBeVisible()
+  // The outcome is a toast that decays; the row disappearing is the lasting answer.
+  await expect(coach.locator('[data-sonner-toast]').filter({ hasText: 'Sam Patel joined the team.' })).toBeVisible()
+  await expect(requests).toHaveCount(0)
   await expect(coach.locator('#members').getByText('coach-joiner@pitfund.test', { exact: true })).toBeVisible()
   await expect.poll(async () => (await messagesTo('coach-joiner@pitfund.test')).some((m) => m.Subject === 'You\'re on Team 31579 · Exodius'), { timeout: 20_000 }).toBe(true)
 
@@ -66,12 +68,13 @@ test('a coach asks to join Exodius from team setup and a member approves', async
   await restoreJoinerRequest()
 })
 
-test('declining a request tells the requester in place', async ({ browser }) => {
+test('declining a request says so and clears the row', async ({ browser }) => {
   const coach = await pageAs(browser, 'coach')
   await coach.goto('/team')
   const requests = coach.getByRole('region', { name: 'Join requests' })
   await requests.getByRole('button', { name: 'Decline' }).click()
-  await expect(requests.getByText('Declined. We’ll let Sam Patel know.')).toBeVisible()
+  await expect(coach.locator('[data-sonner-toast]').filter({ hasText: 'Declined. We’ll let Sam Patel know.' })).toBeVisible()
+  await expect(requests).toHaveCount(0)
   const [row] = await db()`select status from team_join_requests where user_id = (select id from users where email = 'coach-joiner@pitfund.test') order by created_at desc limit 1`
   expect(row.status).toBe('declined')
   await coach.context().close()
@@ -118,7 +121,7 @@ test('invites: send by email, wrong email is refused, revoke kills the link', as
   await expect(anonymous.getByRole('heading', { name: 'Join Team 31579 · Exodius' })).toBeVisible()
   await expect(anonymous.getByRole('link', { name: 'Sign in to accept' })).toHaveAttribute('href', `/login?next=${encodeURIComponent(invitePath)}`)
 
-  const wrong = await pageAs(browser, 'coach-unverified')
+  const wrong = await pageAs(browser, 'coach2')
   await wrong.goto(invitePath)
   await expect(wrong.getByRole('heading', { name: 'This invite is for a different email' })).toBeVisible()
   await expect(wrong.getByRole('button', { name: 'Accept invite' })).toHaveCount(0)
@@ -163,10 +166,12 @@ test('accepting an invite joins the team; used, expired and unknown links explai
 })
 
 test('the only member of a team is told how to leave instead', async ({ browser }) => {
-  const coach = await pageAs(browser, 'coach-unverified')
+  const coach = await pageAs(browser, 'coach2')
   await coach.goto('/team')
   const members = coach.locator('#members')
-  await expect(members.getByText('You’re the only member. To leave, invite another coach first, or email ftcexodius@gmail.com to delete the team.')).toBeVisible()
+  await expect(
+    members.getByText('You own this team and you’re its only member. To leave, invite another coach and make them the owner, or email ftcexodius@gmail.com to delete the team.'),
+  ).toBeVisible()
   await expect(members.getByRole('button', { name: 'Leave team' })).toHaveCount(0)
   await coach.context().close()
 })

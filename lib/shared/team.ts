@@ -8,8 +8,14 @@ export const MAX_PDF_PAGES = 5
 /** Logos are resized in the browser; the source image may be up to 2 MB (plan §5 "Files"). */
 export const MAX_LOGO_SOURCE_BYTES = 2 * 1024 * 1024
 export const LOGO_SIZE_PX = 512
-/** The page-1 preview rendered in the browser before upload. */
-export const THUMB_WIDTH_PX = 1200
+/**
+ * The page-1 preview rendered in the browser before upload.
+ *
+ * It is shown in a column up to 820 CSS px wide, so a screen at 2x needs 1640 real pixels. 1200 was
+ * short of that and the optimizer had to upscale, which is what made the deck preview look soft
+ * before the live canvases replaced it.
+ */
+export const THUMB_WIDTH_PX = 1700
 export const MAX_IMAGE_UPLOAD_BYTES = 2 * 1024 * 1024
 
 export const INVITE_TTL_DAYS = 14
@@ -59,6 +65,35 @@ export function teamLabel(team: { number: number; name: string }) {
   return `Team ${team.number} · ${team.name}`
 }
 
-export function placeLabel(team: { city?: string | null; state?: string | null }) {
-  return [team.city, team.state].filter(Boolean).join(', ')
+/**
+ * Where a team is, as one line. FTC runs worldwide, so this is free text the team writes itself
+ * ("Austin, Texas, USA", "Kuala Lumpur, Malaysia") rather than a city/state pair that only makes
+ * sense in the United States.
+ */
+export function placeLabel(team: { location?: string | null }) {
+  return team.location?.trim() ?? ''
+}
+
+export const MAX_LOCATION_LENGTH = 120
+
+/**
+ * Accepts what people actually paste — "@exodiusftc", "exodiusftc",
+ * "https://instagram.com/exodiusftc/", "www.instagram.com/exodiusftc?hl=en" — and stores the bare
+ * handle. Returns null for empty input and undefined when it isn't an Instagram handle at all.
+ */
+export function normalizeInstagram(input: string): string | null | undefined {
+  const raw = input.trim()
+  if (!raw) return null
+  let handle = raw
+  const url = raw.replace(/^https?:\/\//i, '').replace(/^www\./i, '')
+  if (/^instagram\.com\//i.test(url)) handle = url.slice('instagram.com/'.length)
+  handle = handle.split(/[/?#]/)[0] ?? ''
+  handle = handle.replace(/^@/, '')
+  // Instagram handles are letters, digits, periods and underscores, up to 30 characters.
+  if (!/^[A-Za-z0-9._]{1,30}$/.test(handle)) return undefined
+  return handle
+}
+
+export function instagramUrl(handle: string) {
+  return `https://instagram.com/${handle}`
 }

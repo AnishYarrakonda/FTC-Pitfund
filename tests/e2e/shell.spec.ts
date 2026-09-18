@@ -8,6 +8,8 @@ const NAV: Record<string, string[]> = {
   '/inbox': ['Pitches', 'Company'],
   '/admin': ['Review', 'Directory', 'System'],
   '/welcome': [],
+  // An org waiting for review has no workspace to navigate: every link would bounce it back here.
+  '/welcome/pending': [],
 }
 
 for (const persona of PERSONAS) {
@@ -26,7 +28,7 @@ for (const persona of PERSONAS) {
       await expect(nav.getByRole('link', { name: expected[0] })).toHaveAttribute('aria-current', 'page')
     }
     // Admin area has no bell; the app area does.
-    await expect(page.getByRole('button', { name: /^Notifications/ })).toHaveCount(persona.home === '/admin' ? 0 : 1)
+    await expect(page.getByRole('button', { name: /^Needs your attention/ })).toHaveCount(persona.home === '/admin' ? 0 : 1)
     expect(problems).toEqual([])
   })
 }

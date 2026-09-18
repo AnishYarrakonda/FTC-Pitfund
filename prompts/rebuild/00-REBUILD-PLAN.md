@@ -57,9 +57,12 @@ Why it should exist:
 | Sponsor member | An employee of a company | Member of exactly one company account |
 | Admin | Anish and the people he adds | `users.is_admin = true` |
 
-Teams and companies are each **one shared account with equal members. There are no roles or
-permission levels.** Anyone on a team can do everything the team can do; the same holds for a
-company.
+Teams and companies are each **one shared account.** One member is its `owner`; everyone else is an
+`editor`. Both can do everything the org does — write pitches, edit the profile, answer companies —
+but only the owner changes who is on the account, and the owner can't leave without handing it over.
+
+> Superseded 2026-09-16. The original rule was "equal members, no roles", which meant a coach who
+> joined later could remove the coach who created the team.
 
 ### Core rules (confirmed)
 
@@ -67,12 +70,16 @@ company.
 2. **Team portfolio = one uploaded PDF, max 5 pages, max 10 MB**, plus logo, one-line
    summary, optional website. No structured portfolio questionnaire.
 3. **Team profiles are public web pages** (`/t/{teamNumber}`).
-4. **A coach can pitch immediately after signup.** There is no waiting period and no document
-   upload. The admin is notified of every new team, researches it offline, and marks it
-   **verified** (a checkmark next to the team name). Unverified teams can still pitch.
+4. **A coach is admin-approved before reaching the app.** They fill in the team's profile, deck and
+   a FIRST Dashboard screenshot showing their own name on the roster, then send it for review. Until
+   it is approved the team can't pitch and has no public page. The checkmark next to a team name now
+   means "approved".
+
+   > Superseded 2026-09-16. The original rule let a coach pitch immediately, with verification
+   > afterwards — which meant anyone could claim a team number and solicit sponsors in its name.
 5. **Company signup is open, but a company is hidden from coaches until an admin approves it.**
-   A pending company can set up its profile and invite nobody. Approved companies have no
-   badge; all visible companies are approved by definition.
+   It fills in its profile and questions, sends itself for review, and waits. Approved companies have
+   no badge; all visible companies are approved by definition.
 6. **Each company defines up to 10 questions** that every pitch to it must answer. If it
    defines none, three default questions apply.
 7. **Every pitch is reviewed by an admin before the company sees it.** Admin emails for
@@ -93,7 +100,7 @@ company.
 ### Non-goals (do not build)
 
 Messaging or threads · appeals · impact reports or fiscal years · analytics charts · funding
-caps, capacity, ledger, void-match · sponsor roles, approvals, second signatures · SSO ·
+caps, capacity, ledger, void-match · sponsor role *tiers*, approvals, second signatures · SSO ·
 email-domain rules · admin levels · government IDs or credential documents · password auth ·
 MFA · e-signatures · payment tracking · W-9s or receipts · pitching companies not on the
 platform · company "programs" · teams browsing other teams · student accounts · dark mode (v1) ·

@@ -8,7 +8,7 @@ import { PitchView } from '@/components/pitch/pitch-view'
 import { Banner, StatusBadge, Timeline } from '@/components/ui/feedback'
 import { OrgLogo } from '@/components/ui/identity'
 import { PageContainer } from '@/components/ui/page'
-import { requireTeamMember } from '@/lib/server/authz'
+import { requireApprovedTeam } from '@/lib/server/authz'
 import { getTeamPitch } from '@/lib/server/data/pitches'
 import { guardPage } from '@/lib/server/page-guards'
 import { AppError } from '@/lib/server/result'
@@ -20,10 +20,14 @@ import { PitchActions } from './pitch-actions'
 
 export const metadata: Metadata = { title: 'Pitch' }
 
+// The guard redirects an org that isn't approved yet, so this route can't be validated as instant —
+// the same reason the workspace layout opts out.
+export const instant = false
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export default async function PitchPage({ params }: PageProps<'/pitches/[id]'>) {
-  const [viewer, { id }] = await Promise.all([guardPage(() => requireTeamMember()), params])
+  const [viewer, { id }] = await Promise.all([guardPage(() => requireApprovedTeam()), params])
   if (!UUID.test(id)) notFound()
   const pitch = await getTeamPitch(viewer, id).catch((e: unknown) => {
     if (e instanceof AppError && e.code === 'NOT_FOUND') notFound()

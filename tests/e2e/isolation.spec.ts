@@ -24,11 +24,31 @@ test.describe('sponsor', () => {
   })
 })
 
-test.describe('pending company member', () => {
+test.describe('an org waiting for review', () => {
   test.use(asPersona('sponsor-pending'))
-  test('sees the waiting-for-approval banner', async ({ page }) => {
-    await page.goto('/inbox')
-    await expect(page.getByText('Your company is under review', { exact: true })).toBeVisible()
+  test('is held at the waiting screen and out of the workspace', async ({ page }) => {
+    await page.goto('/welcome/pending')
+    await expect(page.getByRole('heading', { name: /We’re checking Atlas Components/ })).toBeVisible()
+    // Nothing in the app is reachable, including by typing the URL.
+    for (const path of ['/inbox', '/company']) {
+      await page.goto(path)
+      await page.waitForURL('**/welcome/pending')
+    }
+  })
+})
+
+test.describe('a team waiting for review', () => {
+  test.use(asPersona('coach-pending'))
+  test('cannot pitch, and has no public page yet', async ({ page }) => {
+    await page.goto('/welcome/pending')
+    await expect(page.getByRole('heading', { name: /We’re checking Team 29551/ })).toBeVisible()
+    for (const path of ['/pitches', '/sponsors', '/team']) {
+      await page.goto(path)
+      await page.waitForURL('**/welcome/pending')
+    }
+    // The whole point of the gate: claiming a number gets you no page at that number.
+    await page.goto('/t/29551')
+    await expect(page.getByRole('heading', { name: /couldn.t find that page/i })).toBeVisible()
   })
 })
 
@@ -59,7 +79,7 @@ test('dev tools do not exist in a production build', async ({ request }) => {
 })
 
 test.describe('coach pitch isolation and the season rule', () => {
-  test.use(asPersona('coach-unverified'))
+  test.use(asPersona('coach2'))
   test('another team’s pitch or draft is a 404, and its answers never leak into my composer', async ({ page }) => {
     for (const id of [SEED.pitches.exodiusDraft, SEED.pitches.exodiusMatched]) {
       await page.goto(`/pitches/${id}`)

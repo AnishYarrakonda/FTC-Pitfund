@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { MAX_SUMMARY_LENGTH, MAX_TEAM_NAME_LENGTH, REPORT_REASONS } from '../team'
+import { MAX_LOCATION_LENGTH, MAX_SUMMARY_LENGTH, MAX_TEAM_NAME_LENGTH, normalizeInstagram, REPORT_REASONS } from '../team'
 import { normalizeWebsite } from '../url'
 
 /* Shared by the team forms (client) and the team/invite/report actions (server). */
@@ -13,13 +13,27 @@ const teamNumberSchema = z.coerce
 
 export const lookupTeamSchema = z.object({ number: teamNumberSchema })
 
-const placeText = (label: string) => z.string().trim().max(80, `Keep the ${label} under 80 characters`)
+/**
+ * One line, written by the team. FTC runs worldwide, so a city/state pair would be wrong for most of
+ * the world — "Kuala Lumpur, Malaysia" and "Austin, Texas, USA" both belong in the same box.
+ */
+const locationSchema = z
+  .string()
+  .trim()
+  .min(1, 'Enter where your team is based')
+  .max(MAX_LOCATION_LENGTH, `Keep the location under ${MAX_LOCATION_LENGTH} characters`)
+  .transform((v) => v.replace(/\s+/g, ' '))
+
+const teamNameSchema = z
+  .string()
+  .trim()
+  .min(1, 'Enter your team name')
+  .max(MAX_TEAM_NAME_LENGTH, `Keep the team name under ${MAX_TEAM_NAME_LENGTH} characters`)
 
 export const createTeamSchema = z.object({
   number: teamNumberSchema,
-  name: z.string().trim().min(1, 'Enter your team name').max(MAX_TEAM_NAME_LENGTH, `Keep the team name under ${MAX_TEAM_NAME_LENGTH} characters`),
-  city: placeText('city').min(1, 'Enter your team’s city'),
-  state: placeText('state or region').min(1, 'Enter your team’s state or region'),
+  name: teamNameSchema,
+  location: locationSchema,
   country: z.string().trim().max(80).optional().nullable(),
   /** How the details were confirmed: from FIRST records, typed after "not found", or typed while records were down. */
   source: z.enum(['matched', 'manual', 'unchecked']),
@@ -42,16 +56,30 @@ const websiteSchema = z
     return normalized
   })
 
+/** Accepts a handle, an @handle or a full profile URL; stores the bare handle. */
+const instagramSchema = z
+  .string()
+  .trim()
+  .max(120, 'Enter an Instagram handle like @exodiusftc')
+  .transform((v, ctx) => {
+    const handle = normalizeInstagram(v)
+    if (handle === undefined) {
+      ctx.addIssue({ code: 'custom', message: 'Enter an Instagram handle like @exodiusftc' })
+      return z.NEVER
+    }
+    return handle
+  })
+
 export const teamProfileSchema = z.object({
-  name: z.string().trim().min(1, 'Enter your team name').max(MAX_TEAM_NAME_LENGTH, `Keep the team name under ${MAX_TEAM_NAME_LENGTH} characters`),
-  city: placeText('city').min(1, 'Enter your team’s city'),
-  state: placeText('state or region').min(1, 'Enter your team’s state or region'),
+  name: teamNameSchema,
+  location: locationSchema,
   summary: z
     .string()
     .trim()
     .max(MAX_SUMMARY_LENGTH, `Keep the summary to ${MAX_SUMMARY_LENGTH} characters`)
     .transform((v) => (v === '' ? null : v.replace(/\s+/g, ' '))),
   website: websiteSchema,
+  instagram: instagramSchema,
 })
 
 

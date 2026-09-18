@@ -3,6 +3,8 @@ import 'server-only'
 import { eq, sql } from 'drizzle-orm'
 import { cache } from 'react'
 
+import { ACTIONABLE_TYPES } from '@/lib/shared/notifications'
+import type { OrgStatus } from '@/lib/shared/types'
 import type { Viewer } from '@/lib/shared/viewer'
 
 import { getDb } from './db'
@@ -32,18 +34,26 @@ export async function loadViewer(userId: string): Promise<Viewer | null> {
         number: teams.number,
         name: teams.name,
         logoPath: teams.logoPath,
-        verifiedAt: teams.verifiedAt,
-        suspendedAt: teams.suspendedAt,
+        status: sql<OrgStatus>`case when ${teams.suspendedAt} is not null then 'suspended'::org_status else ${teams.status} end`,
+        note: teams.statusNote,
       },
       sponsor: {
         id: sponsors.id,
         name: sponsors.name,
         status: sponsors.status,
+        note: sponsors.statusNote,
         logoPath: sponsors.logoPath,
       },
-      unreadCount: sql<number>`(
+      // Kept out of the nested objects above: they come from the membership tables, and mixing two
+      // tables in one group stops drizzle from typing the group as a single nullable row.
+      teamRole: teamMembers.role,
+      sponsorRole: sponsorMembers.role,
+      // The bell is a to-do list, not a log: only types in ACTIONABLE_TYPES are counted, and each is
+      // cleared when the thing it points at is handled (lib/server/notify.ts resolveNotifications).
+      actionCount: sql<number>`(
         select count(*)::int from notifications n
         where n.user_id = ${users.id} and n.read_at is null
+          and n.type = any(${sql.param(ACTIONABLE_TYPES as unknown as string[])}::text[])
       )`,
       pendingJoin: sql<Viewer['pendingJoin']>`(
         select json_build_object(
@@ -64,11 +74,12 @@ export async function loadViewer(userId: string): Promise<Viewer | null> {
 
   const row = rows[0]
   if (!row) return null
+  const { teamRole, sponsorRole, ...rest } = row
   return {
-    ...row,
-    team: row.team?.id ? row.team : null,
-    sponsor: row.sponsor?.id ? row.sponsor : null,
-    unreadCount: Number(row.unreadCount ?? 0),
+    ...rest,
+    team: row.team?.id ? { ...row.team, role: teamRole ?? 'editor' } : null,
+    sponsor: row.sponsor?.id ? { ...row.sponsor, role: sponsorRole ?? 'editor' } : null,
+    actionCount: Number(row.actionCount ?? 0),
     pendingJoin: row.pendingJoin ?? null,
   }
 }

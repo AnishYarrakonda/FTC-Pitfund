@@ -33,7 +33,10 @@ Anish does not click through the app. Agents verify everything with these comman
   (width ≥320 px at desktop, fits viewport, sticky close, focus trap, Esc, focus return), TTFB/LCP/CLS
   budgets on the production build, ActionButton pending ≤100 ms on `/dev/ui`.
 - States reachable only by interaction (a lookup result, a tab, an upload stage) go in the route's
-  `interactions`; each gets its own screenshot `{persona}-{width}[-edge]--{name}.png`.
+  `interactions`; each gets its own screenshot `{persona}-{width}[-edge]--{name}.png`. Two things need an
+  interaction because the automatic dialog sweep can't reach them: the logo cropper (it opens on a file pick,
+  not from an `[aria-haspopup="dialog"]` trigger) and a toast (Sonner's fixed portal is absent from a full-page
+  screenshot, so the interaction's own assertions are the coverage).
 - Output: `qa/screens/{route}/{persona}-{width}[-edge|-empty].png`, `qa/results/*.json`, `qa/report.md`.
 - **Green is not done.** Open the screenshots and judge them against `.claude/rules/ux-contract.md`.
   Crop long pages with a Playwright element screenshot when a full-page image is too tall to read.
@@ -53,6 +56,14 @@ Anish does not click through the app. Agents verify everything with these comman
 - `tests/e2e/keyboard-journeys.spec.ts`: sign-in, composer and company response with Tab/Enter/Space/arrows/Esc only
   (focus trap and focus return in every dialog). `tests/e2e/mobile.spec.ts`: taps at 375 px on the production build; every
   control used must be ≥ 32 px tall, on screen and not covered where a finger lands.
+- **Signing up no longer lands in the app.** A new team or company is a `draft` on its setup page and reaches the
+  workspace only once an admin approves it, so any test that signs up and then does something has to either go through
+  the admin UI (`tests/e2e/acceptance.spec.ts`) or approve directly (`update teams set status = 'approved'`) when the
+  review isn't what it's testing. Personas `coach-pending` and `sponsor-pending` sit in that waiting state.
+- Workspace pages export `instant = false`: their guards redirect an org that isn't approved, and a redirect can't be
+  validated as instant. Without it every such page logs a console error, which the QA gate counts as a failure.
+- A simulation cookie must be added with `path: '/'`. Deriving the path from `page.url()` silently scopes it to whatever
+  directory the page was in, so it stops being sent after the next navigation.
 - Running a second checkout's `npm run setup` restarts the shared local Supabase stack with that checkout's hook secret, so
   auth emails fail here ("signInWithOtp failed 500"). Re-run `npm run setup` in this checkout to take it back.
 - `npm run screenshots:marketing` regenerates `public/marketing/*.webp` from the seeded production build.

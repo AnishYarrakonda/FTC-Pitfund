@@ -9,7 +9,7 @@ import { Banner, StatusBadge } from '@/components/ui/feedback'
 import { TeamMark } from '@/components/ui/identity'
 import { PageContainer } from '@/components/ui/page'
 import { PdfViewer } from '@/components/ui/pdf-viewer'
-import { requireSponsorMember } from '@/lib/server/authz'
+import { requireApprovedSponsor } from '@/lib/server/authz'
 import { getInboxPitch } from '@/lib/server/data/inbox'
 import { guardPage } from '@/lib/server/page-guards'
 import { AppError } from '@/lib/server/result'
@@ -21,10 +21,14 @@ import { InboxActions } from './inbox-actions'
 
 export const metadata: Metadata = { title: 'Pitch' }
 
+// The guard redirects an org that isn't approved yet, so this route can't be validated as instant —
+// the same reason the workspace layout opts out.
+export const instant = false
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export default async function InboxPitchPage({ params }: PageProps<'/inbox/[id]'>) {
-  const [viewer, { id }] = await Promise.all([guardPage(() => requireSponsorMember()), params])
+  const [viewer, { id }] = await Promise.all([guardPage(() => requireApprovedSponsor()), params])
   if (!UUID.test(id)) notFound()
   const pitch = await getInboxPitch(viewer, id).catch((e: unknown) => {
     if (e instanceof AppError && e.code === 'NOT_FOUND') notFound()

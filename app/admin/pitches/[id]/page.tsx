@@ -17,7 +17,7 @@ import { guardPage } from '@/lib/server/page-guards'
 import { AppError } from '@/lib/server/result'
 import { cn } from '@/lib/shared/cn'
 import { formatDate, formatDateTime, formatWaiting } from '@/lib/shared/format'
-import { PITCH_STATUS, SPONSOR_STATUS } from '@/lib/shared/labels'
+import { PITCH_STATUS, ORG_STATUS } from '@/lib/shared/labels'
 import { displayWebsite } from '@/lib/shared/url'
 
 export const metadata: Metadata = { title: 'Review pitch' }
@@ -200,7 +200,7 @@ export default async function AdminPitchPage({ params }: PageProps<'/admin/pitch
               </div>
               <Facts
                 rows={[
-                  { label: 'Status', value: <StatusBadge label={SPONSOR_STATUS[company.status].label} tone={SPONSOR_STATUS[company.status].tone} /> },
+                  { label: 'Status', value: <StatusBadge label={ORG_STATUS[company.status].label} tone={ORG_STATUS[company.status].tone} /> },
                   { label: 'Website', value: <ExternalLink href={company.website}>{displayWebsite(company.website)}</ExternalLink> },
                   { label: 'People notified', value: company.memberCount },
                   { label: 'Questions', value: company.questionCount ? `${company.questionCount} of its own` : 'Default questions' },

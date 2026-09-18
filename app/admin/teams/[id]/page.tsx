@@ -14,7 +14,7 @@ import { getTeamForAdmin } from '@/lib/server/data/admin-orgs'
 import { guardPage } from '@/lib/server/page-guards'
 import { AppError } from '@/lib/server/result'
 import { formatBytes, formatDate, formatRelative } from '@/lib/shared/format'
-import { PITCH_STATUS } from '@/lib/shared/labels'
+import { ORG_STATUS, PITCH_STATUS } from '@/lib/shared/labels'
 import { placeLabel } from '@/lib/shared/team'
 import { displayWebsite } from '@/lib/shared/url'
 
@@ -36,9 +36,9 @@ export default async function AdminTeamPage({ params }: PageProps<'/admin/teams/
 
   return (
     <PageContainer width="review">
-      <Link href={team.verifiedAt ? '/admin/directory' : '/admin?tab=teams'} className="-ml-1 inline-flex items-center gap-1.5 rounded-control px-1 text-small font-medium text-text-secondary hover:text-text">
+      <Link href={team.status === 'pending' ? '/admin?tab=teams' : '/admin/directory'} className="-ml-1 inline-flex items-center gap-1.5 rounded-control px-1 text-small font-medium text-text-secondary hover:text-text">
         <ArrowLeft aria-hidden="true" className="size-4" />
-        {team.verifiedAt ? 'Directory' : 'Teams to verify'}
+        {team.status === 'pending' ? 'Teams to review' : 'Directory'}
       </Link>
 
       <header className="mt-6 flex flex-col gap-5 border-b border-border pb-6 md:flex-row md:items-end md:justify-between">
@@ -47,17 +47,17 @@ export default async function AdminTeamPage({ params }: PageProps<'/admin/teams/
           <div className="grid min-w-0 gap-1.5">
             <h1 className="min-w-0 text-h2 font-semibold tracking-tighter text-text user-text">
               Team {team.number} · {team.name}
-              {team.verifiedAt ? <VerifiedCheck className="ml-2 align-[-1px]" /> : null}
+              {team.status === 'approved' ? <VerifiedCheck className="ml-2 align-[-1px]" /> : null}
             </h1>
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body text-text-secondary">
-              {team.suspendedAt ? <StatusBadge label="Suspended" tone="danger" /> : team.verifiedAt ? <StatusBadge label="Verified" tone="success" /> : <StatusBadge label="Not verified" tone="warning" />}
+              {team.suspendedAt ? <StatusBadge label="Suspended" tone="danger" /> : <StatusBadge label={ORG_STATUS[team.status].label} tone={ORG_STATUS[team.status].tone} />}
               {place ? <span className="min-w-0 line-clamp-1 user-text">{place}</span> : null}
               <span className="text-text-tertiary">Joined {formatDate(team.createdAt)}</span>
             </p>
           </div>
         </div>
         <div className="shrink-0">
-          <TeamDecisions teamId={team.id} number={team.number} verified={Boolean(team.verifiedAt)} suspended={Boolean(team.suspendedAt)} />
+          <TeamDecisions teamId={team.id} number={team.number} status={team.status} suspended={Boolean(team.suspendedAt)} />
         </div>
       </header>
 
@@ -101,6 +101,38 @@ export default async function AdminTeamPage({ params }: PageProps<'/admin/teams/
                   { label: 'Open reports', value: team.openReports ? <Link href="/admin?tab=reports" className="font-medium text-warning hover:underline">{team.openReports}</Link> : '0' },
                 ]}
               />
+            </div>
+          </section>
+
+          <section aria-labelledby="proof-heading" className="grid gap-4">
+            <h2 id="proof-heading" className="text-lead font-semibold tracking-tight text-text">
+              Proof they coach this team
+            </h2>
+            <div className="rounded-dialog border border-border bg-surface p-5">
+              {team.proofUrl ? (
+                <div className="grid gap-3">
+                  <p className="text-small text-text-secondary">
+                    Their FIRST Dashboard, showing their own name on the roster. Check the name against the coaches listed below.
+                  </p>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- a private signed URL the optimizer can't fetch */}
+                  <img
+                    src={team.proofUrl}
+                    alt={`Verification screenshot for Team ${team.number}`}
+                    className="w-full rounded-control border border-border bg-canvas"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <p className="text-small text-text-tertiary">
+                    Uploaded {team.proofUploadedAt ? formatDate(team.proofUploadedAt) : 'at an unknown time'}. This link expires in 15 minutes.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-body text-text-tertiary">
+                  {team.status === 'approved'
+                    ? 'Deleted when this team was approved — it is only kept while a decision is pending.'
+                    : 'No screenshot uploaded yet.'}
+                </p>
+              )}
             </div>
           </section>
 
@@ -149,9 +181,10 @@ export default async function AdminTeamPage({ params }: PageProps<'/admin/teams/
             ) : (
               <p className="text-body text-text-tertiary">No coaches left on this team.</p>
             )}
-            {team.verifiedAt ? (
+            {team.decidedAt ? (
               <p className="border-t border-border pt-3 text-small text-text-tertiary">
-                Verified by {team.verifiedByName ?? 'an admin'} on {formatDate(team.verifiedAt)}
+                {team.status === 'approved' ? 'Approved' : team.status === 'rejected' ? 'Rejected' : 'Decided'} by {team.decidedByName ?? 'an admin'} on{' '}
+                {formatDate(team.decidedAt)}
               </p>
             ) : null}
           </section>

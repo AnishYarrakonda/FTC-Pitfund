@@ -184,6 +184,39 @@
       transform: translateX(250%);
     }
   }
+  /* The bar under a toast, draining for exactly as long as the toast will live. */
+  @keyframes toast-decay {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0);
+    }
+  }
+}
+
+@layer components {
+  .pitfund-toast-decay {
+    animation: toast-decay linear forwards;
+    /* animation-duration is set inline from the same value Sonner was given, so the bar and the
+       dismiss timer can never drift apart. */
+  }
+
+  /* Sonner stops its dismiss timer while a toast is hovered or focused; the bar has to stop too,
+     or it would empty while the toast stays put. */
+  [data-sonner-toast]:hover .pitfund-toast-decay,
+  [data-sonner-toast]:focus-within .pitfund-toast-decay {
+    animation-play-state: paused;
+  }
+
+  /* Reduced motion removes transforms, but a bar that never moves would promise time the toast
+     doesn't have. Keep it still and full: the dismiss button is the real affordance. */
+  @media (prefers-reduced-motion: reduce) {
+    .pitfund-toast-decay {
+      animation: none;
+      transform: scaleX(1);
+    }
+  }
 }
 
 @layer base {

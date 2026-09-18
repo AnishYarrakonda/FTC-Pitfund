@@ -6,10 +6,11 @@ import { notFound } from 'next/navigation'
 import { PublicFooter, PublicHeader } from '@/components/app/public-chrome'
 import { Button } from '@/components/ui/button'
 import { OrgLogo } from '@/components/ui/identity'
+import { InstagramIcon } from '@/components/ui/instagram-icon'
 import { PdfViewer } from '@/components/ui/pdf-viewer'
 import { getPublicTeam, type PublicTeam } from '@/lib/server/data/public-team'
 import { formatDate } from '@/lib/shared/format'
-import { placeLabel } from '@/lib/shared/team'
+import { instagramUrl, placeLabel } from '@/lib/shared/team'
 import { displayWebsite } from '@/lib/shared/url'
 
 import { ReportButton } from './report-button'
@@ -69,17 +70,21 @@ function TeamProfile({ team }: { team: PublicTeam }) {
   const place = placeLabel(team)
 
   return (
-    <div className="mx-auto w-full max-w-reading px-4 pt-10 pb-16 sm:px-6 sm:pt-14">
+    // max-w-app, the same width as the header bar above it. This used to be max-w-reading (720px)
+    // under a 1080px header, which left the whole page looking like a narrow ribbon pushed off
+    // centre on anything wider than a laptop.
+    <div className="mx-auto w-full max-w-app px-4 pt-10 pb-16 sm:px-6 sm:pt-14 lg:px-8">
       <header className="grid gap-6">
-        <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
+        <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
           <OrgLogo name={team.name} src={team.logoUrl} size="xl" />
-          <div className="grid min-w-0 gap-1">
-            <h1 className="flex min-w-0 flex-wrap items-center gap-x-2 text-h1 font-semibold tracking-tighter text-text">
+          <div className="grid min-w-0 gap-1.5">
+            {/* A public page people land on, not a dense app screen: the name carries the page. */}
+            <h1 className="flex min-w-0 flex-wrap items-center gap-x-3 text-h1 font-semibold tracking-tighter text-text sm:text-display">
               <span className="min-w-0 user-text">{team.name}</span>
               {team.verified ? (
-                <span className="inline-flex shrink-0 text-accent" title="Verified by FTC Pitfund">
-                  <BadgeCheck aria-hidden="true" className="size-6" />
-                  <span className="sr-only">Verified by FTC Pitfund</span>
+                <span className="inline-flex shrink-0 text-accent" title="Checked by FTC Pitfund">
+                  <BadgeCheck aria-hidden="true" className="size-6 sm:size-7" />
+                  <span className="sr-only">Checked by FTC Pitfund</span>
                 </span>
               ) : null}
             </h1>
@@ -89,12 +94,23 @@ function TeamProfile({ team }: { team: PublicTeam }) {
             </p>
           </div>
         </div>
-        {team.summary ? <p className="text-lead text-text user-text">{team.summary}</p> : null}
-        <div className="flex flex-wrap gap-x-6 gap-y-2 text-body">
+        {team.summary ? <p className="max-w-reading text-lead text-text user-text sm:text-h3">{team.summary}</p> : null}
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-body">
           {team.website ? (
-            <a href={team.website} target="_blank" rel="noreferrer nofollow" className="inline-flex min-w-0 items-center gap-1 font-medium text-accent hover:text-accent-hover">
+            <a href={team.website} target="_blank" rel="noreferrer nofollow" className="inline-flex min-h-8 min-w-0 items-center gap-1 font-medium text-accent hover:text-accent-hover">
               <span className="min-w-0 user-text">{displayWebsite(team.website)}</span>
               <ArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
+            </a>
+          ) : null}
+          {team.instagram ? (
+            <a
+              href={instagramUrl(team.instagram)}
+              target="_blank"
+              rel="noreferrer nofollow"
+              className="inline-flex min-h-8 min-w-0 items-center gap-1.5 font-medium text-accent hover:text-accent-hover"
+            >
+              <InstagramIcon className="size-4 shrink-0" />
+              <span className="min-w-0 user-text">@{team.instagram}</span>
             </a>
           ) : null}
           {team.deck ? <span className="text-text-tertiary">Deck updated {formatDate(team.deck.updatedAt, new Date(0))}</span> : null}
@@ -102,14 +118,18 @@ function TeamProfile({ team }: { team: PublicTeam }) {
       </header>
 
       <section aria-labelledby="deck-heading" className="mt-12 grid gap-4 border-t border-border pt-8">
-        <h2 id="deck-heading" className="text-lead font-semibold tracking-tight text-text">
+        <h2 id="deck-heading" className="text-h3 font-semibold tracking-tight text-text">
           Sponsorship deck
         </h2>
-        {team.deck ? (
-          <PdfViewer src={team.deck.url} downloadHref={team.deck.downloadUrl} title={`Team ${team.number} sponsorship deck`} pages={team.deck.pages} thumbnailSrc={team.deck.thumbUrl} priority />
-        ) : (
-          <p className="rounded-menu bg-canvas px-5 py-10 text-center text-body text-text-secondary">This team hasn’t uploaded its sponsorship deck yet.</p>
-        )}
+        {/* The column is wider than the deck wants to be: a Letter page rendered 1080px across is
+            uncomfortable to read, so the deck keeps a sensible reading width inside it. */}
+        <div className="w-full max-w-[820px]">
+          {team.deck ? (
+            <PdfViewer src={team.deck.url} downloadHref={team.deck.downloadUrl} title={`Team ${team.number} sponsorship deck`} pages={team.deck.pages} thumbnailSrc={team.deck.thumbUrl} priority />
+          ) : (
+            <p className="rounded-menu bg-canvas px-5 py-10 text-center text-body text-text-secondary">This team hasn’t uploaded its sponsorship deck yet.</p>
+          )}
+        </div>
       </section>
 
       <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6 text-small text-text-tertiary">

@@ -11,10 +11,25 @@ import { createSupabaseAdminClient } from './supabase-admin'
  * staging bucket:  browser uploads land here via a signed upload URL; lib/server/uploads.ts
  *                  verifies them on the server and promotes them into `public`. The daily cron
  *                  deletes staging objects older than 24 h.
+ * verification:    teams/{teamId}/proof-{uuid}.webp — the screenshot a coach uploads to show they
+ *                  are on their team's roster. PRIVATE: it shows a third-party dashboard with
+ *                  people's names on it, so it is never served publicly and is only ever read by an
+ *                  admin through a short-lived signed URL. Not swept by the staging cleaner.
  */
 
-export const BUCKETS = { public: 'public', staging: 'staging' } as const
+export const BUCKETS = { public: 'public', staging: 'staging', verification: 'verification' } as const
 export type Bucket = (typeof BUCKETS)[keyof typeof BUCKETS]
+
+/** Minutes, not hours: long enough to review a team, short enough that a copied URL goes stale. */
+const PROOF_URL_TTL_SECONDS = 15 * 60
+
+/** An admin-only link to a verification screenshot. Null when the team never uploaded one. */
+export async function signedProofUrl(path: string | null | undefined): Promise<string | null> {
+  if (!path) return null
+  const { data, error } = await createSupabaseAdminClient().storage.from(BUCKETS.verification).createSignedUrl(path, PROOF_URL_TTL_SECONDS)
+  if (error || !data) return null
+  return data.signedUrl
+}
 
 export function publicUrl(path: string | null | undefined): string | null {
   if (!path) return null

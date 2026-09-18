@@ -1,10 +1,11 @@
 import 'server-only'
 
-import { and, asc, count, eq, ne, sql } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, ne, sql } from 'drizzle-orm'
 
 import { SUPPORT_EMAIL } from '@/lib/shared/brand'
+import { companyChecklist } from '@/lib/shared/company'
 import { questionsFor, type Question } from '@/lib/shared/questions'
-import type { SupportType } from '@/lib/shared/types'
+import type { OrgRole, SupportType } from '@/lib/shared/types'
 import type { Viewer } from '@/lib/shared/viewer'
 
 import type { SponsorViewer } from '../authz'
@@ -17,8 +18,9 @@ import { assertOwnStagingPath, createStagingUpload, discard, publishVerified, re
 
 /*
  * Companies (sponsors): first-run creation, the profile and questions editor, logo, and members
- * (prompt 3, scope A and B). A company is created `pending`: it can set itself up but is invisible
- * to coaches until an admin approves it (lib/server/data/directory.ts only ever reads `approved`).
+ * (prompt 3, scope A and B). A company is created as a `draft`: it fills its profile and questions
+ * in, sends itself for review, and is invisible to coaches until an admin approves it
+ * (lib/server/data/directory.ts only ever reads `approved`).
  */
 
 // ─── First run ──────────────────────────────────────────────────────────────────────────
@@ -33,9 +35,10 @@ export async function createCompany(viewer: Viewer, input: CreateCompanyData) {
   const db = getDb()
   const [company] = await db
     .insert(sponsors)
-    .values({ name: input.name, website: input.website, status: 'pending', applicantTitle: input.jobTitle, applicantLinkedin: input.linkedin })
+    .values({ name: input.name, website: input.website, status: 'draft', applicantTitle: input.jobTitle, applicantLinkedin: input.linkedin })
     .returning({ id: sponsors.id, name: sponsors.name })
-  await db.insert(sponsorMembers).values({ sponsorId: company.id, userId: viewer.id })
+  // Whoever creates the company owns it. Everyone invited later is an editor.
+  await db.insert(sponsorMembers).values({ sponsorId: company.id, userId: viewer.id, role: 'owner' })
   await db
     .update(users)
     .set({ name: input.yourName, jobTitle: input.jobTitle, acceptedTermsAt: sql`coalesce(${users.acceptedTermsAt}, now())` })
@@ -166,15 +169,23 @@ export async function finalizeCompanyLogo(viewer: SponsorViewer, stagingPath: st
 
 // ─── Members ────────────────────────────────────────────────────────────────────────────
 
-export type CompanyMemberRow = { userId: string; name: string; email: string; jobTitle: string | null; avatarUrl: string | null; joinedAt: Date }
+export type CompanyMemberRow = { userId: string; name: string; email: string; jobTitle: string | null; avatarUrl: string | null; role: OrgRole; joinedAt: Date }
 
 export async function listCompanyMembers(viewer: SponsorViewer): Promise<CompanyMemberRow[]> {
   return getDb()
-    .select({ userId: users.id, name: users.name, email: users.email, jobTitle: users.jobTitle, avatarUrl: users.avatarUrl, joinedAt: sponsorMembers.createdAt })
+    .select({
+      userId: users.id,
+      name: users.name,
+      email: users.email,
+      jobTitle: users.jobTitle,
+      avatarUrl: users.avatarUrl,
+      role: sponsorMembers.role,
+      joinedAt: sponsorMembers.createdAt,
+    })
     .from(sponsorMembers)
     .innerJoin(users, eq(users.id, sponsorMembers.userId))
     .where(eq(sponsorMembers.sponsorId, viewer.sponsor.id))
-    .orderBy(asc(sponsorMembers.createdAt))
+    .orderBy(asc(sql`case when ${sponsorMembers.role} = 'owner' then 0 else 1 end`), asc(sponsorMembers.createdAt))
 }
 
 async function lockCompany(sponsorId: string) {
@@ -194,7 +205,7 @@ export async function removeCompanyMember(viewer: SponsorViewer, userId: string)
   await lockCompany(viewer.sponsor.id)
   const rows = await getDb()
     .delete(sponsorMembers)
-    .where(and(eq(sponsorMembers.sponsorId, viewer.sponsor.id), eq(sponsorMembers.userId, userId)))
+    .where(and(eq(sponsorMembers.sponsorId, viewer.sponsor.id), eq(sponsorMembers.userId, userId), ne(sponsorMembers.role, 'owner')))
     .returning({ userId: sponsorMembers.userId })
   if (!rows[0]) throw new AppError('NOT_FOUND', 'That person isn’t part of your company anymore.')
   const [person] = await getDb().select({ name: users.name, email: users.email }).from(users).where(eq(users.id, userId))
@@ -204,15 +215,67 @@ export async function removeCompanyMember(viewer: SponsorViewer, userId: string)
 
 export async function leaveCompany(viewer: SponsorViewer) {
   await lockCompany(viewer.sponsor.id)
-  if ((await memberCount(viewer.sponsor.id, viewer.id)) === 0) {
+  if (viewer.sponsor.role === 'owner') {
+    const others = await memberCount(viewer.sponsor.id, viewer.id)
     throw new AppError(
       'CONFLICT',
-      `You’re the only member of ${viewer.sponsor.name}. Invite a coworker first, or email ${SUPPORT_EMAIL} to close the company.`,
+      others === 0
+        ? `You own ${viewer.sponsor.name} and you’re its only member. Invite a coworker and make them the owner first, or email ${SUPPORT_EMAIL} to close the company.`
+        : `You own ${viewer.sponsor.name}. Make a coworker the owner before you leave.`,
     )
   }
   await getDb().delete(sponsorMembers).where(and(eq(sponsorMembers.sponsorId, viewer.sponsor.id), eq(sponsorMembers.userId, viewer.id)))
   await audit({ actorId: viewer.id, action: 'sponsor.member_left', entityType: 'sponsor', entityId: viewer.sponsor.id, data: { userId: viewer.id } })
   return { sponsorId: viewer.sponsor.id }
+}
+
+/** See transferTeamOwnership: demote then promote, so the one-owner index is never violated. */
+export async function transferCompanyOwnership(viewer: SponsorViewer, userId: string) {
+  if (userId === viewer.id) throw new AppError('VALIDATION', 'You already own this company.')
+  const db = getDb()
+  await lockCompany(viewer.sponsor.id)
+  const [target] = await db
+    .select({ userId: sponsorMembers.userId, name: users.name, email: users.email })
+    .from(sponsorMembers)
+    .innerJoin(users, eq(users.id, sponsorMembers.userId))
+    .where(and(eq(sponsorMembers.sponsorId, viewer.sponsor.id), eq(sponsorMembers.userId, userId)))
+  if (!target) throw new AppError('NOT_FOUND', 'That person isn’t part of your company.')
+  await db
+    .update(sponsorMembers)
+    .set({ role: 'editor' })
+    .where(and(eq(sponsorMembers.sponsorId, viewer.sponsor.id), eq(sponsorMembers.userId, viewer.id)))
+  await db
+    .update(sponsorMembers)
+    .set({ role: 'owner' })
+    .where(and(eq(sponsorMembers.sponsorId, viewer.sponsor.id), eq(sponsorMembers.userId, userId)))
+  await audit({ actorId: viewer.id, action: 'sponsor.ownership_transferred', entityType: 'sponsor', entityId: viewer.sponsor.id, data: { to: userId } })
+  return { userId, name: target.name.trim() || target.email }
+}
+
+/** Send a company for review. Mirrors submitTeamForReview; the checklist is the blocker list. */
+export async function submitCompanyForReview(viewer: SponsorViewer) {
+  const profile = await getCompanyProfile(viewer)
+  const checklist = companyChecklist({
+    hasLogo: Boolean(profile.logoUrl),
+    hasAbout: Boolean(profile.about?.trim()),
+    supportTypeCount: profile.supportTypes.length,
+    questionCount: profile.usesDefaultQuestions ? 0 : profile.questions.length,
+    reviewedQuestions: profile.reviewedQuestions,
+  })
+  const missing = checklist.items.find((i) => !i.done)
+  if (missing) throw new AppError('VALIDATION', `Finish your setup first: ${missing.label.toLowerCase()}.`)
+
+  const now = new Date()
+  const [row] = await getDb()
+    .update(sponsors)
+    // Only a draft or rejected company can be submitted, so a double-click can't reset its place in
+    // the queue.
+    .set({ status: 'pending', submittedAt: now, statusNote: null, updatedAt: now })
+    .where(and(eq(sponsors.id, viewer.sponsor.id), inArray(sponsors.status, ['draft', 'rejected'])))
+    .returning({ id: sponsors.id, name: sponsors.name })
+  if (!row) throw new AppError('CONFLICT', `${viewer.sponsor.name} has already been sent for review.`)
+  await audit({ actorId: viewer.id, action: 'sponsor.submitted', entityType: 'sponsor', entityId: row.id })
+  return row
 }
 
 /** Every active member of a company, for emails (suspended people are skipped). */

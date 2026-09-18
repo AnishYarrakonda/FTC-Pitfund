@@ -46,7 +46,7 @@ export function TopBar({ viewer, area, devTools }: { viewer: Viewer; area: 'app'
         <NavLinks items={items} />
       </div>
       <div className="ml-auto flex items-center gap-1.5">
-        {area === 'app' ? <NotificationBell unreadCount={viewer.unreadCount} /> : null}
+        {area === 'app' ? <NotificationBell actionCount={viewer.actionCount} /> : null}
         <div className="hidden sm:block">
           <AccountMenu
             name={name}

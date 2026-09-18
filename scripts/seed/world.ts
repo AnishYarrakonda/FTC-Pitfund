@@ -95,7 +95,7 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
   const adminId = personaId('admin')
 
   // ─── Teams ─────────────────────────────────────────────────────────────────────────
-  const teamFixtures = mode === 'demo' ? TEAMS : TEAMS.filter((t) => t.members.some((m) => m === 'coach' || m === 'coach-unverified'))
+  const teamFixtures = mode === 'demo' ? TEAMS : TEAMS.filter((t) => t.members.some((m) => m === 'coach' || m === 'coach2'))
   const teamIds = new Map<number, string>()
   for (const [i, t] of teamFixtures.entries()) {
     const id = seedTeamId(t.number)
@@ -111,9 +111,8 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
       id,
       number: t.number,
       name: t.name,
-      city: t.city,
-      state: t.state,
-      country: 'USA',
+      location: `${t.city}, ${t.state}`,
+      country: t.state.length > 2 ? t.state : 'USA',
       website: mode === 'demo' ? t.website : null,
       summary: mode === 'demo' ? t.summary : null,
       logoPath: assets?.logoPath ?? null,
@@ -126,15 +125,32 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
       pdfUpdatedAt: assets?.pdf ? ago(now, (20 - i) * DAY) : null,
       mediaConsentAt: assets?.pdf ? ago(now, (20 - i) * DAY) : null,
       recordStatus: t.recordStatus,
-      verifiedAt: t.verified && mode === 'demo' ? ago(now, (30 - i * 2) * DAY) : null,
-      verifiedBy: t.verified && mode === 'demo' ? adminId : null,
+      // Seeded teams are live so the rest of the app has something to show; a fixture can opt into
+      // 'pending' to sit in the review queue instead.
+      status: t.status ?? 'approved',
+      submittedAt: createdAt,
+      decidedAt: t.status === 'pending' || mode !== 'demo' ? null : ago(now, (30 - i * 2) * DAY),
+      decidedBy: t.status === 'pending' || mode !== 'demo' ? null : adminId,
+      proofPath: null,
+      instagram: t.instagram ?? null,
       createdAt,
     })
     const members = mode === 'demo' ? t.members : t.members.filter((m) => typeof m === 'string')
-    await db.insert(teamMembers).values(members.map((m, j) => ({ teamId: id, userId: idOf(memberEmail(m)), createdAt: ago(now, (34 - i * 2 - j) * DAY) })))
+    // The first member listed is the coach who set the team up, so they own it.
+    await db.insert(teamMembers).values(
+      members.map((m, j) => ({ teamId: id, userId: idOf(memberEmail(m)), role: (j === 0 ? 'owner' : 'editor') as 'owner' | 'editor', createdAt: ago(now, (34 - i * 2 - j) * DAY) })),
+    )
     await db
       .insert(ftcTeamCache)
-      .values({ number: t.number, name: t.name, city: t.city, state: t.state, country: 'USA', source: i % 3 === 0 ? 'ftcscout' : 'first', fetchedAt: createdAt })
+      .values({
+        number: t.number,
+        name: t.name,
+        city: t.city,
+        state: t.state,
+        country: t.state.length > 2 ? t.state : 'USA',
+        source: i % 3 === 0 ? 'ftcscout' : 'first',
+        fetchedAt: createdAt,
+      })
       .onConflictDoNothing()
   }
 
@@ -171,7 +187,7 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
       createdAt: ago(now, (32 - i) * DAY),
     })
     const members = mode === 'demo' ? s.members : s.members.filter((m) => typeof m === 'string')
-    await db.insert(sponsorMembers).values(members.map((m) => ({ sponsorId: id, userId: idOf(memberEmail(m)) })))
+    await db.insert(sponsorMembers).values(members.map((m, j) => ({ sponsorId: id, userId: idOf(memberEmail(m)), role: (j === 0 ? 'owner' : 'editor') as 'owner' | 'editor' })))
   }
 
   // Join request: coach-joiner waits on Exodius in both modes.
@@ -328,7 +344,7 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
     outbox.push({ toEmail: personaEmail(i % 2 ? 'coach' : 'sponsor'), template: 'notice', payload: notice(i % 2 ? 'Your pitch was sent' : 'New pitch from Exodius'), priority: 1, status: 'sent', attempts: 1, resendId: `seed-${i}`, sentAt, sendAfter: sentAt, createdAt: sentAt })
   }
   outbox.push({ toEmail: personaEmail('admin'), template: 'notice', payload: notice('Daily summary: 2 new teams, 1 new company'), priority: 3, status: 'queued', sendAfter: new Date(now.getTime() + 14 * HOUR), createdAt: ago(now, 1 * HOUR) })
-  outbox.push({ toEmail: personaEmail('coach-unverified'), template: 'notice', payload: notice('Your pitch to Cedar Valley Credit Union is in review'), priority: 1, status: 'queued', sendAfter: new Date(now.getTime() + 3 * HOUR), attempts: 2, lastError: 'rate_limit_exceeded: Too many requests', createdAt: ago(now, 30 * 60 * 1000) })
+  outbox.push({ toEmail: personaEmail('coach2'), template: 'notice', payload: notice('Your pitch to Cedar Valley Credit Union is in review'), priority: 1, status: 'queued', sendAfter: new Date(now.getTime() + 3 * HOUR), attempts: 2, lastError: 'rate_limit_exceeded: Too many requests', createdAt: ago(now, 30 * 60 * 1000) })
   outbox.push({ toEmail: 'member-tidal@pitfund.test', template: 'notice', payload: notice('Welcome to FTC Pitfund'), priority: 1, status: 'failed', attempts: 5, lastError: 'validation_error: The to address is invalid', createdAt: ago(now, 5 * HOUR), updatedAt: ago(now, 4 * HOUR) })
   outbox.push({ toEmail: 'old-address@pitfund.test', template: 'notice', payload: notice('New pitch from Quantum Quokkas'), priority: 1, status: 'bounced', attempts: 1, resendId: 'seed-bounced', sentAt: ago(now, 9 * HOUR), sendAfter: ago(now, 9 * HOUR), lastError: 'bounced: Mailbox does not exist', createdAt: ago(now, 9 * HOUR), updatedAt: ago(now, 8 * HOUR) })
   await db.insert(emailOutbox).values(outbox)

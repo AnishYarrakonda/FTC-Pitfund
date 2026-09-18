@@ -7,7 +7,7 @@ import { EmptyState, StatusBadge } from '@/components/ui/feedback'
 import { OrgLogo } from '@/components/ui/identity'
 import { LinkPendingIndicator } from '@/components/ui/link-status'
 import { PageContainer, PageHeader } from '@/components/ui/page'
-import { requireTeamMember } from '@/lib/server/authz'
+import { requireApprovedTeam } from '@/lib/server/authz'
 import { EVENT_VERBS, listTeamPitches, type TeamPitchRow } from '@/lib/server/data/pitches'
 import { getTeamSetup } from '@/lib/server/data/teams'
 import { guardPage } from '@/lib/server/page-guards'
@@ -19,8 +19,12 @@ import { setupChecklist } from '@/lib/shared/team'
 
 export const metadata: Metadata = { title: 'Pitches' }
 
+// The guard redirects an org that isn't approved yet, so this route can't be validated as instant —
+// the same reason the workspace layout opts out.
+export const instant = false
+
 export default async function PitchesPage() {
-  const viewer = await guardPage(() => requireTeamMember())
+  const viewer = await guardPage(() => requireApprovedTeam())
   const [rows, setup] = await Promise.all([listTeamPitches(viewer), getTeamSetup(viewer)])
   const checklist = setupChecklist(setup)
   const groups = PITCH_GROUPS.map((g) => ({ ...g, rows: rows.filter((r) => g.statuses.includes(r.status)) })).filter((g) => g.rows.length > 0)

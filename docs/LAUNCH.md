@@ -76,6 +76,13 @@ It runs Supabase, Vercel, Resend and Sentry in order and stops (exit 2) when it 
 
 **Done when:** `npm run provision` ends with "Everything that can be automated is done" (exit 0).
 
+It creates three storage buckets: `public` (decks, logos and previews, served to anyone), `staging`
+(private, holds a file for the minutes between the browser uploading it and the server checking it,
+emptied daily) and **`verification`** (private, holds the FIRST Dashboard screenshot each coach
+uploads to prove they coach their team). `verification` is never emptied and must never be made
+public — an admin reads a screenshot through a link that expires in 15 minutes. If you ever recreate
+a bucket by hand in the Supabase dashboard, leave "Public bucket" off for those two.
+
 ## 5. Google sign-in
 
 In [Google Cloud Console](https://console.cloud.google.com) with the **FTC Pitfund** project selected:

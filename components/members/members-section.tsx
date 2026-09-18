@@ -6,21 +6,26 @@ import { FormSection } from '@/components/ui/field'
 import { Avatar } from '@/components/ui/avatar'
 import { formatDate } from '@/lib/shared/format'
 import type { Result } from '@/lib/shared/result'
+import type { OrgRole } from '@/lib/shared/types'
 
-import { InviteButton, InviteRowActions, LeaveButton, MembersFeedback, RemoveButton } from './member-controls'
+import { InviteButton, InviteRowActions, LeaveButton, MembersFeedback, RemoveButton, TransferOwnerButton } from './member-controls'
 
-export type SectionMember = { userId: string; name: string; email: string; jobTitle?: string | null; avatarUrl: string | null }
+export type SectionMember = { userId: string; name: string; email: string; jobTitle?: string | null; avatarUrl: string | null; role: OrgRole }
 export type SectionInvite = { id: string; email: string; expiresAt: string; createdAt: string; expired: boolean }
 
 type InviteResult = Promise<Result<{ email: string; emailDelayed: boolean }>>
 
 /**
  * Members and pending invites of a team or company, shared by /team and /company. Rendered on the
- * server; only the buttons (./member-controls.tsx) ship JavaScript. Every member is equal, so any
- * member can invite, resend, revoke and remove; the last member can't leave.
+ * server; only the buttons (./member-controls.tsx) ship JavaScript.
+ *
+ * One member owns the account. Only the owner invites, revokes, removes and hands ownership on, so
+ * a coach who joins later can't push out the coach who created the team. The owner can't leave
+ * either: they transfer first, which is why there is no Leave button on their own row.
  */
 export function MembersSection({
   viewerId,
+  viewerRole,
   description,
   members,
   invites,
@@ -29,6 +34,7 @@ export function MembersSection({
   inviteDisabledReason,
 }: {
   viewerId: string
+  viewerRole: OrgRole
   description: string
   members: SectionMember[]
   invites: SectionInvite[]
@@ -39,6 +45,9 @@ export function MembersSection({
     removeConsequence: string
     removedFrom: string
     onlyMember: ReactNode
+    /** Shown on the owner's own row instead of Leave. */
+    ownerCantLeave: string
+    orgLabel: string
     noInvites: string
     inviteTitle: string
     inviteDescription: string
@@ -49,6 +58,7 @@ export function MembersSection({
   actions: {
     leave: (input: { confirm: 'leave' }) => Promise<Result<{ redirectTo: string }>>
     remove: (input: { userId: string }) => Promise<Result<{ name: string }>>
+    transfer: (input: { userId: string }) => Promise<Result<{ name: string }>>
     invite: (input: { email: string }) => InviteResult
     resend: (input: { inviteId: string }) => InviteResult
     revoke: (input: { inviteId: string }) => Promise<Result<{ email: string }>>
@@ -57,7 +67,8 @@ export function MembersSection({
   inviteDisabledReason?: string | null
 }) {
   const onlyMember = members.length <= 1
-  const canInvite = !inviteDisabledReason
+  const isOwner = viewerRole === 'owner'
+  const canInvite = isOwner && !inviteDisabledReason
 
   return (
     <FormSection id="members" title="Members" description={description}>
@@ -76,17 +87,25 @@ export function MembersSection({
                   </span>
                   <span className="min-w-0 text-small text-text-tertiary line-clamp-2 user-text">{[m.jobTitle, m.email].filter(Boolean).join(' · ')}</span>
                 </div>
+                {m.role === 'owner' ? (
+                  <span className="shrink-0 rounded-control bg-muted px-1.5 py-0.5 text-caption font-medium text-text-secondary">Owner</span>
+                ) : null}
                 {you ? (
-                  onlyMember ? null : <LeaveButton label={copy.leaveLabel} title={copy.leaveTitle} consequence={copy.leaveConsequence} action={actions.leave} />
-                ) : (
-                  <RemoveButton userId={m.userId} name={label} consequence={copy.removeConsequence} removedFrom={copy.removedFrom} action={actions.remove} />
-                )}
+                  m.role === 'owner' || onlyMember ? null : (
+                    <LeaveButton label={copy.leaveLabel} title={copy.leaveTitle} consequence={copy.leaveConsequence} action={actions.leave} />
+                  )
+                ) : isOwner ? (
+                  <div className="flex shrink-0 gap-1">
+                    <TransferOwnerButton userId={m.userId} name={label} orgLabel={copy.orgLabel} action={actions.transfer} />
+                    <RemoveButton userId={m.userId} name={label} consequence={copy.removeConsequence} removedFrom={copy.removedFrom} action={actions.remove} />
+                  </div>
+                ) : null}
               </li>
             )
           })}
         </ul>
 
-        {onlyMember ? <p className="text-small text-text-tertiary">{copy.onlyMember}</p> : null}
+        {isOwner ? <p className="text-small text-text-tertiary">{onlyMember ? copy.onlyMember : copy.ownerCantLeave}</p> : null}
 
         <div className="grid gap-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -110,7 +129,7 @@ export function MembersSection({
           </div>
           {!canInvite ? (
             <p id="invite-disabled-reason" className="text-small text-text-tertiary">
-              {inviteDisabledReason}
+              {inviteDisabledReason ?? `Only the owner can invite people to ${copy.orgLabel}.`}
             </p>
           ) : null}
           {invites.length === 0 ? (
@@ -128,7 +147,7 @@ export function MembersSection({
                       {invite.expired ? `Expired ${formatDate(invite.expiresAt)}` : `Invited ${formatDate(invite.createdAt)} · Expires ${formatDate(invite.expiresAt)}`}
                     </span>
                   </div>
-                  <InviteRowActions inviteId={invite.id} resend={canInvite ? actions.resend : undefined} revoke={actions.revoke} />
+                  {isOwner ? <InviteRowActions inviteId={invite.id} resend={canInvite ? actions.resend : undefined} revoke={actions.revoke} /> : null}
                 </li>
               ))}
             </ul>

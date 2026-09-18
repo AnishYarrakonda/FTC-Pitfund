@@ -91,6 +91,22 @@ Fixed without an image pair (each is now guarded by a test or a gate):
   caret by writing an inline style onto every input, and on a slow runner that happened before React hydrated the page.
   `settle()` (`tests/qa/checks.ts`) now waits until every form control is hydrated.
 - **Creating a company** now goes straight to `/company` (profile and questions), so the sign-up path is 4 screens (`app/actions/company.ts`).
+- **The seeded deck poster was a near-blank sheet.** `generateDeckThumbnail` was widened to `THUMB_WIDTH_PX`
+  (1700 px) without scaling the layout it draws, so the header band and text lines stayed at their 300 px
+  coordinates in the corner of a blank page. Every deck card, the team setup page and the public page's first
+  paint showed it. The drawing is now scaled with the canvas (`scripts/seed/assets.ts`).
+- **The verification screenshot was never deleted.** `/welcome/team` tells a coach "we delete it once you're
+  approved", and nothing did. `approveTeam` now clears `proof_path`/`proof_bytes`/`proof_uploaded_at` and returns
+  the path so `approveTeamAction` removes the object from the private bucket; the admin page says the screenshot
+  was deleted on approval instead of reading as a gap. Covered by `tests/unit/admin.test.ts`.
+- **The logo cropper escaped the QA gate.** It opens on a file pick, not from an `[aria-haspopup="dialog"]`
+  trigger, so the gate's automatic dialog sweep (focus trap, Esc, focus return, axe, width) never reached it.
+  `tests/qa/routes.ts` now opens it as a `team` interaction.
+- **Nothing checked a toast.** Every action now reports through one, and no gate had ever opened one. `/dev/ui`
+  gets a `toast` interaction that clicks the specimen and asserts the decay bar and the dismiss button are
+  there, with axe running over the page while it is open; the specimen itself lives for a minute (instead of
+  the app's ten seconds) so the bar can be watched draining. Sonner renders in a fixed portal, which a
+  full-page screenshot doesn't capture, so the assertions are the coverage, not an image.
 - **Emails in the admin people directory** were truncated to "member-…" at 375 px; they now wrap onto up to two lines (`line-clamp-2 break-all`), and member rows put their actions under the name instead of breaking emails mid-word.
 
 ---
@@ -111,8 +127,13 @@ rolled-back transaction; "E2E" tests drive a real browser against the dev server
 | Admin review **conflict from two contexts** | the second admin is told who decided; nothing changes | `tests/e2e/sponsor-admin.spec.ts` "two admins deciding the same pitch", `tests/unit/admin.test.ts` |
 | Company response | Interested snapshots contacts; Not a fit with optional reason; a coworker answered first → conflict | `tests/e2e/sponsor-admin.spec.ts`, `tests/unit/sponsor-side.test.ts` |
 | **Withdrawn pitch opened by a company** | read-only notice, no response buttons | `tests/e2e/fault-injection.spec.ts` |
-| Team membership | join request approve/decline; invite by email; wrong email refused; **revoked invite** link explains; used/expired/unknown links explain; last member can't leave | `tests/e2e/team-membership.spec.ts`, `tests/unit/invites.test.ts`, `tests/unit/team.test.ts` |
-| Company approval | pending company invisible to coaches until approved; can't invite coworkers | `tests/e2e/sponsor-admin.spec.ts`, `tests/unit/sponsor-side.test.ts` |
+| Team membership | join request approve/decline; invite by email; wrong email refused; **revoked invite** link explains; used/expired/unknown links explain | `tests/e2e/team-membership.spec.ts`, `tests/unit/invites.test.ts`, `tests/unit/team.test.ts` |
+| **Owner and editors** | an editor can edit the profile and pitch but can't invite, decide a join request or remove anyone; the owner can't be removed and can't leave without handing the team over; transfer demotes before it promotes, so one owner per org always holds | `tests/unit/team.test.ts` "the owner can't be removed and can't walk away without handing the team over", `tests/unit/authz.test.ts` (`coach-editor` fails `requireTeamOwner`), `tests/e2e/team-membership.spec.ts` |
+| **Team review gate** | draft (blockers name what is missing) → sent for review → locked waiting screen → approved, or rejected with a note the team can fix and resubmit; nothing about an unapproved team is reachable, its public page included | `tests/e2e/acceptance.spec.ts` §12 coach, `tests/e2e/shell.spec.ts` (`coach-pending` lands on `/welcome/pending`), `tests/unit/admin.test.ts` "approve and reject are one-shot transitions…" and "a rejected team keeps the note…" |
+| Company approval | pending company invisible to coaches **and locked out of its own workspace** until approved | `tests/e2e/sponsor-admin.spec.ts`, `tests/unit/sponsor-side.test.ts` |
+| **The bell** | only work is counted — news is stored but never reaches it; acting on an item clears it for everyone on the org, not just whoever clicked | `tests/unit/data.test.ts` "only count work: news is stored but never reaches the bell" and "clear an action item for everyone once the thing it points at is handled", `tests/e2e/feedback.spec.ts` "the bell lists only what needs doing, and an item clears when it is done" |
+| **Directory search** | a misspelled company name still finds the company, best match first; below the similarity threshold it says "No companies match"; the pitch-status chips narrow to what this team has and hasn't pitched, and a withdrawn pitch counts as not yet pitched | `tests/unit/directory-and-public.test.ts` "finds companies whose names were typed wrong, best match first" and "narrows the list to what this team has and hasn't pitched", `tests/unit/directory-filters.test.ts` |
+| **Logo cropper** | drag and zoom choose the square that is kept; Cancel keeps the old logo; the server still re-checks the bytes it is sent | `tests/unit/logo-crop.test.ts` (the geometry: clamping, zoom, the region that is actually rendered), `tests/e2e/acceptance.spec.ts` (both org kinds pick a file and confirm with "Use photo"), QA gate (the dialog is swept for focus trap, Esc, focus return and axe at every width) |
 | Email **Resend 429 / 500** | action still succeeds, System shows the email retrying; transient back-off 1/2/4/8 min, 5 attempts; permanent errors fail at once and can be retried | `tests/e2e/fault-injection.spec.ts` (`email-500`), `tests/unit/outbox.test.ts` |
 | **Exhausted email quota** | approval says email is delayed until tomorrow; System shows it queued; auth codes use the full 100 | `tests/e2e/sponsor-admin.spec.ts`, `tests/unit/outbox.test.ts` |
 | **Offline mid-action** | "Couldn't reach FTC Pitfund. Check your connection." + Retry recovers | `tests/e2e/feedback.spec.ts` |
@@ -141,9 +162,10 @@ Components' pending, error, empty and long-content states are also on `/dev/ui` 
 - **Accessible names:** axe (`button-name`, `link-name`, `label`, `aria-*`) runs on every route × persona × width and on
   every opened dialog, sheet and popover in the QA gate with zero serious or critical violations. Icon-only controls were
   also reviewed by hand. `IconButton` (`components/ui/icon-button.tsx`) requires a `label` and renders it as `aria-label`;
-  the rest set one directly. Each has a specific name: "Notifications, N unread", "Account menu", "Open menu" / "Close menu" (phone nav), "Close"
-  (every dialog and sheet), "Clear search", "Previous page" / "Next page" (PDF viewer), "Actions for {name}" (admin
-  directory), and "Move question N up" / "Move question N down" / "Delete question N" (questions editor). The skip link
+  the rest set one directly. Each has a specific name: "Needs your attention, N items", "Account menu", "Open menu" / "Close menu" (phone nav), "Close"
+  (every dialog and sheet), "Dismiss" (every toast), "Clear search", "Previous page" / "Next page" (PDF viewer),
+  "Actions for {name}" (admin directory), "Move question N up" / "Move question N down" / "Delete question N"
+  (questions editor), and, in the logo cropper, a labelled "Zoom" slider plus a crop area named "Crop area. Drag to move the image, or use the arrow keys. Press plus and minus to zoom." The skip link
   "Skip to content" is the first Tab stop on every page.
 
 ## 5. Phone (375 px)
@@ -167,28 +189,33 @@ The QA gate separately screenshots every route at 375 px (and checks overflow, s
 Measured by `npm run perf` on the local production build (budgets in `tests/qa/routes.ts` `BUDGETS`; any miss exits 1,
 and CI runs it on every push). Latest run, after the fixes below:
 
-**First-load JS (gzip, the scripts each route's HTML references; budget ≤ 170 KB):** all 57 QA routes pass. Largest:
-`/company` 166 KB, `/admin/pitches/[id]` 165, `/team` 164, composer 163; `/login` 152, `/t/[number]` 153, `/` 145.
+**First-load JS (gzip, the scripts each route's HTML references; budget ≤ 170 KB):** all 63 QA routes pass. Largest:
+`/company` 167 KB, `/welcome/team` and `/welcome/company` 166, `/admin/pitches/[id]` 165, `/team` 164, composer 163;
+`/login` 152, `/t/[number]` 153, `/welcome/pending` 147, `/` 145. The logo cropper, the toast body and Sonner load on
+first use, so none of them appear here.
 
 **Lighthouse, mobile, applied Slow 4G throttling (150 ms RTT, 1.6 Mbit/s, 4× CPU), median of 3**
 
 | Page | Performance (≥ 90) | Accessibility (≥ 95) | LCP (≤ 2,000 ms) | CLS (≤ 0.05) | TBT |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `/` | 100 | 100 | 1,548 ms | 0 | 23 ms |
-| `/t/31579` | 99 | 100 | 1,181 ms | 0 | 38 ms |
-| `/login` | 100 | 100 | 671 ms | 0 | 21 ms |
+| `/` | 100 | 100 | 1,515 ms | 0 | 14 ms |
+| `/t/31579` | 100 | 100 | 1,175 ms | 0 | 25 ms |
+| `/login` | 100 | 100 | 689 ms | 0 | 34 ms |
 
 **Authed pages (queries per request with `DEBUG_QUERIES=1`; render time on the production build; budgets ≤ 5 queries, p95 ≤ 400 ms)**
 
 | Page | Queries | Render p50 | Render p95 |
 | --- | ---: | ---: | ---: |
-| `/pitches` (coach) | 3 | 14 ms | 16 ms |
-| `/sponsors` (coach) | 2 | 14 ms | 16 ms |
-| `/inbox` (company) | 3 | 13 ms | 15 ms |
-| `/admin` | 3 | 13 ms | 16 ms |
-| `/admin/pitches/[id]` | 5 | 17 ms | 19 ms |
+| `/pitches` (coach) | 3 | 13 ms | 15 ms |
+| `/sponsors` (coach) | 2 | 13 ms | 16 ms |
+| `/inbox` (company) | 3 | 12 ms | 15 ms |
+| `/admin` | 3 | 12 ms | 15 ms |
+| `/admin/pitches/[id]` | 5 | 14 ms | 15 ms |
 
-**Server action latency:** composer autosave (`saveDraftAction`) p50 27 ms, p95 34 ms (budget ≤ 500 ms, excluding `after()` work).
+`/sponsors` stays at 2 queries: the pitch-status chips are counted from data the page already loads, and the
+uncached filtered query only runs when a chip other than **All** is active (3 then, still inside the budget of 5).
+
+**Server action latency:** composer autosave (`saveDraftAction`) p50 30 ms, p95 41 ms (budget ≤ 500 ms, excluding `after()` work).
 **Pending state:** every `ActionButton` on `/dev/ui` shows its pending state within 100 ms (QA gate), and a save on Slow 3G
 acknowledges in ≈ 100 ms (`tests/e2e/fault-injection.spec.ts`). The QA gate also checks TTFB/LCP/CLS on every budgeted route at 1280 px.
 
@@ -242,10 +269,18 @@ dropped to ~670 ms, `/t/31579` from ~1,470 to ~1,180 ms, and `/` from ~1,720 to 
 
 ### Product
 
-- [x] **A new coach: landing page → submitted first pitch in ≤ 8 screens and < 5 minutes.**
-  `tests/e2e/acceptance.spec.ts`: 8 screens (`/ → /login → /welcome → /welcome/team → /pitches → /team → /sponsors → composer`) in 12 s.
-- [x] **A new company: sign-up → complete profile with questions in ≤ 4 screens and < 3 minutes.**
-  `tests/e2e/acceptance.spec.ts`: 4 screens (`/login → /welcome → /welcome/company → /company`) in 3 s.
+- [x] **A new coach: landing page → submitted first pitch in ≤ 10 screens and < 5 minutes.**
+  `tests/e2e/acceptance.spec.ts`: 8 screens (`/ → /login → /welcome → /welcome/team → /welcome/pending → /pitches → /sponsors → composer`)
+  in 14 s, of which **5 are unaided** — the coach reaches "sent for review" in 5 screens and the rest happen after an admin approves.
+
+  > The criterion was written as ≤ 8 screens when a coach could pitch immediately. Admin review
+  > (2026-09-16) inserts the waiting screen and the return trip, so the budget is restated as
+  > **≤ 10 screens end to end, ≤ 6 before review**. The measured journey is inside both.
+- [x] **A new company: sign-up → sent for review in ≤ 5 screens and < 3 minutes.**
+  `tests/e2e/acceptance.spec.ts`: 4 screens (`/login → /welcome → /welcome/company → /welcome/pending`) in 3 s.
+
+  > Restated the same way: the criterion said "complete profile with questions in ≤ 4 screens", and
+  > the profile now ends at *Submit for review* rather than at the workspace.
 - [x] **The admin approves a pitch from the notification email in 2 clicks.**
   `tests/e2e/acceptance.spec.ts` follows the "Review pitch" link from the real email in Mailpit, then Approve & send: 2 clicks, status `sent`.
 - [x] **Every §1 core rule is implemented and covered by a test.**
@@ -255,8 +290,8 @@ dropped to ~670 ms, `/t/31579` from ~1,470 to ~1,180 ms, and `/` from ~1,720 to 
   | 1 Pitches only to approved companies | `tests/unit/pitches.test.ts` "only approved companies can be pitched"; `tests/unit/sponsor-side.test.ts` "a pending company is invisible to coaches"; `tests/e2e/sponsor-admin.spec.ts` "a pending company is invisible to coaches until an admin approves it"; `tests/unit/admin.test.ts` "approval is blocked while the company isn't approved" |
   | 2 One PDF ≤ 5 pages ≤ 10 MB, logo, summary, website | `tests/unit/team.test.ts` "checks magic bytes, parseability, size and page count"; `tests/e2e/coach-journey.spec.ts` (8-page PDF refused) |
   | 3 Public team pages | `tests/e2e/public-team.spec.ts`; `tests/unit/directory-and-public.test.ts` "returns public fields only" |
-  | 4 Pitch immediately; verification is a checkmark; unverified can pitch | `tests/e2e/coach-journey.spec.ts` (a brand-new, unverified team submits); `tests/unit/admin.test.ts` "verify and unverify are one-shot transitions" |
-  | 5 Open company signup, hidden until approved, can't invite while pending | `tests/unit/sponsor-side.test.ts`; `tests/e2e/sponsor-admin.spec.ts` |
+  | 4 A coach is admin-approved before reaching the app | `tests/e2e/acceptance.spec.ts` §12 coach (draft → submit → waiting screen → admin approves → workspace); `tests/unit/admin.test.ts` "approve and reject are one-shot transitions, and only an approved team has a public page" and "a rejected team keeps the note, loses its page, and can be approved after fixing things"; `tests/unit/authz.test.ts` (the `coach-draft` and `coach-pending` personas pass `requireTeamMember` but fail `requireApprovedTeam`, as `sponsor-pending` and `sponsor-rejected` do on the company side) |
+  | 5 Open company signup, hidden from coaches and locked out of the app until approved | `tests/unit/sponsor-side.test.ts`; `tests/e2e/sponsor-admin.spec.ts` "a pending company is invisible to coaches until an admin approves it" |
   | 6 ≤ 10 questions, three defaults | `tests/unit/sponsor-side.test.ts` "allows 0–10 questions", "the database refuses more than 10"; `tests/unit/season-and-schema.test.ts` "uses the three defaults" |
   | 7 Every pitch admin-reviewed; admin email is a notification into the app | `tests/unit/admin.test.ts` "Approve & send moves in_review → sent"; `tests/unit/sponsor-side.test.ts` "lists only sent, matched and declined pitches"; `tests/e2e/acceptance.spec.ts` (email link) |
   | 8 One pitch per team × company × season; withdraw frees it; reject / not a fit don't | `tests/unit/season-and-schema.test.ts` "one pitch per team per company per season"; `tests/unit/pitches.test.ts` "withdraw … frees the season slot"; `tests/unit/admin.test.ts` "a rejected or not-a-fit pitch still uses the team's one pitch" |
@@ -268,7 +303,9 @@ dropped to ~670 ms, `/t/31579` from ~1,470 to ~1,180 ms, and `/` from ~1,720 to 
   | 14 Fresh database | `drizzle/` starts at `0000`; `tests/unit/season-and-schema.test.ts` asserts the schema and lockdown |
 
 - [x] **No non-goal from §1 exists.** `npm run security:scan` "non-goals": word-level patterns for Clerk, capacity, ledger,
-  appeals, impact reports, analytics, org roles, SSO, MFA, passwords, payments, messaging and e-signatures across app code, 0 findings.
+  appeals, impact reports, analytics, role *tiers* beyond owner/editor, SSO, MFA, passwords, payments, messaging and
+  e-signatures across app code, 0 findings. (The "no roles" non-goal became "no role tiers" on 2026-09-16, when owner/editor
+  was added so a later joiner can't remove the coach who created the team.)
 
 ### UX
 
@@ -336,3 +373,25 @@ It now waits for `load` and treats the quiet network as best-effort. It passed a
 
 GitHub Actions `CI` passed on `rebuild` at `484b88c` (run 34937248942): typecheck, lint, setup, Vitest, build, E2E,
 QA gate, performance budgets, security scan, production dependency audit and knip.
+
+### Re-run after the review-gate round (2026-09-17)
+
+Every gate was run again on `coach-feedback` after admin review, owner/editor roles, decaying toasts, the logo
+cropper, fuzzy directory search, the wider public page, Instagram and free-text location landed.
+
+| Step | Result |
+| --- | --- |
+| `npm run check` | ✓ typecheck, lint (0 warnings), Vitest 144 / 144 in 19 files |
+| `npm run e2e` | ✓ 74 / 74 in 2.9 min, including the §12 timings above |
+| `npm run qa` | ✓ 600 checks, 0 failures (`demo`, `edge`, `empty`), screenshots reviewed (section 2) |
+| `npm run qa:clicks` | ✓ 0 findings, the new chips, cropper controls and Make owner included |
+| `npm run perf` | ✓ every budget met; section 6 carries the numbers |
+| `npm run email:preview` | ✓ every template, including the new `team-approved` and `team-rejected` |
+| `npm run security:scan` | ✓ clean with the non-goal list narrowed from "roles" to "role tiers" |
+| `npm run knip` | ✓ nothing unused |
+
+An earlier full `npm run e2e` on this branch reported three failures (the offline toast, the pending-company
+journey and account deletion) and took 14 minutes instead of 3. All three passed in isolation, and the local
+Supabase stack had stopped by the time the run ended: the machine's Docker daemon died mid-run. Restarted, the
+same suite is 74 / 74. Recorded here because the failure signature — unrelated tests timing out on anything
+that waits for an email, plus a run several times slower than usual — reads like flakiness and isn't.

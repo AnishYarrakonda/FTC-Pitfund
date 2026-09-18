@@ -2,11 +2,11 @@ import { ArrowUpRight } from 'lucide-react'
 import type { Metadata } from 'next'
 
 import { inviteTeamMember, resendTeamInvite, revokeTeamInvite } from '@/app/actions/invites'
-import { leaveMyTeam, removeMember } from '@/app/actions/team'
+import { leaveMyTeam, removeMember, transferOwnership } from '@/app/actions/team'
 import { MembersSection } from '@/components/members/members-section'
 import { Button } from '@/components/ui/button'
 import { PageContainer, PageHeader } from '@/components/ui/page'
-import { requireTeamMember } from '@/lib/server/authz'
+import { requireApprovedTeam } from '@/lib/server/authz'
 import { listOpenInvites } from '@/lib/server/data/invites'
 import { getTeamProfile, listPendingJoinRequests, listTeamMembers } from '@/lib/server/data/teams'
 import { guardPage } from '@/lib/server/page-guards'
@@ -20,8 +20,12 @@ import { PublicPreview } from './public-preview'
 
 export const metadata: Metadata = { title: 'Team' }
 
+// The guard redirects an org that isn't approved yet, so this route can't be validated as instant —
+// the same reason the workspace layout opts out.
+export const instant = false
+
 export default async function TeamPage() {
-  const viewer = await guardPage(() => requireTeamMember())
+  const viewer = await guardPage(() => requireApprovedTeam())
   const [profile, members, invites, requests] = await Promise.all([
     getTeamProfile(viewer),
     listTeamMembers(viewer),
@@ -52,17 +56,20 @@ export default async function TeamPage() {
           <DeckSection deck={profile.deck} />
           <MembersSection
             viewerId={viewer.id}
-            description="Everyone here shares the team account equally: the profile, the deck and every pitch."
+            viewerRole={viewer.team.role}
+            description="Everyone here shares the team account: the profile, the deck and every pitch. The owner decides who is on it."
             members={members}
             invites={invites.map((i) => ({ id: i.id, email: i.email, expired: i.expired, expiresAt: i.expiresAt.toISOString(), createdAt: i.createdAt.toISOString() }))}
-            actions={{ leave: leaveMyTeam, remove: removeMember, invite: inviteTeamMember, resend: resendTeamInvite, revoke: revokeTeamInvite }}
+            actions={{ leave: leaveMyTeam, remove: removeMember, transfer: transferOwnership, invite: inviteTeamMember, resend: resendTeamInvite, revoke: revokeTeamInvite }}
             copy={{
               leaveLabel: 'Leave team',
               leaveTitle: 'Leave this team?',
               leaveConsequence: 'You’ll lose access to the team’s profile and pitches. A coach on the team can invite you back.',
               removeConsequence: 'They’ll lose access to the team’s profile and pitches right away. You can invite them again later.',
               removedFrom: 'the team',
-              onlyMember: `You’re the only member. To leave, invite another coach first, or email ${SUPPORT_EMAIL} to delete the team.`,
+              onlyMember: `You own this team and you’re its only member. To leave, invite another coach and make them the owner, or email ${SUPPORT_EMAIL} to delete the team.`,
+              ownerCantLeave: 'You own this team. Make another coach the owner before you leave.',
+              orgLabel: 'the team',
               noInvites: 'No pending invites. Invite a co-coach so the team isn’t locked to one person.',
               inviteTitle: 'Invite a coach',
               inviteDescription: 'They’ll get an email with a link. It works once, for that address, for 14 days.',

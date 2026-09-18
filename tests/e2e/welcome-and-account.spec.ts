@@ -81,7 +81,7 @@ test.describe('account', () => {
 })
 
 test.describe('account deletion', () => {
-  test.use(asPersona('coach-unverified'))
+  test.use(asPersona('coach2'))
   test('is blocked for the last member of a team, with an explanation', async ({ page }) => {
     await page.goto('/account')
     await expect(page.getByText('You can’t delete your account yet')).toBeVisible()

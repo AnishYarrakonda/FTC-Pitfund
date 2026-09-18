@@ -1,4 +1,4 @@
-import type { PitchStatus, SponsorStatus } from './types'
+import type { PitchStatus, OrgStatus } from './types'
 
 /* Human labels for statuses (plan §3.3). The UI never shows raw enum values. */
 
@@ -23,8 +23,10 @@ export const SPONSOR_PITCH_STATUS: Partial<Record<PitchStatus, { label: string; 
   withdrawn: { label: 'Withdrawn', tone: 'neutral' },
 }
 
-export const SPONSOR_STATUS: Record<SponsorStatus, { label: string; tone: Tone }> = {
-  pending: { label: 'Pending approval', tone: 'warning' },
+/** Teams and companies share one gate, so they share one set of labels. */
+export const ORG_STATUS: Record<OrgStatus, { label: string; tone: Tone }> = {
+  draft: { label: 'Not submitted', tone: 'neutral' },
+  pending: { label: 'Waiting for review', tone: 'warning' },
   approved: { label: 'Approved', tone: 'success' },
   rejected: { label: 'Not approved', tone: 'danger' },
   suspended: { label: 'Suspended', tone: 'danger' },

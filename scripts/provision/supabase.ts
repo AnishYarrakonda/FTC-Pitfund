@@ -170,10 +170,13 @@ async function migrate(stage: Stage) {
 const BUCKET_SETTINGS = {
   public: { public: true, fileSizeLimit: '10MB', allowedMimeTypes: ['application/pdf', 'image/webp', 'image/png', 'image/jpeg'] },
   staging: { public: false, fileSizeLimit: '10MB', allowedMimeTypes: ['application/pdf', 'image/*'] },
+  // Proof that a coach is on their team's roster. Private: only an admin ever reads it, through a
+  // short-lived signed URL.
+  verification: { public: false, fileSizeLimit: '10MB', allowedMimeTypes: ['image/webp', 'image/png', 'image/jpeg'] },
 }
 
 async function buckets(stage: Stage) {
-  if (dryRun && !getValue(KEY(stage, 'SECRET_KEY'))) return plan(`create storage buckets public and staging on ${stage}`)
+  if (dryRun && !getValue(KEY(stage, 'SECRET_KEY'))) return plan(`create storage buckets ${Object.keys(BUCKET_SETTINGS).join(', ')} on ${stage}`)
   const admin = createClient(getValue(KEY(stage, 'URL'))!, getValue(KEY(stage, 'SECRET_KEY'))!, { auth: { persistSession: false } })
   const { data: existing, error } = await admin.storage.listBuckets()
   if (error) fail(`Couldn't list buckets on ${stage}: ${error.message}`)

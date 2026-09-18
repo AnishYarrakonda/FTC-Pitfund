@@ -13,6 +13,7 @@ import {
   lookupTeamNumber,
   removeTeamMember,
   requestToJoinTeam,
+  transferTeamOwnership,
   updateTeamProfile,
 } from '@/lib/server/data/teams'
 import { getDb } from '@/lib/server/db'
@@ -51,7 +52,7 @@ describe('team creation', () => {
     dbTest(async () => {
       const user = await createUser({ acceptedTermsAt: null })
       const number = 700_000 + Math.floor(Math.random() * 99_999)
-      const team = await createTeamForViewer(await viewerOf(user.id), { number, name: 'Fresh', city: 'Austin', state: 'TX', source: 'matched' })
+      const team = await createTeamForViewer(await viewerOf(user.id), { number, name: 'Fresh', location: 'Austin, Texas, USA', source: 'matched' })
       const [row] = await getDb().select().from(teams).where(eq(teams.id, team.id))
       expect(row.recordStatus).toBe('unchecked')
       const [member] = await getDb().select().from(teamMembers).where(eq(teamMembers.userId, user.id))
@@ -62,14 +63,14 @@ describe('team creation', () => {
       const other = await createUser()
       const recorded = number + 1
       await getDb().insert(ftcTeamCache).values({ number: recorded, name: 'Recorded', city: 'Austin', state: 'TX', country: 'USA', source: 'first' })
-      const matched = await createTeamForViewer(await viewerOf(other.id), { number: recorded, name: 'Recorded', city: 'Austin', state: 'TX', source: 'matched' })
+      const matched = await createTeamForViewer(await viewerOf(other.id), { number: recorded, name: 'Recorded', location: 'Austin, Texas, USA', source: 'matched' })
       const [matchedRow] = await getDb().select().from(teams).where(eq(teams.id, matched.id))
       expect(matchedRow).toMatchObject({ recordStatus: 'matched', country: 'USA' })
 
       // One team per person, one account per team number.
-      await expectAppError(createTeamForViewer(await viewerOf(user.id), { number: number + 2, name: 'Second', city: 'A', state: 'B', source: 'manual' }), 'CONFLICT')
+      await expectAppError(createTeamForViewer(await viewerOf(user.id), { number: number + 2, name: 'Second', location: 'A, B', source: 'manual' }), 'CONFLICT')
       const third = await createUser()
-      const duplicate = await createTeamForViewer(await viewerOf(third.id), { number, name: 'Dup', city: 'A', state: 'B', source: 'manual' }).catch((e: unknown) => e)
+      const duplicate = await createTeamForViewer(await viewerOf(third.id), { number, name: 'Dup', location: 'A, B', source: 'manual' }).catch((e: unknown) => e)
       expect(mapDbError(duplicate, { conflict: { teams_number_key: 'taken' } })).toMatchObject({ code: 'CONFLICT', message: 'taken' })
     }),
   )
@@ -89,7 +90,7 @@ describe('team creation', () => {
       const team = await createTeam()
       const bystander = await createTeam({ name: 'Untouched' })
       const coach = await coachOn(team)
-      const profile = await updateTeamProfile(coach, { name: 'Renamed', city: 'Dallas', state: 'TX', summary: 'One line.', website: 'https://example.org' })
+      const profile = await updateTeamProfile(coach, { name: 'Renamed', location: 'Dallas, Texas, USA', summary: 'One line.', website: 'https://example.org', instagram: null })
       expect(profile).toMatchObject({ id: team.id, name: 'Renamed', summary: 'One line.', website: 'https://example.org' })
       const [still] = await getDb().select({ name: teams.name }).from(teams).where(eq(teams.id, bystander.id))
       expect(still.name).toBe('Untouched')
@@ -99,25 +100,43 @@ describe('team creation', () => {
 
 describe('members', () => {
   it(
-    'the last member can’t leave; others can leave or be removed',
+    'the owner can’t be removed and can’t walk away without handing the team over',
     dbTest(async () => {
       const team = await createTeam()
-      const a = await coachOn(team)
-      await expectAppError(leaveTeam(a), 'CONFLICT', { message: /only member/ })
-      const b = await coachOn(team)
-      await expectAppError(removeTeamMember(a, a.id), 'VALIDATION')
-      await expect(removeTeamMember(a, b.id)).resolves.toMatchObject({ userId: b.id })
-      await expectAppError(removeTeamMember(a, b.id), 'NOT_FOUND')
+      const owner = await coachOn(team)
+      // Nobody is left to run the team, so this is refused with an explanation, not a silent no-op.
+      await expectAppError(leaveTeam(owner), 'CONFLICT', { message: /only member/ })
 
-      const c = await coachOn(team)
-      await expect(leaveTeam(a)).resolves.toEqual({ teamId: team.id })
+      const editor = await coachOn(team)
+      await expectAppError(removeTeamMember(owner, owner.id), 'VALIDATION')
+      await expect(removeTeamMember(owner, editor.id)).resolves.toMatchObject({ userId: editor.id })
+      await expectAppError(removeTeamMember(owner, editor.id), 'NOT_FOUND')
+
+      // With someone else on the team the owner still can’t just leave.
+      const second = await coachOn(team)
+      await expectAppError(leaveTeam(owner), 'CONFLICT', { message: /Make another coach the owner/ })
+
+      // An editor cannot remove the owner, even by calling the data function directly — the
+      // guard in front of it is not the only thing standing between the two.
+      await expectAppError(removeTeamMember(second, owner.id), 'NOT_FOUND')
+
+      // Hand it over, and now the old owner is an ordinary member who can leave.
+      await expect(transferTeamOwnership(owner, second.id)).resolves.toMatchObject({ userId: second.id })
+      const demoted = await teamViewerOf(owner.id)
+      const promoted = await teamViewerOf(second.id)
+      expect(demoted.team.role).toBe('editor')
+      expect(promoted.team.role).toBe('owner')
+      await expect(leaveTeam(demoted)).resolves.toEqual({ teamId: team.id })
+
       const remaining = await getDb().select({ userId: teamMembers.userId }).from(teamMembers).where(eq(teamMembers.teamId, team.id))
-      expect(remaining.map((r) => r.userId)).toEqual([c.id])
+      expect(remaining.map((r) => r.userId)).toEqual([second.id])
 
       // Removing someone on another team does nothing.
       const otherTeam = await createTeam()
       const outsider = await coachOn(otherTeam)
-      await expectAppError(removeTeamMember(c, outsider.id), 'NOT_FOUND')
+      await expectAppError(removeTeamMember(promoted, outsider.id), 'NOT_FOUND')
+      await expectAppError(transferTeamOwnership(promoted, outsider.id), 'NOT_FOUND')
+      await expectAppError(transferTeamOwnership(promoted, promoted.id), 'VALIDATION')
     }),
   )
 })

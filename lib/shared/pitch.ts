@@ -13,10 +13,10 @@ export type PitchViewData = {
   team: {
     number: number
     name: string
-    city: string | null
-    state: string | null
+    location: string | null
     summary: string | null
     website: string | null
+    instagram: string | null
     logoUrl: string | null
     verified: boolean
     deck: { url: string; thumbUrl: string | null; pages: number } | null

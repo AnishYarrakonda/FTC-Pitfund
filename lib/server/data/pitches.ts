@@ -41,19 +41,19 @@ export const pitchEmailKey = (pitchId: string, template: string, recipient: stri
 
 export type { PitchViewData }
 
-type TeamRow = Pick<typeof teams.$inferSelect, 'number' | 'name' | 'city' | 'state' | 'summary' | 'website' | 'logoPath' | 'verifiedAt' | 'pdfPath' | 'pdfThumbPath' | 'pdfPages'>
+type TeamRow = Pick<typeof teams.$inferSelect, 'number' | 'name' | 'location' | 'summary' | 'website' | 'instagram' | 'logoPath' | 'status' | 'pdfPath' | 'pdfThumbPath' | 'pdfPages'>
 
 export function teamForView(row: TeamRow): PitchViewData['team'] {
   const deckUrl = publicUrl(row.pdfPath)
   return {
     number: row.number,
     name: row.name,
-    city: row.city,
-    state: row.state,
+    location: row.location,
     summary: row.summary,
     website: row.website,
+    instagram: row.instagram,
     logoUrl: publicUrl(row.logoPath),
-    verified: Boolean(row.verifiedAt),
+    verified: row.status === 'approved',
     deck: deckUrl && row.pdfPages ? { url: deckUrl, thumbUrl: publicUrl(row.pdfThumbPath), pages: row.pdfPages } : null,
   }
 }
@@ -61,12 +61,12 @@ export function teamForView(row: TeamRow): PitchViewData['team'] {
 const teamColumns = {
   number: teams.number,
   name: teams.name,
-  city: teams.city,
-  state: teams.state,
+  location: teams.location,
   summary: teams.summary,
   website: teams.website,
+  instagram: teams.instagram,
   logoPath: teams.logoPath,
-  verifiedAt: teams.verifiedAt,
+  status: teams.status,
   pdfPath: teams.pdfPath,
   pdfThumbPath: teams.pdfThumbPath,
   pdfPages: teams.pdfPages,

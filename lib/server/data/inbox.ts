@@ -28,7 +28,7 @@ const GROUP_LIMIT = 100
 type InboxRow = {
   id: string
   status: PitchStatus
-  team: { number: number; name: string; logoUrl: string | null; verified: boolean; city: string | null; state: string | null; summary: string | null }
+  team: { number: number; name: string; logoUrl: string | null; verified: boolean; location: string | null; summary: string | null }
   ask: string | null
   receivedAt: Date
   respondedAt: Date | null
@@ -48,7 +48,7 @@ export async function listInbox(viewer: SponsorViewer): Promise<InboxGroups> {
       askAmountCents: pitches.askAmountCents,
       askNote: pitches.askNote,
       rank: sql<number>`row_number() over (partition by ${pitches.status} order by coalesce(${pitches.respondedAt}, ${pitches.sentAt}) desc)`,
-      team: { number: teams.number, name: teams.name, logoPath: teams.logoPath, verifiedAt: teams.verifiedAt, city: teams.city, state: teams.state, summary: teams.summary },
+      team: { number: teams.number, name: teams.name, logoPath: teams.logoPath, status: teams.status, location: teams.location, summary: teams.summary },
     })
     .from(pitches)
     .innerJoin(teams, eq(teams.id, pitches.teamId))
@@ -58,11 +58,11 @@ export async function listInbox(viewer: SponsorViewer): Promise<InboxGroups> {
   const groups: InboxGroups = { sent: [], matched: [], declined: [] }
   for (const r of rows) {
     if (Number(r.rank) > GROUP_LIMIT) continue
-    const { logoPath, verifiedAt, ...team } = r.team
+    const { logoPath, status, ...team } = r.team
     groups[r.status as keyof InboxGroups].push({
       id: r.id,
       status: r.status,
-      team: { ...team, logoUrl: publicUrl(logoPath), verified: Boolean(verifiedAt) },
+      team: { ...team, logoUrl: publicUrl(logoPath), verified: status === 'approved' },
       ask: formatAsk({ type: r.askType, amountCents: r.askAmountCents, note: r.askNote }),
       receivedAt: r.sentAt ?? new Date(0),
       respondedAt: r.respondedAt,
@@ -107,12 +107,12 @@ export async function getInboxPitch(viewer: SponsorViewer, pitchId: string, now 
       team: {
         number: teams.number,
         name: teams.name,
-        city: teams.city,
-        state: teams.state,
+        location: teams.location,
         summary: teams.summary,
         website: teams.website,
+        instagram: teams.instagram,
         logoPath: teams.logoPath,
-        verifiedAt: teams.verifiedAt,
+        status: teams.status,
         pdfPath: teams.pdfPath,
         pdfThumbPath: teams.pdfThumbPath,
         pdfPages: teams.pdfPages,

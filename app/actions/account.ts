@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { audit } from '@/lib/server/audit'
 import { requireViewer } from '@/lib/server/authz'
 import { acceptTerms, cancelJoinRequest, deleteAccount, updateProfile } from '@/lib/server/data/account'
-import { markAllNotificationsRead, markNotificationRead, listNotifications } from '@/lib/server/data/notifications'
+import { markNotificationRead, listNotifications } from '@/lib/server/data/notifications'
 import { defineAction } from '@/lib/server/result'
 import { createSupabaseServerClient } from '@/lib/server/supabase'
 import { inTransaction } from '@/lib/server/transaction'
@@ -39,11 +39,6 @@ export const fetchNotifications = defineAction(z.object({}), async () => {
 export const readNotification = defineAction(z.object({ id: z.uuid() }), async ({ id }) => {
   const viewer = await requireViewer()
   return { changed: await markNotificationRead(viewer, id) }
-})
-
-export const readAllNotifications = defineAction(z.object({}), async () => {
-  const viewer = await requireViewer()
-  return { changed: await markAllNotificationsRead(viewer) }
 })
 
 export const completeWelcome = defineAction(welcomeSchema, async ({ role, name }) => {
