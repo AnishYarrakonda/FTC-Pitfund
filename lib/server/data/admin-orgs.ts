@@ -249,8 +249,19 @@ async function setTeamStatus(admin: Viewer, teamId: string, from: OrgStatus[], t
   return { team: row, members }
 }
 
-export const approveTeam = (admin: Viewer, teamId: string, now = new Date()) =>
-  setTeamStatus(admin, teamId, ['pending', 'rejected'], 'approved', null, 'team.approved', now)
+/**
+ * Approving is also when the verification screenshot stops being needed, and the upload page
+ * promises it is deleted then. The row is cleared here; the object itself is handed back so the
+ * action can remove it from the bucket once the transaction has committed.
+ */
+export async function approveTeam(admin: Viewer, teamId: string, now = new Date()) {
+  const [before] = await getDb().select({ proofPath: teams.proofPath }).from(teams).where(eq(teams.id, teamId))
+  const result = await setTeamStatus(admin, teamId, ['pending', 'rejected'], 'approved', null, 'team.approved', now)
+  if (before?.proofPath) {
+    await getDb().update(teams).set({ proofPath: null, proofBytes: null, proofUploadedAt: null }).where(eq(teams.id, teamId))
+  }
+  return { ...result, proofPath: before?.proofPath ?? null }
+}
 
 export const rejectTeam = (admin: Viewer, teamId: string, note: string, now = new Date()) =>
   setTeamStatus(admin, teamId, ['pending'], 'rejected', note, 'team.rejected', now)

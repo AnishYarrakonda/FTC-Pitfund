@@ -230,14 +230,20 @@ describe('team decisions', () => {
     'approve and reject are one-shot transitions, and only an approved team has a public page',
     dbTest(async () => {
       const admin = await adminViewer()
-      const team = await createTeam({ status: 'pending' })
+      const team = await createTeam({ status: 'pending', proofPath: 'teams/x/proof-1.webp', proofBytes: 4096, proofUploadedAt: NOW })
       // A team waiting for review must not already be reachable at its own number: that is what
       // stops someone claiming a team number and getting a page with that team on it.
       expect(await queryPublicTeam(team.number)).toBeNull()
 
-      await approveTeam(admin, team.id, NOW)
+      const decision = await approveTeam(admin, team.id, NOW)
       await expectAppError(approveTeam(admin, team.id, NOW), 'CONFLICT')
       expect((await queryPublicTeam(team.number))?.verified).toBe(true)
+
+      // The upload page promises the screenshot is deleted once the team is approved: the row is
+      // cleared here and the object itself is handed back for the action to remove.
+      expect(decision.proofPath).toBe('teams/x/proof-1.webp')
+      const [after] = await getDb().select({ proofPath: teams.proofPath, proofBytes: teams.proofBytes }).from(teams).where(eq(teams.id, team.id))
+      expect(after).toMatchObject({ proofPath: null, proofBytes: null })
 
       // Rejecting only applies to a team still waiting, so a second admin can't undo an approval
       // by racing it.

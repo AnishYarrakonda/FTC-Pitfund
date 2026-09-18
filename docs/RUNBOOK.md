@@ -15,8 +15,13 @@ For whoever operates FTC Pitfund day to day. You don't need to write code. A few
    - **Reject** only for spam, abuse or a team that doesn't exist. The team is told.
    - Keyboard: `J` next, `K` previous, `A` approve, `S` send back, `R` reject.
    - A pitch waiting more than a day is marked in orange. Try to keep the queue under that.
-3. **Approve companies.** `/admin` → Companies. Check the website is a real business that could sponsor a robotics team. Approve, or reject with a reason. Until approved, coaches can't see the company.
-4. **New teams.** `/admin` → Teams. "Found in FIRST records" means the number and name match FIRST. Verify teams that look right; the check mark shows on their public page.
+3. **Approve companies.** `/admin` → Companies. Check the website is a real business that could sponsor a robotics team. Approve, or reject with a reason. A company that isn't approved can't sign in to the app and coaches can't see it.
+4. **Approve teams.** `/admin` → Teams. Nobody reaches the app until you approve them, so this is the step that keeps strangers from claiming a team's identity. On the team page, three things have to agree:
+   - **The FIRST record.** "Found in FIRST records" means the number and name match FIRST's own list. "Not found" isn't automatically a rejection (very new teams lag), but it means the screenshot has to carry the weight.
+   - **Proof they coach this team.** A screenshot of their FIRST Dashboard team page. Look for **their own name** on the roster as a coach or mentor.
+   - **The coaches listed on the right.** The name in the screenshot should be one of them, and the email should look like a person, not a throwaway.
+
+   Then **Approve** (they get an email and the app opens up; the check mark shows on their public page) or **Reject** with a note saying what to send instead ("The screenshot doesn't show your name — send the Dashboard page that lists the coaches"). A rejected team can fix it and submit again. The screenshot link expires after 15 minutes; reload the page to get a fresh one. Screenshots are private, are never shown on the public site, and are **deleted the moment you approve the team** — so decide before you approve, and if you need another look later, ask the team to send a new one.
 5. **Reports.** `/admin` → Reports. Open the team page. If the report is right (inappropriate photos, impersonation, spam), open the team and **Suspend**: its page disappears and its open pitches are withdrawn. Otherwise resolve the report. Reply to the reporter if they left an email.
 6. **Glance at System** (`/admin/system`). No orange banners means nothing needs you.
 

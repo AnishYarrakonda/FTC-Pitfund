@@ -33,7 +33,8 @@
   functions also refuse to delete an owner, so the guard isn't the only thing protecting them.
   Transfer demotes before promoting — the other order violates the index.
 - A team's verification screenshot lives in the private `verification` bucket and is read only through
-  `signedProofUrl` (15 minutes). It must never be served publicly.
+  `signedProofUrl` (15 minutes). It must never be served publicly, and `approveTeam` clears the row and
+  hands the path back so `approveTeamAction` deletes the object — the upload page promises that.
 - Contact snapshots (`pitches.team_contact`, `sponsor_contact`) are read only for `matched` pitches, only by the two orgs.
 - Tests: `tests/unit/authz.test.ts` is the guard × persona matrix. Extend it when adding a guard or persona.
 

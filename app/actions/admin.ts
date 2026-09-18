@@ -32,6 +32,7 @@ import { absoluteUrl } from '@/lib/server/env'
 import { notifySponsor, notifyTeam, notifyUsers, resolveNotifications } from '@/lib/server/notify'
 import { AppError, defineAction } from '@/lib/server/result'
 import { inTransaction } from '@/lib/server/transaction'
+import { BUCKETS } from '@/lib/server/storage'
 import { discard } from '@/lib/server/uploads'
 import { formatAsk } from '@/lib/shared/pitch'
 import { rejectPitchSchema, reviewNoteSchema, sponsorDecisionSchema } from '@/lib/shared/schemas/company'
@@ -249,9 +250,11 @@ export const approveTeamAction = defineAction(teamIdSchema, async ({ teamId }) =
       })
       emailDelayed ||= sent.delayed
     }
-    return { team: r.team, notified: r.members.length, emailDelayed }
+    return { team: r.team, notified: r.members.length, emailDelayed, proofPath: r.proofPath }
   })
   invalidateTeam(result.team)
+  // Promised on the upload page: the screenshot is deleted once the team is approved.
+  await discard(BUCKETS.verification, [result.proofPath])
   await scheduleDrain()
   return { number: result.team.number, notified: result.notified, emailDelayed: result.emailDelayed }
 })

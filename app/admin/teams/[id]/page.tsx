@@ -127,7 +127,11 @@ export default async function AdminTeamPage({ params }: PageProps<'/admin/teams/
                   </p>
                 </div>
               ) : (
-                <p className="text-body text-text-tertiary">No screenshot uploaded yet.</p>
+                <p className="text-body text-text-tertiary">
+                  {team.status === 'approved'
+                    ? 'Deleted when this team was approved — it is only kept while a decision is pending.'
+                    : 'No screenshot uploaded yet.'}
+                </p>
               )}
             </div>
           </section>

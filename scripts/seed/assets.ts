@@ -124,10 +124,14 @@ export function generateDeckThumbnail(color: string): Uint8Array {
   const h = Math.round((THUMB_WIDTH_PX * 792) / 612)
   const [r, g, b] = hexToRgb(color)
   const px = new Uint8Array(w * h * 3).fill(255)
+  // The layout below is written for a 300 px page and scaled up, so widening THUMB_WIDTH_PX enlarges
+  // the drawing instead of stranding it in the corner of a blank sheet.
+  const u = w / 300
   const fill = (x0: number, y0: number, x1: number, y1: number, c: [number, number, number]) => {
-    for (let y = Math.max(0, y0); y < Math.min(h, y1); y++) for (let x = Math.max(0, x0); x < Math.min(w, x1); x++) px.set(c, (y * w + x) * 3)
+    for (let y = Math.max(0, Math.round(y0 * u)); y < Math.min(h, Math.round(y1 * u)); y++)
+      for (let x = Math.max(0, Math.round(x0 * u)); x < Math.min(w, Math.round(x1 * u)); x++) px.set(c, (y * w + x) * 3)
   }
-  fill(0, 0, w, 92, [r, g, b])
+  fill(0, 0, 300, 92, [r, g, b])
   fill(24, 30, 170, 44, [255, 255, 255])
   fill(24, 54, 120, 62, [Math.min(255, r + 90), Math.min(255, g + 90), Math.min(255, b + 90)])
   const grey: [number, number, number] = [214, 214, 219]

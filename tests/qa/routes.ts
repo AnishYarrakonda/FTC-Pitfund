@@ -123,6 +123,20 @@ const personActionDialog: QaInteraction = {
   },
 }
 
+/*
+ * The logo cropper opens on a file pick rather than from an [aria-haspopup="dialog"] trigger, so the
+ * gate's automatic dialog sweep never reaches it. Open it by hand to get it screenshotted and axed.
+ */
+const cropLogo: QaInteraction = {
+  name: 'logo-cropper',
+  run: async (page) => {
+    await page.getByRole('button', { name: 'Logo image' }).setInputFiles('tests/.fixtures/logo.png')
+    const dialog = page.getByRole('dialog', { name: 'Position your logo' })
+    await expect(dialog.getByRole('button', { name: 'Use photo' })).toBeVisible({ timeout: 20_000 })
+    await dialog.getByLabel('Zoom').fill('2')
+  },
+}
+
 const openFaq: QaInteraction = {
   name: 'faq-open',
   run: async (page) => {
@@ -193,7 +207,7 @@ export const QA_ROUTES: QaRoute[] = [
     path: '/team',
     personas: ['coach', 'coach2'],
     budget: 'authed',
-    interactions: [uploadStage('hold'), uploadStage('fail')],
+    interactions: [uploadStage('hold'), uploadStage('fail'), cropLogo],
   },
 
   // Company workspace
