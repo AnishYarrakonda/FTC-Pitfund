@@ -28,7 +28,7 @@ test.describe('an org waiting for review', () => {
   test.use(asPersona('sponsor-pending'))
   test('is held at the waiting screen and out of the workspace', async ({ page }) => {
     await page.goto('/welcome/pending')
-    await expect(page.getByRole('heading', { name: /We’re checking Atlas Components/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /We’re checking Allele Components/ })).toBeVisible()
     // Nothing in the app is reachable, including by typing the URL.
     for (const path of ['/inbox', '/company']) {
       await page.goto(path)
@@ -87,7 +87,7 @@ test.describe('coach pitch isolation and the season rule', () => {
     }
     // Exodius has a Summit draft; this team's own Summit pitch (matched) opens instead.
     await page.goto(`/sponsors/${SEED.summit}/pitch`)
-    await page.waitForURL(`**/pitches/${seedPitchId(24890, 'Summit Fabrication')}`)
+    await page.waitForURL(`**/pitches/${seedPitchId(24890, 'Synapse Fabrication')}`)
     await expect(page.getByText(/6061 aluminum/)).toHaveCount(0)
     // Pending companies are invisible to coaches.
     await page.goto(`/sponsors/${SEED.atlasPending}`)
@@ -98,17 +98,17 @@ test.describe('coach pitch isolation and the season rule', () => {
 test.describe('coach composer states', () => {
   test.use(asPersona('coach'))
   test('a pitched company opens its pitch; a changed question set is explained', async ({ page }) => {
-    await page.goto(`/sponsors/${SEED.brightline}/pitch`)
+    await page.goto(`/sponsors/${SEED.ribosome}/pitch`)
     await page.waitForURL(`**/pitches/${SEED.pitches.exodiusMatched}`)
-    await expect(page.getByRole('heading', { name: 'Connected with Brightline Engineering' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Connected with Ribosome Robotics' })).toBeVisible()
     await expect(page.getByText('We emailed you both. Reach out and take it from here.')).toBeVisible()
 
     await page.goto(`/sponsors/${SEED.summit}/pitch`)
-    await expect(page.getByText('Summit Fabrication updated its questions')).toBeVisible()
+    await expect(page.getByText('Synapse Fabrication updated its questions')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Submit for review' })).toBeDisabled()
 
     await page.goto(`/sponsors/${SEED.northpeak}/pitch`)
     await expect(page.getByText('A reviewer sent this pitch back')).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Edit and resubmit Northpeak Software' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Edit and resubmit NeuroPeak Software' })).toBeVisible()
   })
 })

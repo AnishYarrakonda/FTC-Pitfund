@@ -80,8 +80,8 @@ async function row(id: string) {
 const clean = () => getDb().delete(emailOutbox)
 
 describe('outbox budgets', () => {
-  it('budgets: auth 100, transactional/admin 90, digest 70', () => {
-    expect([0, 1, 2, 3].map(budgetFor)).toEqual([100, 90, 90, 70])
+  it('budgets: auth 100, everything else 90', () => {
+    expect([0, 1, 2, 3].map(budgetFor)).toEqual([100, 90, 90, 90])
   })
 
   it(
@@ -130,7 +130,7 @@ describe('outbox budgets', () => {
   )
 
   it(
-    'auth codes use the full 100 while digests stop at 70',
+    'auth codes use the full 100 while everything else stops at 90',
     dbTest(async () => {
       await clean()
       await fillSent(95, at(-2 * HOUR))

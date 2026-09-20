@@ -20,7 +20,7 @@ export const DEFAULT_QUESTIONS: Question[] = [
   },
 ]
 
-/** Puts the company name into a default prompt: `{Company}` → "Atlas", `{Company’s}` → "Atlas’s" or "Atlas Components’". */
+/** Puts the company name into a default prompt: `{Company}` → "Atlas", `{Company’s}` → "Atlas’s" or "Allele Components’". */
 export function fillCompany(prompt: string, name: string) {
   return prompt.replaceAll('{Company’s}', /s$/i.test(name) ? `${name}’` : `${name}’s`).replaceAll('{Company}', name)
 }

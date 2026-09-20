@@ -51,7 +51,7 @@ Crops are in `docs/qa/`. Each "before" was taken from the build that had the pro
 | System limits at 768 px: three narrow columns wrapped "13 / 100" and "24 h" and the quota rows; the cards stack until 1024 px | ![](qa/system-limits-768-before.webp) | ![](qa/system-limits-768-after.webp) |
 | Sponsor directory at 375 px: the status link ("Matched →") was inset from the card text and buttons; it now aligns with them (`-mx-2`) | ![](qa/directory-status-375-before.webp) | ![](qa/directory-status-375-after.webp) |
 | Pitch header at 375 px: the company logo was vertically centred against a three-line header; it now aligns to the title's top | ![](qa/pitch-header-375-before.webp) | ![](qa/pitch-header-375-after.webp) |
-| Default questions: "Atlas Components's support" (wrong possessive for names ending in s); now "Atlas Components’ support" (`fillCompany`) | ![](qa/default-question-before.webp) | ![](qa/default-question-after.webp) |
+| Default questions: "Allele Components's support" (wrong possessive for names ending in s); now "Allele Components’ support" (`fillCompany`) | ![](qa/default-question-before.webp) | ![](qa/default-question-after.webp) |
 
 Fixed without an image pair (each is now guarded by a test or a gate):
 

@@ -25,7 +25,7 @@ const test = base.extend<{ scenario: 'demo' | 'edge' | 'empty' }>({ scenario: ['
  */
 const flatten = (value: unknown): string[] => (typeof value === 'object' && value ? Object.values(value).flatMap(flatten) : [String(value)])
 const SEEDED = [...flatten(SEED), ...Object.values(SEED_INVITE_TOKENS)]
-const IN_EMPTY = new Set(flatten([SEED.exodius, SEED.voltage, SEED.brightline, SEED.cedar, SEED.atlasPending]))
+const IN_EMPTY = new Set(flatten([SEED.exodius, SEED.voltage, SEED.ribosome, SEED.cedar, SEED.atlasPending]))
 const needsContent = (path: string) => SEEDED.some((v) => !IN_EMPTY.has(v) && path.includes(v))
 
 for (const route of QA_ROUTES) {

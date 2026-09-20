@@ -226,10 +226,10 @@ export const QA_ROUTES: QaRoute[] = [
 
   // Company workspace
   { name: 'inbox', path: '/inbox', personas: ['sponsor', 'sponsor2'], budget: 'authed' },
-  { name: 'inbox-new', path: `/inbox/${SEED.pitches.voltageToBrightlineSent}`, personas: ['sponsor'], budget: 'authed', interactions: [notAFitOther] },
+  { name: 'inbox-new', path: `/inbox/${SEED.pitches.voltageToRibosomeSent}`, personas: ['sponsor'], budget: 'authed', interactions: [notAFitOther] },
   { name: 'inbox-matched', path: `/inbox/${SEED.pitches.exodiusMatched}`, personas: ['sponsor'], budget: 'authed' },
-  { name: 'inbox-declined', path: `/inbox/${SEED.pitches.gearToBrightlineDeclined}`, personas: ['sponsor'], budget: 'authed' },
-  { name: 'inbox-withdrawn', path: `/inbox/${SEED.pitches.knightsToBrightlineWithdrawn}`, personas: ['sponsor'], budget: 'authed' },
+  { name: 'inbox-declined', path: `/inbox/${SEED.pitches.gearToRibosomeDeclined}`, personas: ['sponsor'], budget: 'authed' },
+  { name: 'inbox-withdrawn', path: `/inbox/${SEED.pitches.knightsToRibosomeWithdrawn}`, personas: ['sponsor'], budget: 'authed' },
   { name: 'company', path: '/company', personas: ['sponsor'], budget: 'authed', interactions: [customizeQuestions] },
 
   // Shared
@@ -240,7 +240,7 @@ export const QA_ROUTES: QaRoute[] = [
   { name: 'admin-review-companies', path: '/admin?tab=companies', personas: ['admin'], budget: 'authed' },
   { name: 'admin-review-teams', path: '/admin?tab=teams', personas: ['admin'], budget: 'authed' },
   { name: 'admin-review-reports', path: '/admin?tab=reports', personas: ['admin'], budget: 'authed' },
-  { name: 'admin-pitch', path: `/admin/pitches/${SEED.pitches.lotusToBrightlineInReview}`, personas: ['admin'], budget: 'authed' },
+  { name: 'admin-pitch', path: `/admin/pitches/${SEED.pitches.lotusToRibosomeInReview}`, personas: ['admin'], budget: 'authed' },
   { name: 'admin-pitch-blocked', path: `/admin/pitches/${SEED.pitches.sagesToVantageInReview}`, personas: ['admin'], budget: 'authed' },
   { name: 'admin-pitch-decided', path: `/admin/pitches/${SEED.pitches.exodiusMatched}`, personas: ['admin'], budget: 'authed' },
   { name: 'admin-company-pending', path: `/admin/companies/${SEED.atlasPending}`, personas: ['admin'], budget: 'authed' },

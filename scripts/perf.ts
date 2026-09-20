@@ -150,7 +150,7 @@ const AUTHED_PAGES: Array<{ path: string; persona: PersonaKey }> = [
   { path: '/sponsors', persona: 'coach' },
   { path: '/inbox', persona: 'sponsor' },
   { path: '/admin', persona: 'admin' },
-  { path: `/admin/pitches/${SEED.pitches.lotusToBrightlineInReview}`, persona: 'admin' },
+  { path: `/admin/pitches/${SEED.pitches.lotusToRibosomeInReview}`, persona: 'admin' },
 ]
 
 async function timedGet(url: string, cookie: string) {

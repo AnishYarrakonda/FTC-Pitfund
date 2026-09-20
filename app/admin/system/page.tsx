@@ -77,7 +77,7 @@ export default async function AdminSystemPage() {
           <SectionTitle id="usage-heading" title="Limits" />
           <div className="grid gap-px overflow-hidden rounded-dialog border border-border bg-border lg:grid-cols-3">
             <LimitCard
-              meter={<Meter label="Emails in the last 24 h" used={email.used} limit={email.limit} display={`${email.used} / ${email.limit}`} warnAt={0.7} dangerAt={0.9} />}
+              meter={<Meter label="Emails in the last 24 h" used={email.used} limit={email.limit} display={`${email.used} / ${email.limit}`} warnAt={0.8} dangerAt={0.9} />}
               guidance="Upgrade to Resend Pro ($20/mo) when this is 80 or more most days."
             >
               <ul className="grid gap-1.5">

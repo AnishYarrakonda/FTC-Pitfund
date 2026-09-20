@@ -91,8 +91,8 @@ describe('composer rules', () => {
   })
 
   it('draft ids must be UUIDs (seed ids included)', () => {
-    const id = seedUuid('pitch', '31579:Brightline Engineering')
-    expect(id).toBe(seedUuid('pitch', '31579:Brightline Engineering'))
+    const id = seedUuid('pitch', '31579:Ribosome Robotics')
+    expect(id).toBe(seedUuid('pitch', '31579:Ribosome Robotics'))
     expect(saveDraftSchema.safeParse({ sponsorId: id, pitchId: null, answers: [], ask: NO_ASK }).success).toBe(true)
     expect(saveDraftSchema.safeParse({ sponsorId: 'nope', pitchId: null, answers: [], ask: NO_ASK }).success).toBe(false)
   })

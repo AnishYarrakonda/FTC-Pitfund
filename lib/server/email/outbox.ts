@@ -15,7 +15,7 @@ import { isSensitiveTemplate, renderEmail, TemplateError, type TemplateName, typ
  *   0 auth            may use all 100
  *   1 transactional   stops at 90
  *   2 admin instant   stops at 90
- *   3 digest          stops at 70
+ *   3 daily summary   stops at 90 (it is the warning that the plan is filling up, so it must arrive)
  * so sign-in codes always have headroom. Rows over budget wait until the oldest send in the
  * window ages out (`send_after = oldest_sent + 24h`). Transient failures back off
  * exponentially for up to 5 attempts; permanent failures fail immediately.
@@ -31,9 +31,7 @@ type EmailPriority = 0 | 1 | 2 | 3
 export const PRIORITY = { auth: 0, transactional: 1, adminInstant: 2, digest: 3 } as const
 
 export function budgetFor(priority: number) {
-  if (priority <= 0) return 100
-  if (priority <= 2) return 90
-  return 70
+  return priority <= 0 ? 100 : 90
 }
 
 /** Delay before retry number `attempts + 1`: 1, 2, 4, 8 minutes (capped at 1 hour). */

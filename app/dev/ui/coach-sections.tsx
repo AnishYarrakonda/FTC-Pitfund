@@ -53,10 +53,10 @@ function pitchData(deck: Deck, variant: 'full' | 'bare' | 'long'): PitchViewData
       verified: variant !== 'bare',
       deck: variant !== 'bare' && deck ? { url: deck.src, thumbUrl: deck.thumb, pages: deck.pages ?? 1 } : null,
     },
-    company: { id: '00000000-0000-4000-8000-000000000000', name: long ? LONG.slice(0, 60) : 'Brightline Engineering', logoUrl: null },
+    company: { id: '00000000-0000-4000-8000-000000000000', name: long ? LONG.slice(0, 60) : 'Ribosome Robotics', logoUrl: null },
     answers: [
       { questionId: 'a', prompt: long ? LONG.slice(0, 200) : 'Walk us through one design decision from last season.', answer: long ? LONG : 'Our intake jammed on the second ring. We tried a wider funnel, then compliant wheels, and ended up with a two-stage roller.' },
-      { questionId: 'b', prompt: 'Would your team want an engineer from Brightline as a mentor?', answer: '' },
+      { questionId: 'b', prompt: 'Would your team want an engineer from Ribosome as a mentor?', answer: '' },
     ],
     ask: { ...ask, label: formatAsk(ask) },
     submittedAt: variant === 'bare' ? null : SENT_AT,
@@ -65,7 +65,7 @@ function pitchData(deck: Deck, variant: 'full' | 'bare' | 'long'): PitchViewData
 
 const SPONSOR: SponsorSummaryData = {
   id: '00000000-0000-4000-8000-000000000001',
-  name: 'Brightline Engineering',
+  name: 'Ribosome Robotics',
   logoUrl: null,
   city: 'Austin',
   state: 'TX',

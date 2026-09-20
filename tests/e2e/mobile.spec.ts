@@ -85,7 +85,7 @@ test.describe('an admin on a phone', () => {
   test.use({ ...asPersona('admin'), ...PHONE })
 
   test('the review page: the pitch reads, all three decisions are tappable, and the note dialog fits and closes', async ({ page, problems }) => {
-    await page.goto(`/admin/pitches/${SEED.pitches.lotusToBrightlineInReview}`, { waitUntil: 'networkidle' })
+    await page.goto(`/admin/pitches/${SEED.pitches.lotusToRibosomeInReview}`, { waitUntil: 'networkidle' })
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
     await expectTappable(page, page.getByRole('button', { name: /Approve & send/ }))
     await expectTappable(page, page.getByRole('button', { name: /^Reject/ }))
@@ -102,7 +102,7 @@ test.describe('an admin on a phone', () => {
     await cancel.tap()
     await expect(dialog).toBeHidden()
 
-    const [row] = await db()`select status from pitches where id = ${SEED.pitches.lotusToBrightlineInReview}`
+    const [row] = await db()`select status from pitches where id = ${SEED.pitches.lotusToRibosomeInReview}`
     expect(row.status).toBe('in_review')
     expect(problems).toEqual([])
   })
@@ -114,10 +114,10 @@ test.describe('a company on a phone', () => {
   test('the inbox: the pitch reads, the sticky response bar is tappable, and Not a fit fits the screen', async ({ page, problems }) => {
     await page.goto('/inbox', { waitUntil: 'networkidle' })
     // The whole row is the target: its link is stretched over it.
-    const link = page.locator(`a[href="/inbox/${SEED.pitches.voltageToBrightlineSent}"]`)
+    const link = page.locator(`a[href="/inbox/${SEED.pitches.voltageToRibosomeSent}"]`)
     await expectTappable(page, link, link.locator('xpath=ancestor::div[contains(@class, "group")][1]'))
     await link.tap()
-    await page.waitForURL(`**/inbox/${SEED.pitches.voltageToBrightlineSent}`)
+    await page.waitForURL(`**/inbox/${SEED.pitches.voltageToRibosomeSent}`)
     await page.waitForLoadState('networkidle')
 
     const notAFit = page.getByRole('button', { name: 'Not a fit' })
@@ -137,7 +137,7 @@ test.describe('a company on a phone', () => {
     await cancel.tap()
     await expect(dialog).toBeHidden()
 
-    const [row] = await db()`select status from pitches where id = ${SEED.pitches.voltageToBrightlineSent}`
+    const [row] = await db()`select status from pitches where id = ${SEED.pitches.voltageToRibosomeSent}`
     expect(row.status).toBe('sent')
     expect(problems).toEqual([])
   })
