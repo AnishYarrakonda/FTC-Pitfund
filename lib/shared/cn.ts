@@ -22,6 +22,7 @@ const RULES: Array<[RegExp, string]> = [
   [/^(not-)?sr-only$/, 'sr'],
   [/^(truncate|text-ellipsis|text-clip)$/, 'text-overflow'],
   [/^(underline|overline|line-through|no-underline)$/, 'text-decoration'],
+  [/^(uppercase|lowercase|capitalize|normal-case)$/, 'text-transform'],
   [/^(grow|shrink)(-|$)/, '$1'],
   // Gradient color stops (`from-brand-blue to-brand-yellow`, the signature gradient).
   [/^(from|via|to)-/, 'gradient-$1'],

@@ -186,6 +186,17 @@ describe('join requests', () => {
       await expectAppError(decideJoinRequest(coach, request.requestId, 'approve'), 'CONFLICT', { message: /joined a company/ })
     }),
   )
+
+  it(
+    'refuses someone who never accepted the terms — the only way onto an org without a checkbox',
+    dbTest(async () => {
+      const team = await createTeam()
+      const joiner = await createUser({ acceptedTermsAt: null })
+      await expectAppError(requestToJoinTeam(await viewerOf(joiner.id), team.id), 'FORBIDDEN', { message: /Accept the Terms/ })
+      await getDb().update(users).set({ acceptedTermsAt: new Date() }).where(eq(users.id, joiner.id))
+      await expect(requestToJoinTeam(await viewerOf(joiner.id), team.id)).resolves.toMatchObject({ team: { id: team.id } })
+    }),
+  )
 })
 
 describe('deck verification', () => {

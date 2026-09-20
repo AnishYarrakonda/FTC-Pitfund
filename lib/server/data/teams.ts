@@ -290,6 +290,13 @@ export async function transferTeamOwnership(viewer: TeamViewer, userId: string) 
 
 export async function requestToJoinTeam(viewer: Viewer, teamId: string) {
   if (viewer.team || viewer.sponsor) throw new AppError('CONFLICT', 'You’re already part of a team or company.')
+  /*
+   * Joining an existing team is the one way onto an org that never passed a Terms checkbox: creating a
+   * team, creating a company and accepting an invite each carry their own, but this path only ever had
+   * a "Request to join" button. /welcome collects the confirmation and /welcome/team now refuses anyone
+   * who skipped it, so this is the backstop for the action itself.
+   */
+  if (!viewer.acceptedTermsAt) throw new AppError('FORBIDDEN', 'Accept the Terms and Privacy Policy before joining a team.')
   if (viewer.pendingJoin) {
     if (viewer.pendingJoin.teamId === teamId) throw new AppError('CONFLICT', 'You’ve already asked to join this team.')
     throw new AppError('CONFLICT', `Cancel your request to join Team ${viewer.pendingJoin.teamNumber} first.`)

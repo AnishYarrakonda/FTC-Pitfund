@@ -365,11 +365,11 @@ Cloned from GitHub (`ExodiusFTC/FTC-Pitfund-Source-Code`, branch `rebuild`) into
 | --- | --- |
 | `npm install` | ✓ |
 | `npm run setup` | ✓ local Supabase, migrations, `demo` seed, `.env.local` written |
-| `npm run check` | ✓ typecheck, lint (0 warnings), Vitest 157 / 157 |
+| `npm run check` | ✓ typecheck, lint (0 warnings), Vitest 158 / 158 |
 | `npm run build` | ✓ |
 | `npm run e2e` | ✓ 74 / 74 (starts `npm run dev` and the production build from the clone) |
 | `npm run qa` | ✓ 603 checks, 0 failures (`demo`, `edge`, `empty`) |
-| `npm run perf` | ✗ one miss: Lighthouse `/` 96 / 100 / **2,471 ms LCP** (budget 2,000). `/t/31579` 95 / 100 / 702 ms, `/login` 100 / 100 / 691 ms; bundles, queries, render p95 and action p95 (14 samples, p95 45 ms) all met (section 6) |
+| `npm run perf` | ✗ one miss: Lighthouse `/` 97 / 100 / **2,461 ms LCP** (budget 2,000). `/t/31579` 99 / 100 / 1,193 ms, `/login` 100 / 100 / 681 ms; bundles (`/legal/*` 141 KB), queries, render p95 and action p95 (15 samples, p95 43 ms) all met (section 6) |
 | `npm run qa:clicks` | ✓ 60 route checks, 0 findings |
 | `npm run security:scan` | ✓ clean |
 | `npm run knip` | ✓ nothing unused |
