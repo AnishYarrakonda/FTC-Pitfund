@@ -10,7 +10,7 @@ import { requireSponsorMember } from '@/lib/server/authz'
 import { getCompanyProfile } from '@/lib/server/data/company'
 import { pageViewer } from '@/lib/server/page-guards'
 import { companyChecklist } from '@/lib/shared/company'
-import { homeFor } from '@/lib/shared/viewer'
+import { homeFor, welcomePath } from '@/lib/shared/viewer'
 
 import { CompanySetup } from './company-setup'
 import { SubmitBar } from './submit-bar'
@@ -24,6 +24,8 @@ export const metadata: Metadata = { title: 'Set up your company' }
 export default async function WelcomeCompanyPage() {
   const viewer = await pageViewer()
   if (viewer.team || viewer.pendingJoin) redirect(homeFor(viewer))
+  // /welcome is where the 18+ and Terms confirmation is collected; nobody sets up an org around it.
+  if (!viewer.acceptedTermsAt) redirect(welcomePath('company'))
   if (!viewer.sponsor) {
     return (
       <PageContainer width="form" className="sm:pt-16">

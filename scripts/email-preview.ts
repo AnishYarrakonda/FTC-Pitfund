@@ -41,7 +41,7 @@ const LONG_NAME = 'The Remarkably Persistent Robotics Collective of Springfield'
 const LONG_WORD = 'Supercalifragilisticexpialidocious'.repeat(150).slice(0, 5000)
 const long = (max: number) => LONG_WORD.slice(0, max)
 
-type Sample = { [T in TemplateName]: { name: T; variant: 'default' | 'long'; data: TemplatePayload<T> } }[TemplateName]
+type Sample = { [T in TemplateName]: { name: T; variant: 'default' | 'long' | 'quiet'; data: TemplatePayload<T> } }[TemplateName]
 
 const samples: Sample[] = [
   { name: 'login-code', variant: 'default', data: { code: '482913', expiresInMinutes: 10 } },
@@ -89,7 +89,7 @@ const samples: Sample[] = [
       teamNumber: 16225,
       teamName: 'Exodius',
       verified: true,
-      companyName: 'Brightline Manufacturing',
+      companyName: 'Ribosome Manufacturing',
       summary: 'Student-run FTC team building a mentoring program for middle schoolers.',
       ask: '$1,500 for competition fees and a CNC router bit set.',
       resubmission: false,
@@ -104,7 +104,7 @@ const samples: Sample[] = [
   {
     name: 'pitch-withdrawn',
     variant: 'default',
-    data: { teamNumber: 16225, teamName: 'Exodius', companyName: 'Brightline Manufacturing', inboxUrl: url(`/inbox/${UUID}`) },
+    data: { teamNumber: 16225, teamName: 'Exodius', companyName: 'Ribosome Manufacturing', inboxUrl: url(`/inbox/${UUID}`) },
   },
   { name: 'pitch-withdrawn', variant: 'long', data: { teamNumber: 16225, teamName: LONG_NAME, companyName: LONG_NAME, inboxUrl: url(`/inbox/${UUID}`) } },
   {
@@ -112,12 +112,12 @@ const samples: Sample[] = [
     variant: 'default',
     data: {
       teamNumber: 16225,
-      companyName: 'Brightline Manufacturing',
+      companyName: 'Ribosome Manufacturing',
       contactName: 'Marcus Ortiz',
       contactTitle: 'Community Programs Manager',
-      contactEmail: 'marcus.ortiz@brightline.example',
+      contactEmail: 'marcus.ortiz@ribosome.example',
       contactPhone: '(555) 201-4477',
-      companyWebsite: 'https://brightline.example',
+      companyWebsite: 'https://ribosome.example',
       pitchUrl: url(`/pitches/${UUID}`),
     },
   },
@@ -129,9 +129,9 @@ const samples: Sample[] = [
       companyName: LONG_NAME,
       contactName: long(200),
       contactTitle: long(5000),
-      contactEmail: 'marcus.ortiz@brightline.example',
+      contactEmail: 'marcus.ortiz@ribosome.example',
       contactPhone: '(555) 201-4477 ext. 99999999999999999999',
-      companyWebsite: `https://brightline.example/${long(300)}`,
+      companyWebsite: `https://ribosome.example/${long(300)}`,
       pitchUrl: url(`/pitches/${UUID}`),
     },
   },
@@ -164,10 +164,10 @@ const samples: Sample[] = [
   {
     name: 'pitch-not-a-fit',
     variant: 'default',
-    data: { teamNumber: 16225, companyName: 'Brightline Manufacturing', reason: 'Our budget for this season is already committed to teams in our county.', pitchUrl: url(`/pitches/${UUID}`) },
+    data: { teamNumber: 16225, companyName: 'Ribosome Manufacturing', reason: 'Our budget for this season is already committed to teams in our county.', pitchUrl: url(`/pitches/${UUID}`) },
   },
   { name: 'pitch-not-a-fit', variant: 'long', data: { teamNumber: 16225, companyName: LONG_NAME, reason: long(5000), pitchUrl: url(`/pitches/${UUID}`) } },
-  { name: 'pitch-approved-coach', variant: 'default', data: { teamNumber: 16225, companyName: 'Brightline Manufacturing', pitchUrl: url(`/pitches/${UUID}`) } },
+  { name: 'pitch-approved-coach', variant: 'default', data: { teamNumber: 16225, companyName: 'Ribosome Manufacturing', pitchUrl: url(`/pitches/${UUID}`) } },
   { name: 'pitch-approved-coach', variant: 'long', data: { teamNumber: 16225, companyName: LONG_NAME, pitchUrl: url(`/pitches/${UUID}`) } },
   {
     name: 'new-pitch-sponsor',
@@ -177,7 +177,7 @@ const samples: Sample[] = [
       teamName: 'Exodius',
       place: 'Austin, Texas',
       verified: true,
-      companyName: 'Brightline Manufacturing',
+      companyName: 'Ribosome Manufacturing',
       summary: 'Student-run FTC team building a mentoring program for middle schoolers.',
       ask: '$1,500 for competition fees and a CNC router bit set.',
       inboxUrl: url(`/inbox/${UUID}`),
@@ -193,8 +193,8 @@ const samples: Sample[] = [
     variant: 'default',
     data: {
       teamNumber: 16225,
-      companyName: 'Brightline Manufacturing',
-      note: 'Brightline asks how you would use the money. Please say what the $1,500 buys, and add your outreach numbers from last season.',
+      companyName: 'Ribosome Manufacturing',
+      note: 'Ribosome asks how you would use the money. Please say what the $1,500 buys, and add your outreach numbers from last season.',
       editUrl: url(`/pitches/${UUID}/edit`),
     },
   },
@@ -202,7 +202,7 @@ const samples: Sample[] = [
   {
     name: 'pitch-rejected',
     variant: 'default',
-    data: { teamNumber: 16225, companyName: 'Brightline Manufacturing', note: 'The deck is for a different team number than your account.', pitchUrl: url(`/pitches/${UUID}`) },
+    data: { teamNumber: 16225, companyName: 'Ribosome Manufacturing', note: 'The deck is for a different team number than your account.', pitchUrl: url(`/pitches/${UUID}`) },
   },
   { name: 'pitch-rejected', variant: 'long', data: { teamNumber: 16225, companyName: LONG_NAME, note: long(5000), pitchUrl: url(`/pitches/${UUID}`) } },
   { name: 'team-approved', variant: 'default', data: { teamNumber: 16225, teamName: 'Exodius', pitchesUrl: url('/pitches') } },
@@ -218,23 +218,23 @@ const samples: Sample[] = [
     },
   },
   { name: 'team-rejected', variant: 'long', data: { teamNumber: 16225, teamName: LONG_NAME, note: long(5000), setupUrl: url('/welcome/team') } },
-  { name: 'sponsor-approved', variant: 'default', data: { companyName: 'Brightline Manufacturing', companyUrl: url('/company') } },
+  { name: 'sponsor-approved', variant: 'default', data: { companyName: 'Ribosome Manufacturing', companyUrl: url('/company') } },
   { name: 'sponsor-approved', variant: 'long', data: { companyName: LONG_NAME, companyUrl: url('/company') } },
   {
     name: 'sponsor-rejected',
     variant: 'default',
-    data: { companyName: 'Brightline Manufacturing', note: 'We couldn’t confirm the company’s website. Add a working link and a short description.', inboxUrl: url('/company') },
+    data: { companyName: 'Ribosome Manufacturing', note: 'We couldn’t confirm the company’s website. Add a working link and a short description.', inboxUrl: url('/company') },
   },
   { name: 'sponsor-rejected', variant: 'long', data: { companyName: LONG_NAME, note: long(5000), inboxUrl: url('/company') } },
   {
     name: 'sponsor-invite',
     variant: 'default',
-    data: { companyName: 'Brightline Manufacturing', inviterName: 'Marcus Ortiz', email: 'jen.wu@brightline.example', acceptUrl: url(`/invite/${UUID}`), expiresOn: 'September 28' },
+    data: { companyName: 'Ribosome Manufacturing', inviterName: 'Marcus Ortiz', email: 'jen.wu@ribosome.example', acceptUrl: url(`/invite/${UUID}`), expiresOn: 'September 28' },
   },
   {
     name: 'sponsor-invite',
     variant: 'long',
-    data: { companyName: LONG_NAME, inviterName: long(200), email: 'jen.wu@brightline.example', acceptUrl: url(`/invite/${UUID}`), expiresOn: 'September 28' },
+    data: { companyName: LONG_NAME, inviterName: long(200), email: 'jen.wu@ribosome.example', acceptUrl: url(`/invite/${UUID}`), expiresOn: 'September 28' },
   },
   {
     name: 'admin-report',
@@ -244,7 +244,7 @@ const samples: Sample[] = [
       teamName: 'Exodius',
       reason: 'Not a real team',
       details: 'The team number belongs to a team in Ohio, but this page says Texas.',
-      reporter: 'marcus.ortiz@brightline.example',
+      reporter: 'marcus.ortiz@ribosome.example',
       reviewUrl: url(`/admin/teams/${UUID}`),
     },
   },
@@ -263,12 +263,52 @@ const samples: Sample[] = [
         { number: 23017, name: 'Voltage', place: null, url: url(`/admin/teams/${UUID}`) },
       ],
       newTeamsTotal: 2,
-      pendingCompanies: [{ name: 'Brightline Manufacturing', applicant: 'Marcus Ortiz', url: url(`/admin/companies/${UUID}`) }],
+      pendingCompanies: [{ name: 'Ribosome Manufacturing', applicant: 'Marcus Ortiz', url: url(`/admin/companies/${UUID}`) }],
       pendingCompaniesTotal: 1,
       openReports: 1,
       waitingPitches: 3,
       oldestWaitingHours: 41,
       reviewUrl: url('/admin'),
+      newUsers: 5,
+      activity: [
+        { label: 'Teams submitted for review', count: 2 },
+        { label: 'Pitches submitted', count: 4 },
+        { label: 'Pitches matched', count: 1 },
+      ],
+      email: {
+        sent24h: 83,
+        limit: 100,
+        failed24h: 1,
+        bounced24h: 0,
+        waiting: 2,
+        sentThisMonth: 611,
+        byKind: [
+          { label: 'login code', count: 41 },
+          { label: 'new pitch sponsor', count: 18 },
+          { label: 'pitch approved coach', count: 12 },
+          { label: 'admin digest', count: 2 },
+        ],
+      },
+      warnAt: 80,
+    },
+  },
+  {
+    name: 'admin-digest',
+    variant: 'quiet',
+    data: {
+      dateLabel: 'Tuesday, September 15',
+      newTeams: [],
+      newTeamsTotal: 0,
+      pendingCompanies: [],
+      pendingCompaniesTotal: 0,
+      openReports: 0,
+      waitingPitches: 0,
+      oldestWaitingHours: null,
+      reviewUrl: url('/admin'),
+      newUsers: 0,
+      activity: [],
+      email: { sent24h: 3, limit: 100, failed24h: 0, bounced24h: 0, waiting: 0, sentThisMonth: 96, byKind: [{ label: 'login code', count: 3 }] },
+      warnAt: 80,
     },
   },
   {
@@ -284,6 +324,18 @@ const samples: Sample[] = [
       waitingPitches: 27,
       oldestWaitingHours: 130,
       reviewUrl: url('/admin'),
+      newUsers: 240,
+      activity: [{ label: long(60), count: 999 }],
+      email: {
+        sent24h: 97,
+        limit: 100,
+        failed24h: 12,
+        bounced24h: 3,
+        waiting: 40,
+        sentThisMonth: 2740,
+        byKind: [{ label: long(60), count: 97 }],
+      },
+      warnAt: 80,
     },
   },
 ]
@@ -342,7 +394,7 @@ async function main() {
   const transport = smtpTransport(SMTP_URL, EMAIL_FROM)
   const sent: Array<{ file: string; to: string }> = []
   for (const sample of samples) {
-    const file = sample.variant === 'long' ? `${sample.name}-long` : sample.name
+    const file = sample.variant === 'default' ? sample.name : `${sample.name}-${sample.variant}`
     const to = `${RECIPIENT_PREFIX}${file}-${runId}@pitfund.test`
     const rendered = await renderEmail(sample.name, sample.data)
     await transport.send({ id: `preview-${runId}-${file}`, to, ...rendered })

@@ -36,6 +36,9 @@ export const HIDE_DEV_OVERLAY = `
  */
 export async function settle(page: Page) {
   await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {})
+  // The homepage skips rendering sections far below the fold (content-visibility: auto). Full-page
+  // screenshots, the overflow check and axe must see every section, so render them all here.
+  await page.addStyleTag({ content: '* { content-visibility: visible !important; }' })
   // Wait for React to hydrate every form control. A screenshot hides the caret by writing an inline
   // `caret-color` onto inputs; if that lands before hydration (a big page on a slow CI runner), React
   // reports a hydration mismatch that the page itself never had.

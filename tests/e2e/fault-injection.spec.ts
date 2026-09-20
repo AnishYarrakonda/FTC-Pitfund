@@ -79,7 +79,7 @@ test.describe('a company', () => {
   test.use({ storageState: authFile('sponsor') })
 
   test('opening a pitch the team withdrew sees why, and no response buttons', async ({ page, problems }) => {
-    await page.goto(`/inbox/${SEED.pitches.knightsToBrightlineWithdrawn}`)
+    await page.goto(`/inbox/${SEED.pitches.knightsToRibosomeWithdrawn}`)
     await expect(page.getByText(/withdrew this pitch\./).first()).toBeVisible()
     await expect(page.getByRole('button', { name: 'Interested' })).toHaveCount(0)
     await expect(page.getByRole('button', { name: /Not a fit/ })).toHaveCount(0)

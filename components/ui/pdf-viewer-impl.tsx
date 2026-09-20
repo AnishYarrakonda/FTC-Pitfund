@@ -11,6 +11,17 @@ import { LETTER_RATIO, PdfPlaceholderPages } from './pdf-viewer'
 /** iOS Safari refuses canvases much past ~16 M pixels; stay well under. */
 const MAX_CANVAS_PIXELS = 12_000_000
 
+/*
+ * Pages are rasterized at this multiple of their CSS size, at least. Rendering at exactly
+ * devicePixelRatio is what a photo needs, but a deck is vector text: pdf.js has no hinting or
+ * subpixel positioning to fall back on, so at 1× on a non-Retina monitor glyph stems land between
+ * pixels and the whole page reads as soft. Two device pixels per CSS pixel is the floor that makes
+ * 9-11 pt body copy legible; a Retina screen already asks for more and keeps its own ratio.
+ */
+const MIN_RENDER_SCALE = 2
+/** Above 3× the file size and decode cost stop buying visible sharpness. */
+const MAX_RENDER_SCALE = 3
+
 export type PdfPagesProps = {
   src: string
   title: string
@@ -142,7 +153,7 @@ function PdfPageCanvas({ doc, page, width, ratio, label }: { doc: PdfDocument; p
       try {
         const pdfPage = await doc.getPage(page)
         const base = pdfPage.getViewport({ scale: 1 })
-        const dpr = Math.min(window.devicePixelRatio || 1, 2)
+        const dpr = Math.min(Math.max(window.devicePixelRatio || 1, MIN_RENDER_SCALE), MAX_RENDER_SCALE)
         let scale = (width / base.width) * dpr
         if (base.width * scale * base.height * scale > MAX_CANVAS_PIXELS) scale = Math.sqrt(MAX_CANVAS_PIXELS / (base.width * base.height))
         const viewport = pdfPage.getViewport({ scale })

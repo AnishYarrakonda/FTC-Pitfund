@@ -131,14 +131,14 @@ test('§12: a new coach reaches a submitted pitch in ≤ 10 screens and < 5 minu
 
   // 8 · Directory
   await page.waitForURL('**/sponsors')
-  await page.getByRole('button', { name: 'Start pitch to Meridian Machine Works' }).click()
+  await page.getByRole('button', { name: 'Start pitch to Mitochondria Machine Works' }).click()
 
   // 9 · Composer
   await page.waitForURL(`**/sponsors/${SEED.meridian}/pitch`)
   await page.getByLabel('Which parts would you want machined, and do you have CAD ready?').locator('visible=true').fill('Two drivetrain side plates. CAD is ready as STEP files.')
   await expect(page.getByText(/Saved · /)).toBeVisible()
   await page.getByRole('button', { name: 'Submit for review' }).click()
-  await page.getByRole('dialog', { name: 'Send this pitch to Meridian Machine Works for review?' }).getByRole('button', { name: 'Submit' }).click()
+  await page.getByRole('dialog', { name: 'Send this pitch to Mitochondria Machine Works for review?' }).getByRole('button', { name: 'Submit' }).click()
 
   // Result: the pitch, in review
   await page.waitForURL(/\/pitches\/[0-9a-f-]{36}$/)
@@ -169,7 +169,7 @@ test('§12: the admin approves that pitch from the notification email in 2 click
   await expect
     .poll(
       async () => {
-        const message = (await messagesTo('admin@pitfund.test')).find((m) => m.Subject === `New pitch: Team ${number} → Meridian Machine Works`)
+        const message = (await messagesTo('admin@pitfund.test')).find((m) => m.Subject === `New pitch: Team ${number} → Mitochondria Machine Works`)
         if (!message) return null
         const full = (await (await fetch(`${MAILPIT}/api/v1/message/${message.ID}`)).json()) as { HTML: string }
         href = full.HTML.match(/href="([^"]*\/admin\/pitches\/[^"]+)"/)?.[1] ?? null
@@ -189,7 +189,7 @@ test('§12: the admin approves that pitch from the notification email in 2 click
   // Click 2: Approve & send (no confirmation for review decisions, plan §3.1 #7).
   clicks++
   await page.getByRole('button', { name: /Approve & send/ }).click()
-  await expect(page.getByText(/Sent to Meridian Machine Works/).first()).toBeVisible()
+  await expect(page.getByText(/Sent to Mitochondria Machine Works/).first()).toBeVisible()
   const [row] = await db()`select status from pitches where id = ${id}`
   expect(row.status).toBe('sent')
 

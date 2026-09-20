@@ -58,15 +58,15 @@ const row = (overrides: Partial<InboxRowData> & { status: InboxRowData['status']
 
 const profile = {
   id: 'preview',
-  name: 'Brightline Engineering',
-  website: 'https://example.com/brightline',
+  name: 'Ribosome Robotics',
+  website: 'https://example.com/ribosome',
   logoUrl: null,
   city: 'Austin',
   state: 'TX',
   region: 'Texas and the Southwest',
   about: 'We sponsor teams that document their engineering process and bring robotics to students who would not otherwise see it.',
   supportTypes: ['funding', 'mentorship'] as Array<'funding' | 'mentorship'>,
-  questions: DEFAULT_QUESTIONS.map((q) => ({ ...q, prompt: fillCompany(q.prompt, 'Brightline Engineering') })),
+  questions: DEFAULT_QUESTIONS.map((q) => ({ ...q, prompt: fillCompany(q.prompt, 'Ribosome Robotics') })),
   usesDefaultQuestions: true,
 }
 
@@ -90,21 +90,21 @@ export function SponsorSections() {
         </ul>
         <div className="grid gap-6 lg:grid-cols-2">
           <EmptyState title="You’ll see pitches here once approved" description="Each pitch answers your questions and includes the team’s deck." className="rounded-dialog border border-border bg-surface" />
-          <EmptyState title="No pitches yet" description="Teams can now find Brightline Engineering in the directory." className="rounded-dialog border border-border bg-surface" />
+          <EmptyState title="No pitches yet" description="Teams can now find Ribosome Robotics in the directory." className="rounded-dialog border border-border bg-surface" />
         </div>
       </Section>
 
       <Section id="connected" title="Connected panel" description="What each side sees once a company is interested: the other side’s name, title, email and phone.">
         <div className="grid gap-6 lg:grid-cols-2">
           <ConnectedPanel title="You’re connected with Team 31579 · Exodius" description="We emailed you both. Reach out and take it from here." contactLabel="Coach" contact={{ name: 'Maya Chen', email: 'coach@pitfund.test', phone: '(512) 555-0142', teamUrl: 'https://pitfund.test/t/31579' }} />
-          <ConnectedPanel title="Connected with Brightline Engineering" description="Email delivery is delayed until tomorrow. Brightline Engineering will still see it in FTC Pitfund." contact={{ name: LONG.slice(0, 120), email: 'sponsor@pitfund.test', phone: null, jobTitle: LONG, website: `https://example.com/${LONG.slice(0, 200)}` }} />
+          <ConnectedPanel title="Connected with Ribosome Robotics" description="Email delivery is delayed until tomorrow. Ribosome Robotics will still see it in FTC Pitfund." contact={{ name: LONG.slice(0, 120), email: 'sponsor@pitfund.test', phone: null, jobTitle: LONG, website: `https://example.com/${LONG.slice(0, 200)}` }} />
         </div>
       </Section>
 
       <Section id="company-status" title="Company status and checklist" description="Pending and rejected banners on /inbox and /company, and the setup checklist part-way done.">
         <div className="grid gap-4">
-          <CompanyStatusBanner status="pending" name="Atlas Components" note={null} />
-          <CompanyStatusBanner status="rejected" name="QuickCash Promotions" note={LONG} />
+          <CompanyStatusBanner status="pending" name="Allele Components" note={null} />
+          <CompanyStatusBanner status="rejected" name="QuickClone Promotions" note={LONG} />
           <CompanyChecklist linkItems={false} profile={{ logoUrl: 'x', about: 'We fund teams.', supportTypes: [], customQuestions: [], reviewedQuestions: false }} />
         </div>
       </Section>
@@ -112,11 +112,11 @@ export function SponsorSections() {
       <Section id="questions-editor" title="Questions editor" description="The defaults with Customize, and a full list of ten (Add question is disabled with its reason). Reorder with the arrow buttons.">
         <div className="grid gap-6 lg:grid-cols-2">
           <Specimen label="Default questions">
-            <QuestionsEditor companyName="Brightline Engineering" customQuestions={[]} reviewed={false} onPreviewChange={noop} />
+            <QuestionsEditor companyName="Ribosome Robotics" customQuestions={[]} reviewed={false} onPreviewChange={noop} />
           </Specimen>
           <Specimen label="Ten custom questions, long text">
             <QuestionsEditor
-              companyName="Keystone Robotics Foundation"
+              companyName="BioBuzz Foundation"
               customQuestions={Array.from({ length: 10 }, (_, i) => ({ id: `g${i}`, prompt: i === 0 ? LONG.slice(0, 200) : `Question number ${i + 1}?`, help: i === 0 ? LONG.slice(0, 300) : undefined, required: i % 3 !== 2 }))}
               reviewed
               onPreviewChange={noop}

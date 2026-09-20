@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useSyncExternalStore } from 'react'
+import { type ReactNode, useSyncExternalStore } from 'react'
 
 /*
  * The landing page is static, so it can't ask the server who is signed in. Instead this checks
@@ -21,13 +21,14 @@ function hasSessionCookie() {
   return SESSION_COOKIE.test(document.cookie)
 }
 
-export function LandingSessionActions({ primaryClass, ghostClass }: { primaryClass: string; ghostClass: string }) {
+export function LandingSessionActions({ primaryClass, ghostClass, arrow }: { primaryClass: string; ghostClass: string; arrow?: ReactNode }) {
   const signedIn = useSyncExternalStore(subscribe, hasSessionCookie, () => false)
 
   if (signedIn) {
     return (
       <Link href="/login" prefetch={false} className={primaryClass}>
         Open FTC Pitfund
+        {arrow}
       </Link>
     )
   }
@@ -39,6 +40,7 @@ export function LandingSessionActions({ primaryClass, ghostClass }: { primaryCla
       </Link>
       <Link href="/login?intent=team" prefetch={false} className={`${primaryClass} max-[359px]:hidden`}>
         Get started
+        {arrow}
       </Link>
     </>
   )

@@ -39,7 +39,9 @@
 - Tests: `tests/unit/authz.test.ts` is the guard × persona matrix. Extend it when adding a guard or persona.
 
 ## Local accounts
-Personas `admin, coach-new, coach, coach-unverified, coach-joiner, sponsor-new, sponsor-pending, sponsor,
-sponsor2` at `{persona}@pitfund.test`. The unit-test persona set (`tests/unit/helpers/db.ts`) additionally
-covers draft/pending teams and both roles. Sign in with one click at `/dev` or `GET /api/dev/sign-in?persona=`.
+The ten personas in `lib/shared/personas.ts` (that list is the truth; this one drifted from it once):
+`admin, coach-new, coach, coach2, coach-pending, coach-joiner, sponsor-new, sponsor-pending, sponsor,
+sponsor2` at `{persona}@pitfund.test`. `coach2`/`sponsor2` are the second org each side uses for isolation
+tests; `coach-pending`/`sponsor-pending` sit on `/welcome/pending` waiting for admin review. The
+unit-test persona set (`tests/unit/helpers/db.ts`) additionally covers draft/pending teams and both roles. Sign in with one click at `/dev` or `GET /api/dev/sign-in?persona=`.
 `/dev/*` is a 404 unless `NODE_ENV !== 'production'` and Supabase is `127.0.0.1`/`localhost`.

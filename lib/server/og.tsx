@@ -1,5 +1,4 @@
 import 'server-only'
-
 import { cacheLife } from 'next/cache'
 import { ImageResponse } from 'next/og'
 import type { ReactNode } from 'react'
@@ -17,17 +16,21 @@ import type { PublicTeam } from './data/public-team'
 
 export const OG_SIZE = { width: 1200, height: 630 }
 
-const TEXT = '#0b0b0c'
-const TEXT_SECONDARY = '#52525b'
-const TEXT_TERTIARY = '#71717a'
-const BORDER = '#e7e7ea'
+const TEXT = '#061b31'
+const TEXT_SECONDARY = '#50617a'
+const TEXT_TERTIARY = '#64748d'
+const BORDER = '#e5edf5'
 
-/** The pine mark as an SVG data URI. `rounded: false` is full-bleed (iOS rounds apple icons itself). */
-export function markSrc({ rounded = true }: { rounded?: boolean } = {}) {
+/** The exact P mark as an SVG data URI. */
+export function markSrc({ tile = false }: { tile?: boolean } = {}) {
+  const fg = tile ? '#fff' : ACCENT
   const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20">` +
-    `<rect width="20" height="20" rx="${rounded ? 5 : 0}" fill="${ACCENT}"/>` +
-    `<path d="M6 14.5V5.5h4.6a3.1 3.1 0 0 1 0 6.2H8.4" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">` +
+    (tile ? `<rect width="32" height="32" fill="${ACCENT}"/>` : '') +
+    `<g transform="translate(0, 1)">` +
+    `<rect x="9.5" y="7.5" width="4" height="17" rx="1.6" fill="${fg}" />` +
+    `<path d="M11.5 7.5H18a5.3 5.3 0 0 1 0 10.6h-6.5" stroke="${fg}" stroke-width="4" stroke-linecap="round" fill="none" />` +
+    `</g>` +
     `</svg>`
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
 }

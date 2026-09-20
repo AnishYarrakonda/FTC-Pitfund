@@ -71,9 +71,9 @@ export async function runDailyCron(options: CronOptions = {}) {
     await step('drain-outbox', () => drainUntilDone(options)),
     await step('admin-digest', async () => {
       const digest = await enqueueAdminDigest(now)
-      // Send it now if the budget allows (priority 3 stops at 70 sent).
-      const drained = digest.skipped ? null : await drainOutbox({ now: options.now, transport: options.transport })
-      return { ...digest, sent: drained?.sent ?? 0 }
+      // Send it now if the budget allows (priority 3 stops at 90 sent).
+      const drained = await drainOutbox({ now: options.now, transport: options.transport })
+      return { ...digest, sent: drained.sent }
     }),
     await step('clean-staging', async () => {
       if (options.skipStorage) return { deleted: 0, skipped: true }

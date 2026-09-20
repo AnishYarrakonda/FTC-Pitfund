@@ -51,7 +51,7 @@ const SHOTS: Shot[] = [
       ;(await page.$('main :focus'))?.evaluate((el) => (el as HTMLElement).blur())
     },
   },
-  { file: 'inbox-pitch', path: `/inbox/${SEED.pitches.voltageToBrightlineSent}`, persona: 'sponsor', selector: 'main', width: 1000 },
+  { file: 'inbox-pitch', path: `/inbox/${SEED.pitches.voltageToRibosomeSent}`, persona: 'sponsor', selector: 'main', width: 1000 },
   { file: 'team-page', path: `/t/${SEED.exodius.number}`, persona: null, selector: 'main', width: 900 },
 ]
 

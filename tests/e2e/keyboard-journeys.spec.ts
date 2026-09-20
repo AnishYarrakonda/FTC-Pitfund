@@ -100,7 +100,7 @@ test.describe('a coach', () => {
     // Submit opens the confirmation: focus is inside, trapped, Esc closes it and focus goes back to Submit.
     await tabTo(page, submit)
     await page.keyboard.press('Enter')
-    const confirm = page.getByRole('dialog', { name: 'Send this pitch to Keystone Robotics Foundation for review?' })
+    const confirm = page.getByRole('dialog', { name: 'Send this pitch to BioBuzz Foundation for review?' })
     await expect(confirm).toBeVisible()
     expect(await confirm.evaluate((d) => d.contains(document.activeElement))).toBe(true)
     await expectFocusTrapped(page, confirm)
@@ -126,7 +126,7 @@ test.describe('a company', () => {
   test.use(asPersona('sponsor'))
 
   test('answers from the keyboard only: both response dialogs trap focus, Esc and Cancel return it, nothing is sent', async ({ page, problems }) => {
-    await page.goto(`/inbox/${SEED.pitches.voltageToBrightlineSent}`, { waitUntil: 'networkidle' })
+    await page.goto(`/inbox/${SEED.pitches.voltageToRibosomeSent}`, { waitUntil: 'networkidle' })
     const notAFit = page.getByRole('button', { name: 'Not a fit' })
     const interested = page.getByRole('button', { name: 'Interested' })
 
@@ -158,7 +158,7 @@ test.describe('a company', () => {
     await expect(connect).toBeHidden()
     await expect(interested).toBeFocused()
 
-    const [row] = await db()`select status from pitches where id = ${SEED.pitches.voltageToBrightlineSent}`
+    const [row] = await db()`select status from pitches where id = ${SEED.pitches.voltageToRibosomeSent}`
     expect(row.status).toBe('sent')
     expect(problems).toEqual([])
   })

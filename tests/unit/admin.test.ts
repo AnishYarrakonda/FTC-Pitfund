@@ -25,7 +25,8 @@ import { queryDirectorySponsor } from '@/lib/server/data/directory'
 import { startPitch } from '@/lib/server/data/pitches'
 import { queryPublicTeam } from '@/lib/server/data/public-team'
 import { getDb } from '@/lib/server/db'
-import { buildDigest, enqueueAdminDigest } from '@/lib/server/digest'
+import { buildDigest, DIGEST_RECIPIENTS, EMAIL_WARN_AT, enqueueAdminDigest } from '@/lib/server/digest'
+import { renderEmail } from '@/lib/server/email/templates'
 import type { EmailTransport } from '@/lib/server/email/send'
 import { runDailyCron } from '@/lib/server/jobs'
 import { auditEvents, cronRuns, emailOutbox, pitches, reports, sponsors, teams, users, type PitchStatus } from '@/lib/server/schema'
@@ -351,17 +352,17 @@ describe('people', () => {
   )
 })
 
-describe('the admin digest', () => {
+describe('the daily summary', () => {
   it(
-    'says nothing when nothing is waiting, and lists what is',
+    'is built on a quiet day too, and lists what is waiting',
     dbTest(async () => {
       await getDb().update(pitches).set({ status: 'draft' }).where(eq(pitches.status, 'in_review'))
       await getDb().update(sponsors).set({ status: 'approved' }).where(eq(sponsors.status, 'pending'))
       await getDb().update(reports).set({ status: 'resolved' }).where(eq(reports.status, 'open'))
       await getDb().update(teams).set({ status: 'approved' }).where(eq(teams.status, 'pending'))
       await getDb().update(teams).set({ createdAt: new Date(NOW.getTime() - 5 * 86400_000) })
-      expect(await buildDigest(NOW)).toBeNull()
-      expect((await enqueueAdminDigest(NOW)).skipped).toBe(true)
+      const quiet = await buildDigest(NOW)
+      expect(quiet).toMatchObject({ waitingPitches: 0, pendingCompaniesTotal: 0, newTeamsTotal: 0, openReports: 0 })
 
       const late = await inReviewPitch({ submittedAt: new Date(NOW.getTime() - 30 * 3600_000) })
       await inReviewPitch({ submittedAt: new Date(NOW.getTime() - 2 * 3600_000) })
@@ -370,23 +371,80 @@ describe('the admin digest', () => {
       await getDb().update(teams).set({ status: 'approved' }).where(inArray(teams.id, [late.team.id]))
       const digest = await buildDigest(NOW)
       expect(digest).toMatchObject({ waitingPitches: 1, oldestWaitingHours: 30, pendingCompaniesTotal: 1, openReports: 0 })
-      expect(digest?.pendingCompanies.map((c) => c.id)).toEqual([pending.id])
-      expect(digest?.newTeams.map((t) => t.id)).toContain(newTeam.id)
+      expect(digest.pendingCompanies.map((c) => c.id)).toEqual([pending.id])
+      expect(digest.newTeams.map((t) => t.id)).toContain(newTeam.id)
     }),
   )
 
   it(
-    'is queued once per admin per day, however often it runs',
+    'counts the emails sent in the last 24 hours, this month, and the ones that went wrong',
     dbTest(async () => {
-      await createSponsor({ status: 'pending' })
-      const admins = await getDb().select({ id: users.id }).from(users).where(eq(users.isAdmin, true))
+      const before = await buildDigest(NOW)
+      const row = (template: string, patch: Partial<typeof emailOutbox.$inferInsert>) => ({ toEmail: 'x@pitfund.test', template, priority: 1 as const, ...patch })
+      await getDb()
+        .insert(emailOutbox)
+        .values([
+          row('login-code', { status: 'sent', sentAt: new Date(NOW.getTime() - 3600_000) }),
+          row('login-code', { status: 'sent', sentAt: new Date(NOW.getTime() - 5 * 3600_000) }),
+          row('pitch-approved-coach', { status: 'sent', sentAt: new Date(NOW.getTime() - 23 * 3600_000) }),
+          // Sent earlier this month, outside the 24 h window.
+          row('pitch-approved-coach', { status: 'sent', sentAt: new Date(NOW.getTime() - 3 * 86400_000) }),
+          row('notice', { status: 'failed', updatedAt: new Date(NOW.getTime() - 2 * 3600_000) }),
+          row('notice', { status: 'bounced', updatedAt: new Date(NOW.getTime() - 4 * 3600_000) }),
+          row('notice', { status: 'queued' }),
+        ])
+      const after = await buildDigest(NOW)
+      expect(after.email.sent24h - before.email.sent24h).toBe(3)
+      expect(after.email.sentThisMonth - before.email.sentThisMonth).toBe(4)
+      expect(after.email.failed24h - before.email.failed24h).toBe(1)
+      expect(after.email.bounced24h - before.email.bounced24h).toBe(1)
+      expect(after.email.waiting - before.email.waiting).toBe(1)
+      expect(after.email.limit).toBe(100)
+      expect(after.email.byKind.find((k) => k.label === 'login code')?.count).toBeGreaterThanOrEqual(2)
+    }),
+  )
+
+  it(
+    'is queued once per recipient per day, admins and the fixed addresses alike, however often it runs',
+    dbTest(async () => {
+      const admins = await getDb().select({ email: users.email }).from(users).where(eq(users.isAdmin, true))
+      const expected = new Set([...DIGEST_RECIPIENTS, ...admins.map((a) => a.email)].map((e) => e.toLowerCase())).size
       const first = await enqueueAdminDigest(NOW)
       const second = await enqueueAdminDigest(new Date(NOW.getTime() + 3600_000))
-      expect(first).toMatchObject({ skipped: false, queued: admins.length, deduped: 0 })
-      expect(second).toMatchObject({ skipped: false, queued: 0, deduped: admins.length })
+      expect(first).toMatchObject({ queued: expected, deduped: 0, recipients: expected })
+      expect(second).toMatchObject({ queued: 0, deduped: expected })
       const rows = await getDb().select().from(emailOutbox).where(like(emailOutbox.dedupeKey, `digest:2026-10-05:%`))
-      expect(rows).toHaveLength(admins.length)
+      expect(rows).toHaveLength(expected)
       expect(rows.every((r) => r.priority === 3 && r.template === 'admin-digest')).toBe(true)
+      expect(rows.map((r) => r.toEmail)).toEqual(expect.arrayContaining([...DIGEST_RECIPIENTS]))
+    }),
+  )
+
+  it(
+    'leads with the email count and warns as it nears the free plan',
+    dbTest(async () => {
+      const content = await buildDigest(NOW)
+      const data = (sent24h: number) => ({
+        dateLabel: 'Monday, Oct 5',
+        newTeams: [],
+        newTeamsTotal: 0,
+        pendingCompanies: [],
+        pendingCompaniesTotal: 0,
+        openReports: 0,
+        waitingPitches: 0,
+        oldestWaitingHours: null,
+        reviewUrl: 'http://127.0.0.1:3000/admin',
+        newUsers: 0,
+        activity: [],
+        email: { ...content.email, sent24h },
+        warnAt: EMAIL_WARN_AT,
+      })
+      const calm = await renderEmail('admin-digest', data(30))
+      const busy = await renderEmail('admin-digest', data(83))
+      expect(calm.subject).toContain('30/100 emails')
+      expect(busy.subject).toContain('83/100 emails')
+      expect(calm.text).not.toContain('Resend Pro')
+      expect(busy.text).toContain('Resend Pro')
     }),
   )
 })

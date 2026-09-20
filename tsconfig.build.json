@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts", "**/*.mts"],
+  "exclude": [
+    "node_modules",
+    "backups",
+    "docs",
+    "playwright-report",
+    "playwright.config.ts",
+    "playwright.qa.config.ts",
+    "prompts",
+    "qa",
+    "scratchpad",
+    "scripts",
+    "test-results",
+    "tests"
+  ]
+}

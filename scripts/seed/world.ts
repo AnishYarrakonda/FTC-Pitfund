@@ -220,7 +220,7 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
     const step = (n: number) => new Date(base.getTime() + n * 7 * HOUR)
     const reached = (s: PitchStatus[]) => s.includes(status)
     const submitted = !reached(['draft'])
-    const withdrawnAfterSending = status === 'withdrawn' && (i % 2 === 0 || sponsorName === 'Brightline Engineering')
+    const withdrawnAfterSending = status === 'withdrawn' && (i % 2 === 0 || sponsorName === 'Ribosome Robotics')
     const reviewed = reached(['changes_requested', 'rejected', 'sent', 'matched', 'declined']) || withdrawnAfterSending
     const sent = reached(['sent', 'matched', 'declined']) || withdrawnAfterSending
     const responded = reached(['matched', 'declined'])
@@ -231,7 +231,7 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
     const answers =
       status !== 'draft'
         ? fullAnswers
-        : teamNumber === 31579 && sponsorName === 'Summit Fabrication'
+        : teamNumber === 31579 && sponsorName === 'Synapse Fabrication'
           ? SUMMIT_DRAFT_ANSWERS
           : fullAnswers.map((a, qi) => (qi === 0 ? a : { ...a, answer: '' }))
     const askType = (['amount', 'in_kind', 'open', 'none'] as const)[i % 4]
@@ -321,13 +321,13 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
   notificationRows.length = 0
   await db.insert(notifications).values({ userId: personaId('coach'), type: 'team.join_request', title: 'Sam Patel wants to join Exodius', body: 'coach-joiner@pitfund.test', href: '/team', createdAt: ago(now, 2 * HOUR) })
 
-  const brightlineId = sponsorIds.get('Brightline Engineering')!
+  const ribosomeId = sponsorIds.get('Ribosome Robotics')!
   await db.insert(invites).values([
     { kind: 'team', teamId: exodiusId, email: personaEmail('coach-new'), tokenHash: hashInviteToken(SEED_INVITE_TOKENS.valid), invitedBy: personaId('coach'), expiresAt: new Date(now.getTime() + 10 * DAY), createdAt: ago(now, 4 * DAY) },
     { kind: 'team', teamId: exodiusId, email: 'old.invite@pitfund.test', tokenHash: hashInviteToken(SEED_INVITE_TOKENS.expired), invitedBy: personaId('coach'), expiresAt: ago(now, 2 * DAY), createdAt: ago(now, 16 * DAY) },
     { kind: 'team', teamId: exodiusId, email: 'revoked.invite@pitfund.test', tokenHash: hashInviteToken(SEED_INVITE_TOKENS.revoked), invitedBy: personaId('coach'), expiresAt: new Date(now.getTime() + 5 * DAY), revokedAt: ago(now, 1 * DAY), createdAt: ago(now, 9 * DAY) },
-    { kind: 'sponsor', sponsorId: brightlineId, email: 'member-brightline@pitfund.test', tokenHash: hashInviteToken(SEED_INVITE_TOKENS.used), invitedBy: personaId('sponsor'), expiresAt: ago(now, 10 * DAY), acceptedAt: ago(now, 22 * DAY), createdAt: ago(now, 23 * DAY) },
-    { kind: 'sponsor', sponsorId: brightlineId, email: 'finance@pitfund.test', tokenHash: hashInviteToken(SEED_INVITE_TOKENS.sponsorValid), invitedBy: personaId('sponsor'), expiresAt: new Date(now.getTime() + 12 * DAY), createdAt: ago(now, 2 * DAY) },
+    { kind: 'sponsor', sponsorId: ribosomeId, email: 'member-ribosome@pitfund.test', tokenHash: hashInviteToken(SEED_INVITE_TOKENS.used), invitedBy: personaId('sponsor'), expiresAt: ago(now, 10 * DAY), acceptedAt: ago(now, 22 * DAY), createdAt: ago(now, 23 * DAY) },
+    { kind: 'sponsor', sponsorId: ribosomeId, email: 'finance@pitfund.test', tokenHash: hashInviteToken(SEED_INVITE_TOKENS.sponsorValid), invitedBy: personaId('sponsor'), expiresAt: new Date(now.getTime() + 12 * DAY), createdAt: ago(now, 2 * DAY) },
   ])
 
   await db.insert(reports).values([
@@ -344,7 +344,7 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
     outbox.push({ toEmail: personaEmail(i % 2 ? 'coach' : 'sponsor'), template: 'notice', payload: notice(i % 2 ? 'Your pitch was sent' : 'New pitch from Exodius'), priority: 1, status: 'sent', attempts: 1, resendId: `seed-${i}`, sentAt, sendAfter: sentAt, createdAt: sentAt })
   }
   outbox.push({ toEmail: personaEmail('admin'), template: 'notice', payload: notice('Daily summary: 2 new teams, 1 new company'), priority: 3, status: 'queued', sendAfter: new Date(now.getTime() + 14 * HOUR), createdAt: ago(now, 1 * HOUR) })
-  outbox.push({ toEmail: personaEmail('coach2'), template: 'notice', payload: notice('Your pitch to Cedar Valley Credit Union is in review'), priority: 1, status: 'queued', sendAfter: new Date(now.getTime() + 3 * HOUR), attempts: 2, lastError: 'rate_limit_exceeded: Too many requests', createdAt: ago(now, 30 * 60 * 1000) })
+  outbox.push({ toEmail: personaEmail('coach2'), template: 'notice', payload: notice('Your pitch to Nucleotide Credit Union is in review'), priority: 1, status: 'queued', sendAfter: new Date(now.getTime() + 3 * HOUR), attempts: 2, lastError: 'rate_limit_exceeded: Too many requests', createdAt: ago(now, 30 * 60 * 1000) })
   outbox.push({ toEmail: 'member-tidal@pitfund.test', template: 'notice', payload: notice('Welcome to FTC Pitfund'), priority: 1, status: 'failed', attempts: 5, lastError: 'validation_error: The to address is invalid', createdAt: ago(now, 5 * HOUR), updatedAt: ago(now, 4 * HOUR) })
   outbox.push({ toEmail: 'old-address@pitfund.test', template: 'notice', payload: notice('New pitch from Quantum Quokkas'), priority: 1, status: 'bounced', attempts: 1, resendId: 'seed-bounced', sentAt: ago(now, 9 * HOUR), sendAfter: ago(now, 9 * HOUR), lastError: 'bounced: Mailbox does not exist', createdAt: ago(now, 9 * HOUR), updatedAt: ago(now, 8 * HOUR) })
   await db.insert(emailOutbox).values(outbox)
@@ -369,7 +369,7 @@ export function cronHistory(now: Date, { lastRunHoursAgo }: { lastRunHoursAgo: n
       const failed = day === 1 && job === 'recheck-records'
       const result = {
         'drain-outbox': { claimed: 4 - day, sent: 4 - day, deferred: 0, retried: 0, failed: 0 },
-        'admin-digest': { skipped: false, queued: 1, deduped: 0, sent: 1 },
+        'admin-digest': { queued: 2, deduped: 0, recipients: 2, emailsSent24h: 4 - day, sent: 2 },
         'clean-staging': { deleted: day },
         'recheck-records': { checked: 1, matched: 0, not_found: 0, unavailable: 1 },
         keepalive: { result: 1 },

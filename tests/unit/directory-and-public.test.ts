@@ -57,25 +57,30 @@ describe('sponsor directory', () => {
     'finds companies whose names were typed wrong, best match first',
     dbTest(async () => {
       await getDb().delete(sponsors)
-      const brightline = await createSponsor({ name: 'Brightline Energy' })
-      const keystone = await createSponsor({ name: 'Keystone Robotics Foundation' })
+      const ribosome = await createSponsor({ name: 'Ribosome Energy' })
+      const keystone = await createSponsor({ name: 'BioBuzz Foundation' })
       const summit = await createSponsor({ name: 'Summit Manufacturing' })
 
-      // The whole point: one wrong letter used to produce an empty page.
+      /*
+       * The whole point: one wrong letter used to produce an empty page. The misspellings have to
+       * stay misspellings *of these fixtures* — a blanket rename of the company names once left the
+       * typos pointing at names that no longer existed, and the test failed for that rather than
+       * for anything the search did.
+       */
       const names = async (q: string) => (await query(q)).items.map((i) => i.id)
-      expect(await names('brightlne')).toContain(brightline.id)
-      expect(await names('brightline energy')).toEqual([brightline.id])
-      expect(await names('keystone robotic')).toContain(keystone.id)
+      expect(await names('ribosme')).toContain(ribosome.id)
+      expect(await names('ribosome energy')).toEqual([ribosome.id])
+      expect(await names('biobuz foundation')).toContain(keystone.id)
       expect(await names('sumit manufacturng')).toContain(summit.id)
-      expect(await names('Keytsone')).toContain(keystone.id)
+      expect(await names('BioBzz')).toContain(keystone.id)
 
       // Best match first, not merely "somewhere in the results".
-      expect((await names('keystone'))[0]).toBe(keystone.id)
+      expect((await names('biobuzz'))[0]).toBe(keystone.id)
       expect((await names('summit'))[0]).toBe(summit.id)
 
       // A prefix beats a better-scoring match elsewhere in the name.
-      const foundation = await createSponsor({ name: 'Keystone Trust' })
-      expect((await names('keystone t'))[0]).toBe(foundation.id)
+      const foundation = await createSponsor({ name: 'BioBuzz Trust' })
+      expect((await names('biobuzz t'))[0]).toBe(foundation.id)
 
       // Below the threshold is nothing at all, not a page of near-misses.
       expect(await names('zzzzzzzz')).toEqual([])
@@ -85,11 +90,11 @@ describe('sponsor directory', () => {
       // stray one next to a real word is just a typo, and fuzzy matching is allowed to see past it.
       expect((await query('%')).items).toEqual([])
       expect((await query('_')).items).toEqual([])
-      expect(await names('Keystone%')).toContain(keystone.id)
+      expect(await names('BioBuzz%')).toContain(keystone.id)
 
       // Searching never pages: the results are ranked, so a cursor on the alphabetical key is
       // meaningless. The page says how many matched instead.
-      expect(await query('keystone')).toMatchObject({ nextCursor: null, prevCursor: null })
+      expect(await query('biobuzz')).toMatchObject({ nextCursor: null, prevCursor: null })
     }),
   )
 

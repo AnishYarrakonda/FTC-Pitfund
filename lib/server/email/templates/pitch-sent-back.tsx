@@ -24,7 +24,7 @@ export default function PitchSentBackEmail(props: PitchSentBackProps) {
       <Text style={{ ...text.body, wordBreak: 'break-word' }}>
         Team {p.teamNumber}’s pitch to {p.companyName} hasn’t been sent yet. Edit it with this note in mind, then resubmit:
       </Text>
-      <Text style={{ ...text.body, color: '#0B0B0C', whiteSpace: 'pre-wrap', wordBreak: 'break-word', borderLeft: '3px solid #E7E7EA', paddingLeft: '12px' }}>{p.note}</Text>
+      <Text style={{ ...text.body, color: '#061B31', whiteSpace: 'pre-wrap', wordBreak: 'break-word', borderLeft: '3px solid #E7E7EA', paddingLeft: '12px' }}>{p.note}</Text>
       <Section style={{ padding: '4px 0 0' }}>
         <EmailButton href={p.editUrl}>Edit and resubmit</EmailButton>
       </Section>

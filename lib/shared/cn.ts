@@ -22,7 +22,10 @@ const RULES: Array<[RegExp, string]> = [
   [/^(not-)?sr-only$/, 'sr'],
   [/^(truncate|text-ellipsis|text-clip)$/, 'text-overflow'],
   [/^(underline|overline|line-through|no-underline)$/, 'text-decoration'],
+  [/^(uppercase|lowercase|capitalize|normal-case)$/, 'text-transform'],
   [/^(grow|shrink)(-|$)/, '$1'],
+  // Gradient color stops (`from-brand-blue to-brand-yellow`, the signature gradient).
+  [/^(from|via|to)-/, 'gradient-$1'],
   [/^border(-\d|-\[|$)/, 'border-w'],
   [/^rounded(-(none|full|sm|md|lg|xl|2xl|3xl|control|menu|dialog|\[)|$)/, 'rounded'],
   [/^(shadow|transition)(-|$)/, '$1'],
@@ -55,7 +58,12 @@ const RULES: Array<[RegExp, string]> = [
   [/^underline-/, 'underline-offset'],
   [/^flex-(row|col)(-reverse)?$/, 'flex-direction'],
   [/^flex-(wrap(-reverse)?|nowrap)$/, 'flex-wrap'],
-  [/^flex-/, 'flex'],
+  // Only the real shorthand values take the `flex` group. A bare /^flex-/ catch-all also swallowed
+  // things that aren't Tailwind utilities at all (an inline style's 'flex-start' reaches this
+  // through cn's own callers), and because `flex` overrides grow/shrink/basis that silently
+  // dropped a `shrink-0`. tailwind-merge leaves an unrecognised flex-* alone; so do we.
+  [/^flex-(\d+(\.\d+)?(\/\d+)?|auto|initial|none|\[)/, 'flex'],
+  [/^flex-/, ''],
   [/^grid-(cols|rows|flow)-/, 'grid-$1'],
   [/^grid-/, ''],
   [/^(col|row)-([a-z]+)/, '$1-$2'],

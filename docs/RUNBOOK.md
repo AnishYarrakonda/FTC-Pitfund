@@ -3,12 +3,12 @@
 For whoever operates FTC Pitfund day to day. You don't need to write code. A few tasks need a terminal in this repository with `npm install` done and the team's `.env.provision` file (from the password manager) in the repository folder.
 
 - **Admin console:** `https://<your domain>/admin`. Sign in as an admin (Google or an email code).
-- **Support inbox:** ftcexodius@gmail.com. Companies and coaches write here, and the admin digest arrives here.
+- **Support inbox:** ftcexodius@gmail.com. Companies and coaches write here, and the daily summary arrives here.
 - **Dashboards** (all owned by ftcexodius@gmail.com): [Vercel](https://vercel.com/dashboard) (site, logs), [Supabase](https://supabase.com/dashboard) (database, storage), [Resend](https://resend.com/emails) (email), [Sentry](https://sentry.io) (errors, if set up). The System page links to each.
 
 ## Every day (about 10 minutes)
 
-1. **Read the digest email.** "FTC Pitfund daily: …" arrives around 13:00 UTC (9 am Eastern) when something is waiting: pitches to review, companies to approve, new teams, reports.
+1. **Read the daily summary.** "FTC Pitfund daily: 34/100 emails, …" arrives every day around 13:00 UTC (9 am Eastern), even on a quiet one. It leads with how many emails went out through Resend in the last 24 hours (and warns from 80), then what happened in the app, then what is waiting: pitches to review, companies and teams to approve, reports.
 2. **Review pitches.** `/admin` → Pitches, oldest first. Open one and read the answers, the ask and the deck. Then:
    - **Approve & send** if it's a real team with a finished pitch. The company gets it right away.
    - **Send back** with a note saying exactly what to fix ("Answer question 2 with numbers").
@@ -31,7 +31,7 @@ For whoever operates FTC Pitfund day to day. You don't need to write code. A few
 | --- | --- | --- |
 | **"The daily job hasn't run in over 36 hours"** | Vercel's cron didn't call the app: queued email, the digest, upload cleanup and the database keepalive stopped. | Vercel → project `ftc-pitfund` → Settings → Cron Jobs: make sure `/api/cron/daily` is listed and enabled. Open Logs, filter `/api/cron/daily`, look for errors. To run it by hand: `curl -H "Authorization: Bearer <CRON_SECRET from .env.provision>" https://<your domain>/api/cron/daily`. |
 | **"Some daily jobs need attention"** + a red job | One step (email, digest, cleanup, FIRST re-check, keepalive) failed last time. The detail says why. | Usually temporary (FIRST's API or Resend was down). If it's red two days in a row, send the error text to whoever maintains the code. |
-| **Emails in the last 24 h** is orange (≥70) or red (≥90) | Resend's free plan sends 100 emails a day. Sign-in codes always go first; digests and notices wait. | One busy day is fine: email is delayed, never lost. If it's **80 or more most days**, upgrade to Resend Pro ($20/month) in Resend → Billing. No code change is needed. |
+| **Emails in the last 24 h** is orange (≥80) or red (≥90) | Resend's free plan sends 100 emails a day. Sign-in codes always go first; everything else stops at 90. | One busy day is fine: email is delayed, never lost. If it's **80 or more most days**, upgrade to Resend Pro ($20/month) in Resend → Billing. No code change is needed. |
 | **Queued email** has rows | Waiting to send, or retrying after a provider error (1, 2, 4, 8 minutes; 5 tries). | Nothing, unless a row is older than a day. **Send now** retries it; **Dismiss** drops it (the in-app notification was already delivered). |
 | **Failed and bounced** has rows | The email copy didn't arrive (bad address, full inbox, marked as spam). The in-app notification still did. | If it's a coach or company contact, email them from ftcexodius@gmail.com to fix the address. Dismiss when handled. |
 | **File storage** passes 800 MB of 1 GB | Decks, previews and logos. | Upgrade Supabase to Pro ($25/month), or ask a maintainer to move files to Cloudflare R2. Also watch **egress** (5 GB/month) on Supabase → Usage. |

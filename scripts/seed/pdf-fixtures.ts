@@ -15,7 +15,7 @@ const PDF_FIXTURES_DIR = path.resolve(process.cwd(), 'tests/.fixtures')
 
 export async function writePdfFixtures() {
   mkdirSync(PDF_FIXTURES_DIR, { recursive: true })
-  const deck = { teamName: 'Upload Test', teamNumber: 31579, location: 'Austin, TX', color: '#1F6F5C' }
+  const deck = { teamName: 'Upload Test', teamNumber: 31579, location: 'Austin, TX', color: '#1E40AF' }
   const valid = await generateDeckPdf({ ...deck, pages: 3, noiseSide: 820 })
   writeFileSync(path.join(PDF_FIXTURES_DIR, 'deck-3-pages.pdf'), valid)
   writeFileSync(path.join(PDF_FIXTURES_DIR, 'deck-8-pages.pdf'), await generateDeckPdf({ ...deck, pages: 8 }))

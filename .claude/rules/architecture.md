@@ -37,7 +37,7 @@ Scripts and Vitest stub `server-only` (`scripts/lib/server-only-stub.mjs`, vites
 
 ## Email
 `enqueueEmail` (in the action's transaction) → `after(() => drainOutbox())`. Budgets per rolling 24 h:
-priority 0 auth 100 · 1 transactional 90 · 2 admin 90 · 3 digest 70. Resend `idempotencyKey = outbox.id`.
+priority 0 auth 100 · 1 transactional 90 · 2 admin 90 · 3 daily summary 90. Resend `idempotencyKey = outbox.id`.
 Transient failures back off (1, 2, 4, 8 min; 5 attempts). Dev sends to Mailpit over SMTP unless
 `EMAIL_TRANSPORT=resend`. Auth codes come from the Supabase Send Email hook (`/api/auth/send-email`) and are
 sent synchronously; their payload is scrubbed after sending. Templates: `lib/server/email/templates/`.
@@ -49,7 +49,7 @@ under a fresh name (never trust the browser's file). Read public objects over HT
 
 ## Jobs
 One Vercel cron: `/api/cron/daily` → `lib/server/jobs.ts` `runDailyCron()`: drain outbox → admin digest
-(`lib/server/digest.ts`, dedupe `digest:{date}:{adminId}`) → clean staging → re-check ≤20 unchecked FIRST records →
+(`lib/server/digest.ts`, dedupe `digest:{date}:{email}`; sent every day to `DIGEST_RECIPIENTS` plus admins, leading with the emails sent in the last 24 h) → clean staging → re-check ≤20 unchecked FIRST records →
 keepalive. One `cron_runs` row per job; System warns when a job is older than 36 h. Every job must be safe to run twice.
 Add jobs there. `npm run cron:run` invokes it locally.
 
@@ -78,8 +78,14 @@ React + Next alone is ~145 KB, so client code on any page gets ~25 KB. Keep it t
 - **Server components for static lists**, client components only for the controls (see `components/members/`).
   A server component can't render `Button` without `asChild` (it attaches an onClick): use `buttonVariants()` on a plain element.
 - Turbopack bundles whole modules: one import from a big client module ships all of it. Split modules instead.
-- The landing page is static; its only island reads the session cookie. `/login` renders the form in the static shell
+- The landing page is static (`components/home/*`, styles scoped to `.hp` in `app/(public)/home.css`). Two islands: one
+  reads the session cookie; `<HomeEffects>` imports `components/home/effects/*` at idle (canvases, menus, dialogs built on
+  first open, carousels), one short task per effect. Below-the-fold sections use `content-visibility: auto`; QA's
+  `settle()` renders them before screenshots, overflow checks and axe. `/login` renders the form in the static shell
   and reads `?intent`, `?next`, `?error` in the browser (a Suspense fallback swap would wipe what the user typed).
+  "Find where to start" routes what a visitor types with `effects/find-match.ts`: a scored, weighted word index
+  with prefix and edit-distance fallbacks, no model and no request. Change the weights only against
+  `tests/unit/find-match.test.ts`, and add the sentence to that corpus first.
 - **CSS is inlined into the HTML** (`experimental.inlineCss`): a render-blocking stylesheet request competing with the scripts
   held `/login` first paint to ~2 s on Slow 4G. Images are served AVIF first (`images.formats`); the landing hero is the LCP.
 - **The logo cropper loads on file pick** (`components/uploads/logo-cropper-impl.tsx`), like the dialog and

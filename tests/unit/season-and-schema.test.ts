@@ -25,9 +25,9 @@ describe('seasons', () => {
 
 describe('questions', () => {
   it('uses the three defaults with the company name when a company defines none', () => {
-    const qs = questionsFor({ name: 'Brightline', questions: [] })
+    const qs = questionsFor({ name: 'Ribosome', questions: [] })
     expect(qs).toHaveLength(3)
-    expect(qs[0].prompt).toBe('Why are you reaching out to Brightline specifically?')
+    expect(qs[0].prompt).toBe('Why are you reaching out to Ribosome specifically?')
     expect(qs.map((q) => q.required)).toEqual([true, true, false])
     expect(DEFAULT_QUESTIONS[0].prompt).toContain('{Company}')
   })

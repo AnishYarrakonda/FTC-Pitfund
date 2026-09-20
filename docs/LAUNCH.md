@@ -10,7 +10,7 @@ All infrastructure belongs to the team Google account **ftcexodius@gmail.com**. 
 | `2` | Waiting on you. The last lines say exactly what to do. Do it, then run the same command again. |
 | `1` | Something failed. The error says what; nothing was left half-done. Fix it and run the command again. |
 
-Before starting: a computer with Node 22+, Docker (only for local development), the [GitHub CLI](https://cli.github.com) and this repository cloned (`npm install`).
+Before starting: a computer with Node 24 (what CI and Vercel build with), Docker (only for local development), the [GitHub CLI](https://cli.github.com) and this repository cloned (`npm install`).
 
 ---
 
@@ -131,9 +131,16 @@ Then sign in at `https://<your domain>/login` with ftcexodius@gmail.com. The adm
 
 ## 8. Legal review
 
-`/legal/terms` and `/legal/privacy` are plain-language drafts. Have a qualified person (a parent who is a lawyer, a school district contact, a mentor company's counsel) read both. Change the text in `app/(public)/legal/*/page.tsx` and update the "Last updated" date.
+`/legal/terms` and `/legal/privacy` are plain-language drafts. Have a qualified person (a parent who is a lawyer, a school district contact, a mentor company's counsel) read both. The text lives in the `SECTIONS` array in `app/(public)/legal/*/page.tsx`; change it there and update the "Last updated" date. Each section has a stable `id`, so a reviewer can point at `/legal/terms#shared-accounts`.
 
-**Done when:** the reviewer signs off and the "Plain-language draft" comment is removed from both files.
+Give the reviewer these four, which the code can't settle:
+
+1. **Which law applies, and where a dispute goes.** Neither page says. Every other site this size names a state.
+2. **A copyright-complaint route.** "Reports, removal and suspension" covers a bad team page; it doesn't tell a company whose logo was used how to ask for it to come down, or name an agent.
+3. **Whether accepting once is enough.** We record the moment someone accepts (`users.accepted_terms_at`) but not *which version*, and nothing re-prompts when the text changes — the Terms just say continued use is acceptance. If the reviewer wants recorded re-acceptance, that is a version constant plus a gate in the app shell.
+4. **Whether a volunteer team can disclaim liability the way "No warranty" does**, given the users are adults acting for schools and companies.
+
+**Done when:** the reviewer signs off, those four are answered, and the "Plain-language draft" comment is removed from both files.
 
 ## 9. Retire v1, only after v2 is live
 

@@ -10,7 +10,7 @@ import { PageContainer } from '@/components/ui/page'
 import { requireTeamMember } from '@/lib/server/authz'
 import { getTeamProfile, submitBlockers } from '@/lib/server/data/teams'
 import { pageViewer } from '@/lib/server/page-guards'
-import { homeFor } from '@/lib/shared/viewer'
+import { homeFor, welcomePath } from '@/lib/shared/viewer'
 
 import { ProofUpload } from './proof-upload'
 import { SubmitBar } from './submit-bar'
@@ -26,6 +26,8 @@ export const metadata: Metadata = { title: 'Set up your team' }
 export default async function WelcomeTeamPage() {
   const viewer = await pageViewer()
   if (viewer.sponsor || viewer.pendingJoin) redirect(homeFor(viewer))
+  // /welcome is where the 18+ and Terms confirmation is collected; nobody sets up an org around it.
+  if (!viewer.acceptedTermsAt) redirect(welcomePath('team'))
   // No team yet: look one up and claim it.
   if (!viewer.team) return <Shell>{<TeamSetup />}</Shell>
   if (viewer.team.status === 'approved' || viewer.team.status === 'suspended') redirect(homeFor(viewer))

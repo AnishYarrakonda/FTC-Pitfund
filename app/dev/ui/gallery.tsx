@@ -334,7 +334,7 @@ function FormsSection() {
         </Specimen>
         <Specimen label="Textarea (auto-grow, counter from 80%)">
           <div className="grid gap-5">
-            <Field label="What would Brightline's support make possible?" required>
+            <Field label="What would Ribosome's support make possible?" required>
               <Textarea value={answer} onChange={(e) => setAnswer(e.target.value)} maxLength={80} />
             </Field>
             <Field label="Always-on counter" hint="Up to 2,000 characters.">
@@ -465,7 +465,7 @@ function IdentitySection({ logo }: { logo: string | null }) {
           <div className="flex items-center gap-3">
             <OrgLogo name="Exodius" src={logo} size="sm" />
             <OrgLogo name="Exodius" src={logo} size="md" />
-            <OrgLogo name="Brightline Engineering" size="lg" />
+            <OrgLogo name="Ribosome Robotics" size="lg" />
             <OrgLogo name="Cedar Valley" size="xl" />
           </div>
         </Specimen>
@@ -514,7 +514,7 @@ function StatusSection() {
               Usually within a day. You can&apos;t edit a pitch while it&apos;s in review.
             </Banner>
             <Banner tone="warning" title="Email delivery is delayed until tomorrow" action={<Button size="sm" variant="secondary">View queue</Button>}>
-              Brightline Engineering will still see it in FTC Pitfund.
+              Ribosome Robotics will still see it in FTC Pitfund.
             </Banner>
             <Banner tone="danger" title="Couldn't reach FTC Pitfund. Check your connection." action={<Button size="sm" variant="secondary">Retry</Button>} />
             <Banner tone="success" title="Deck updated · visible on your public page" />
@@ -535,7 +535,7 @@ function StatusSection() {
               { id: '1', title: 'Draft started', at: new Date(now - 6 * 86400000), tone: 'neutral' },
               { id: '2', title: 'Submitted for review', description: 'By Maya Chen', at: new Date(now - 5 * 86400000), tone: 'info' },
               { id: '3', title: 'Sent back', description: 'Please say what the funding would pay for in the second answer.', at: new Date(now - 4 * 86400000), tone: 'warning' },
-              { id: '4', title: 'Sent to Brightline Engineering', at: new Date(now - 3 * 3600000), tone: 'accent' },
+              { id: '4', title: 'Sent to Ribosome Robotics', at: new Date(now - 3 * 3600000), tone: 'accent' },
               { id: '5', title: 'Matched', description: 'Daniel Brooks is interested.', at: new Date(now - 20 * 60000), tone: 'success' },
             ]}
           />
@@ -549,8 +549,8 @@ type Row = { id: string; team: string; number: number; company: string; status: 
 
 function ListsSection() {
   const rows: Row[] = [
-    { id: '1', team: 'Exodius', number: 31579, company: 'Brightline Engineering', status: 'matched', updated: '2 h ago' },
-    { id: '2', team: 'Gear Grinders', number: 16072, company: 'Cedar Valley Credit Union', status: 'in_review', updated: 'yesterday' },
+    { id: '1', team: 'Exodius', number: 31579, company: 'Ribosome Robotics', status: 'matched', updated: '2 h ago' },
+    { id: '2', team: 'Gear Grinders', number: 16072, company: 'Nucleotide Credit Union', status: 'in_review', updated: 'yesterday' },
     { id: '3', team: LONG.slice(0, 60), number: 24890, company: LONG.slice(0, 300), status: 'changes_requested', updated: '3 days ago' },
   ]
   return (
@@ -680,7 +680,7 @@ function OverlaysSection() {
                   now={new Date(now)}
                   events={Array.from({ length: 12 }, (_, i) => ({
                     id: String(i),
-                    title: i % 2 ? 'Pitch sent to Brightline Engineering' : 'Member joined',
+                    title: i % 2 ? 'Pitch sent to Ribosome Robotics' : 'Member joined',
                     description: LONG_SENTENCE.slice(0, 120),
                     at: new Date(now - i * 86400000),
                   }))}
@@ -694,8 +694,8 @@ function OverlaysSection() {
                 Confirm (succeeds)
               </Button>
             }
-            title="Send this pitch to Brightline Engineering for review?"
-            consequence="A Pitfund reviewer reads every pitch before it reaches Brightline Engineering, usually within a day. You can't edit it while it's in review."
+            title="Send this pitch to Ribosome Robotics for review?"
+            consequence="A Pitfund reviewer reads every pitch before it reaches Ribosome Robotics, usually within a day. You can't edit it while it's in review."
             confirmLabel="Submit pitch"
             pendingLabel="Submitting…"
             onConfirm={() => fakeSlowSuccess({})}
@@ -721,7 +721,7 @@ function OverlaysSection() {
               </Button>
             }
             title="Withdraw this pitch?"
-            consequence="Cedar Valley Credit Union won't see it anymore, and you can pitch them again this season."
+            consequence="Nucleotide Credit Union won't see it anymore, and you can pitch them again this season."
             confirmLabel="Withdraw"
             pendingLabel="Withdrawing…"
             tone="danger"
@@ -771,7 +771,7 @@ function MenusSection() {
           <Tooltip content="Verified by FTC Pitfund">
             <Button variant="ghost">Hover or focus for a tooltip</Button>
           </Tooltip>
-          <Button variant="secondary" onClick={() => toast.success('Sent to Brightline Engineering · 2 people notified')}>
+          <Button variant="secondary" onClick={() => toast.success('Sent to Ribosome Robotics · 2 people notified')}>
             Success toast
           </Button>
           <Button variant="secondary" onClick={() => toast.error('Something went wrong on our side. Reference 3f9a2c1b7e04.')}>

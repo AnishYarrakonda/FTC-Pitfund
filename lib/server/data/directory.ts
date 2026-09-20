@@ -58,7 +58,7 @@ const escapeLike = (text: string) => text.replace(/[\\%_]/g, (c) => `\\${c}`)
  *
  * This is word_similarity, not similarity: it scores the query against the best-matching run of
  * words inside the name, so a short query isn't punished for the rest of a long company name
- * ("keytsone" against "Keystone Robotics Foundation" scores 0.38 this way and 0.15 the other).
+ * ("keytsone" against "BioBuzz Foundation" scores 0.38 this way and 0.15 the other).
  * Measured against real misspellings in tests/unit/directory-and-public.test.ts — 0.3 accepts a
  * dropped or transposed letter and rejects words that merely share a few trigrams.
  */

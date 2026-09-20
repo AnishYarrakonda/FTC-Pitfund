@@ -106,11 +106,11 @@ test('a new coach goes from sign-in to a submitted pitch, withdraws it, and can 
   // ─── Directory → composer ──────────────────────────────────────────────────────────────
   await page.goto('/sponsors')
   await expect(page.getByRole('heading', { name: 'Sponsors' })).toBeVisible()
-  await expect(page.getByText('Atlas Components')).toHaveCount(0)
+  await expect(page.getByText('Allele Components')).toHaveCount(0)
   await page.goto(`/sponsors/${SEED.meridian}`)
   await page.getByRole('button', { name: 'Start pitch' }).click()
   await page.waitForURL(`**/sponsors/${SEED.meridian}/pitch`)
-  await expect(page.getByRole('heading', { name: 'Pitch Meridian Machine Works' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Pitch Mitochondria Machine Works' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Submit for review' })).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Answer question 1' })).toBeVisible()
 
@@ -122,7 +122,7 @@ test('a new coach goes from sign-in to a submitted pitch, withdraws it, and can 
   expect(draft.answers[0].answer).toBe('Two drivetrain side plates. CAD is ready as STEP files.')
 
   await page.getByRole('button', { name: 'Submit for review' }).click()
-  const confirm = page.getByRole('dialog', { name: 'Send this pitch to Meridian Machine Works for review?' })
+  const confirm = page.getByRole('dialog', { name: 'Send this pitch to Mitochondria Machine Works for review?' })
   await confirm.getByRole('button', { name: 'Submit' }).click()
   await page.waitForURL(`**/pitches/${draft.id}`)
   await expect(page.getByText('Waiting for Pitfund review, usually within a day').first()).toBeVisible()
@@ -130,7 +130,7 @@ test('a new coach goes from sign-in to a submitted pitch, withdraws it, and can 
 
   // Admins get the instant email.
   await expect
-    .poll(async () => (await messagesTo('admin@pitfund.test')).some((m) => m.Subject === `New pitch: Team ${number} → Meridian Machine Works`), { timeout: 20_000 })
+    .poll(async () => (await messagesTo('admin@pitfund.test')).some((m) => m.Subject === `New pitch: Team ${number} → Mitochondria Machine Works`), { timeout: 20_000 })
     .toBe(true)
 
   // ─── Withdraw frees the slot ───────────────────────────────────────────────────────────

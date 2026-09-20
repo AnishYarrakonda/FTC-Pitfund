@@ -18,7 +18,7 @@ import { authFile } from '../support/session'
 
 test.describe.configure({ mode: 'serial' })
 
-const VOLTAGE_TO_CEDAR = seedPitchId(24890, 'Cedar Valley Credit Union')
+const VOLTAGE_TO_CEDAR = seedPitchId(24890, 'Nucleotide Credit Union')
 
 test.afterAll(async () => {
   await db()`delete from email_outbox where resend_id like 'e2e-quota-%'`
@@ -48,12 +48,12 @@ test('admin sends back, the coach resubmits, the admin approves, the company con
   const admin = await as(browser, 'admin')
   const coach = await as(browser, 'coach2')
   const company = await as(browser, 'sponsor2')
-  const brightline = await as(browser, 'sponsor')
+  const ribosome = await as(browser, 'sponsor')
 
   // ─── Admin: send back with a note ─────────────────────────────────────────────────────
   await admin.page.goto(`/admin/pitches/${VOLTAGE_TO_CEDAR}`)
-  await expect(admin.page.getByRole('heading', { name: /Team 24890 · Voltage Vultures → Cedar Valley Credit Union/ })).toBeVisible()
-  await expect(admin.page.getByText('The pitch, exactly as Cedar Valley Credit Union will see it')).toBeVisible()
+  await expect(admin.page.getByRole('heading', { name: /Team 24890 · Voltage Vultures → Nucleotide Credit Union/ })).toBeVisible()
+  await expect(admin.page.getByText('The pitch, exactly as Nucleotide Credit Union will see it')).toBeVisible()
   await admin.page.getByRole('button', { name: /Send back/ }).click()
   const sendBack = admin.page.getByRole('dialog', { name: 'Send back to Team 24890' })
   await sendBack.getByRole('button', { name: 'Send back' }).click()
@@ -62,7 +62,7 @@ test('admin sends back, the coach resubmits, the admin approves, the company con
   await sendBack.getByRole('button', { name: 'Send back' }).click()
   await expect(admin.page.getByText(/Sent back · Team 24890 was told/)).toBeVisible()
   await admin.page.waitForURL((url) => !url.pathname.endsWith(VOLTAGE_TO_CEDAR))
-  await waitForEmail('coach2@pitfund.test', /Changes requested on your pitch to Cedar Valley Credit Union/, started)
+  await waitForEmail('coach2@pitfund.test', /Changes requested on your pitch to Nucleotide Credit Union/, started)
 
   // ─── Coach: sees the note, edits, resubmits ───────────────────────────────────────────
   await coach.page.goto(`/pitches/${VOLTAGE_TO_CEDAR}`)
@@ -81,9 +81,9 @@ test('admin sends back, the coach resubmits, the admin approves, the company con
   await admin.page.goto(`/admin/pitches/${VOLTAGE_TO_CEDAR}`)
   await expect(admin.page.getByText('Resubmitted', { exact: true })).toBeVisible()
   await (await decideOnPage(admin.page)).click()
-  await expect(admin.page.getByText(/Sent to Cedar Valley Credit Union · 1 person notified/)).toBeVisible()
+  await expect(admin.page.getByText(/Sent to Nucleotide Credit Union · 1 person notified/)).toBeVisible()
   await waitForEmail('sponsor2@pitfund.test', /New pitch from Team 24890 · Voltage Vultures/, started)
-  await waitForEmail('coach2@pitfund.test', /Your pitch to Cedar Valley Credit Union was sent/, started)
+  await waitForEmail('coach2@pitfund.test', /Your pitch to Nucleotide Credit Union was sent/, started)
 
   // ─── Company: Interested → Connected; the coach sees the company's contact ────────────
   await company.page.goto('/inbox')
@@ -95,29 +95,29 @@ test('admin sends back, the coach resubmits, the admin approves, the company con
   await connect.getByRole('button', { name: 'Share contact details' }).click()
   await expect(company.page.getByRole('heading', { name: 'You’re connected with Team 24890 · Voltage Vultures' })).toBeVisible()
   await expect(company.page.getByRole('link', { name: 'coach2@pitfund.test' })).toBeVisible()
-  await waitForEmail('coach2@pitfund.test', /Cedar Valley Credit Union is interested in Team 24890/, started)
+  await waitForEmail('coach2@pitfund.test', /Nucleotide Credit Union is interested in Team 24890/, started)
   await waitForEmail('sponsor2@pitfund.test', /You’re connected with Team 24890/, started)
 
   await coach.page.goto(`/pitches/${VOLTAGE_TO_CEDAR}`)
-  await expect(coach.page.getByRole('heading', { name: 'Connected with Cedar Valley Credit Union' })).toBeVisible()
+  await expect(coach.page.getByRole('heading', { name: 'Connected with Nucleotide Credit Union' })).toBeVisible()
   await expect(coach.page.getByRole('link', { name: 'sponsor2@pitfund.test' })).toBeVisible()
 
   // ─── Another pitch: Not a fit with a reason; the row moves ────────────────────────────
-  await brightline.page.goto(`/inbox/${SEED.pitches.voltageToBrightlineSent}`)
-  await brightline.page.getByRole('button', { name: 'Not a fit' }).click()
-  const notAFit = brightline.page.getByRole('dialog', { name: 'Mark this pitch not a fit?' })
+  await ribosome.page.goto(`/inbox/${SEED.pitches.voltageToRibosomeSent}`)
+  await ribosome.page.getByRole('button', { name: 'Not a fit' }).click()
+  const notAFit = ribosome.page.getByRole('dialog', { name: 'Mark this pitch not a fit?' })
   await notAFit.getByRole('radio', { name: 'Outside our region' }).click()
   await notAFit.getByRole('button', { name: 'Mark not a fit' }).click()
-  await brightline.page.waitForURL('**/inbox')
-  await expect(brightline.page.getByText('Marked not a fit. Team 24890 · Voltage Vultures has been notified.')).toBeVisible()
-  const notAFitGroup = brightline.page.locator('section', { has: brightline.page.getByRole('heading', { name: /^Not a fit/ }) })
+  await ribosome.page.waitForURL('**/inbox')
+  await expect(ribosome.page.getByText('Marked not a fit. Team 24890 · Voltage Vultures has been notified.')).toBeVisible()
+  const notAFitGroup = ribosome.page.locator('section', { has: ribosome.page.getByRole('heading', { name: /^Not a fit/ }) })
   await expect(notAFitGroup.getByText('Voltage Vultures')).toBeVisible()
-  await waitForEmail('coach2@pitfund.test', /Brightline Engineering isn’t a fit this time/, started)
-  await coach.page.goto(`/pitches/${SEED.pitches.voltageToBrightlineSent}`)
+  await waitForEmail('coach2@pitfund.test', /Ribosome Robotics isn’t a fit this time/, started)
+  await coach.page.goto(`/pitches/${SEED.pitches.voltageToRibosomeSent}`)
   await expect(coach.page.getByText('Outside our region').first()).toBeVisible()
 
-  for (const p of [admin, coach, company, brightline]) expect(p.problems).toEqual([])
-  for (const p of [admin, coach, company, brightline]) await p.close()
+  for (const p of [admin, coach, company, ribosome]) expect(p.problems).toEqual([])
+  for (const p of [admin, coach, company, ribosome]) await p.close()
 })
 
 test('a pending company is invisible to coaches until an admin approves it', async ({ browser }) => {
@@ -127,31 +127,31 @@ test('a pending company is invisible to coaches until an admin approves it', asy
   const pending = await as(browser, 'sponsor-pending')
 
   await pending.page.goto('/welcome/pending')
-  await expect(pending.page.getByRole('heading', { name: /We’re checking Atlas Components/ })).toBeVisible()
+  await expect(pending.page.getByRole('heading', { name: /We’re checking Allele Components/ })).toBeVisible()
   await pending.page.goto('/inbox')
   await pending.page.waitForURL('**/welcome/pending')
 
   await coach.page.goto(`/sponsors/${SEED.atlasPending}`)
   await expect(coach.page.getByRole('heading', { name: 'We couldn\'t find that page' })).toBeVisible()
-  await coach.page.goto('/sponsors?q=Atlas')
+  await coach.page.goto('/sponsors?q=Allele')
   await expect(coach.page.getByText('No companies match')).toBeVisible()
 
   await admin.page.goto('/admin?tab=companies')
-  await admin.page.getByRole('link', { name: /Atlas Components/ }).click()
+  await admin.page.getByRole('link', { name: /Allele Components/ }).click()
   await admin.page.waitForURL(`**/admin/companies/${SEED.atlasPending}`)
   await expect(admin.page.getByText('Head of People', { exact: true })).toBeVisible()
   await admin.page.getByRole('button', { name: 'Approve' }).click()
-  await expect(admin.page.getByText(/Atlas Components is approved · 1 person emailed/)).toBeVisible()
-  await waitForEmail('sponsor-pending@pitfund.test', /Atlas Components is approved on FTC Pitfund/, started)
+  await expect(admin.page.getByText(/Allele Components is approved · 1 person emailed/)).toBeVisible()
+  await waitForEmail('sponsor-pending@pitfund.test', /Allele Components is approved on FTC Pitfund/, started)
 
   // Approval lets it into the app as well as into the directory.
   await pending.page.goto('/inbox')
   await expect(pending.page.getByRole('heading', { name: 'Pitches', level: 1 })).toBeVisible()
 
   await coach.page.goto(`/sponsors/${SEED.atlasPending}`)
-  await expect(coach.page.getByRole('heading', { name: 'Atlas Components' })).toBeVisible()
-  await coach.page.goto('/sponsors?q=Atlas')
-  await expect(coach.page.getByRole('link', { name: /Atlas Components/ })).toBeVisible()
+  await expect(coach.page.getByRole('heading', { name: 'Allele Components' })).toBeVisible()
+  await coach.page.goto('/sponsors?q=Allele')
+  await expect(coach.page.getByRole('link', { name: /Allele Components/ })).toBeVisible()
   await pending.page.goto('/inbox')
   await expect(pending.page.getByText('No pitches yet')).toBeVisible()
 
@@ -185,7 +185,7 @@ test('a new company signs up and lands on its setup page as a draft', async ({ b
 test.describe('company isolation', () => {
   test.use({ storageState: authFile('sponsor2') })
   test('another company’s pitches are a 404, and a coach can’t open the inbox', async ({ page, browser }) => {
-    for (const id of [SEED.pitches.exodiusMatched, SEED.pitches.quokkasToBrightlineSent, SEED.pitches.lotusToBrightlineInReview]) {
+    for (const id of [SEED.pitches.exodiusMatched, SEED.pitches.quokkasToRibosomeSent, SEED.pitches.lotusToRibosomeInReview]) {
       await page.goto(`/inbox/${id}`)
       await expect(page.getByRole('heading', { name: 'We couldn\'t find that page' })).toBeVisible()
     }
@@ -208,7 +208,7 @@ test('with the email quota exhausted, approval says email is delayed and System 
   const admin = await as(browser, 'admin')
   await admin.page.goto(`/admin/pitches/${SEED.pitches.exodiusInReview}`)
   await (await decideOnPage(admin.page)).click()
-  await expect(admin.page.getByText('Sent to Meridian Machine Works · email delayed until tomorrow')).toBeVisible()
+  await expect(admin.page.getByText('Sent to Mitochondria Machine Works · email delayed until tomorrow')).toBeVisible()
 
   await admin.page.goto('/admin/system')
   await expect(admin.page.getByText('Email delivery is delayed until the 24-hour window frees up. Sign-in codes still go out.')).toBeVisible()
@@ -218,7 +218,7 @@ test('with the email quota exhausted, approval says email is delayed and System 
 
   const coach = await as(browser, 'coach')
   await coach.page.goto(`/pitches/${SEED.pitches.exodiusInReview}`)
-  await expect(coach.page.getByText('Email to Meridian Machine Works delayed until tomorrow; they can see it in FTC Pitfund.')).toBeVisible()
+  await expect(coach.page.getByText('Email to Mitochondria Machine Works delayed until tomorrow; they can see it in FTC Pitfund.')).toBeVisible()
   expect(admin.problems).toEqual([])
   await sql`delete from email_outbox where resend_id like 'e2e-quota-%'`
   await admin.close()
@@ -232,7 +232,7 @@ test('two admins deciding the same pitch: the second is told who decided', async
   await first.page.goto(`/admin/pitches/${pitch}`)
   await second.page.goto(`/admin/pitches/${pitch}`, { waitUntil: 'networkidle' })
   await (await decideOnPage(first.page)).click()
-  await expect(first.page.getByText(/Sent to Harbor Point Energy/)).toBeVisible()
+  await expect(first.page.getByText(/Sent to Plasmid Point Energy/)).toBeVisible()
   await (await decideOnPage(second.page)).click()
   await expect(second.page.getByText('Avery Admin already approved this pitch.')).toBeVisible()
   await second.page.getByRole('button', { name: 'Refresh' }).click()
@@ -240,7 +240,7 @@ test('two admins deciding the same pitch: the second is told who decided', async
 
   // A company suspended while its pitch is open for review blocks approval with the reason.
   await first.page.goto(`/admin/pitches/${SEED.pitches.sagesToVantageInReview}`)
-  await expect(first.page.getByText('Vantage Promotions is suspended, so it can’t receive pitches.')).toBeVisible()
+  await expect(first.page.getByText('Vacuole Promotions is suspended, so it can’t receive pitches.')).toBeVisible()
   await expect(await decideOnPage(first.page)).toBeDisabled()
   await first.close()
   await second.close()
@@ -249,7 +249,7 @@ test('two admins deciding the same pitch: the second is told who decided', async
 test('keyboard-only review: S and R open their note dialogs, A approves, J and K move, and each decision advances', async ({ browser }) => {
   test.setTimeout(120_000)
   // Earlier tests decided some seeded pitches: put three approvable ones back in the queue.
-  const queue = [SEED.pitches.lotusToBrightlineInReview, SEED.pitches.quokkasToBrightlineSent, SEED.pitches.tidalToHarborInReview]
+  const queue = [SEED.pitches.lotusToRibosomeInReview, SEED.pitches.quokkasToRibosomeSent, SEED.pitches.tidalToHarborInReview]
   await db()`update pitches set status = 'in_review', sent_at = null, reviewed_by = null, reviewed_at = null, review_note = null where id = any(${queue})`
   const admin = await as(browser, 'admin')
   const { page } = admin
