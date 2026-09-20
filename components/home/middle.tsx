@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 import { STATS } from './content'
-import { Arrow, I } from './icons'
+import { I } from './icons'
 
 /* "Get product recommendations": a gradient-bordered box that routes a visitor to the right door. */
 export function FindPath() {
@@ -50,37 +50,6 @@ export function FindPath() {
     </section>
   )
 }
-
-/* The conference banner, as the season announcement. */
-export function SeasonBanner() {
-  return (
-    <section className="hp-section" aria-labelledby="hp-banner-title">
-      <div className="hp-container hp-container--top0">
-        <div className="hp-banner">
-          <div className="hp-banner__art" aria-hidden="true">
-            <span className="hp-banner__ribbon hp-banner__ribbon--a" />
-            <span className="hp-banner__ribbon hp-banner__ribbon--b" />
-            <span className="hp-banner__ribbon hp-banner__ribbon--c" />
-            <span className="hp-banner__floor" />
-          </div>
-          <div className="hp-banner__content">
-            <h2 id="hp-banner-title" className="hp-h-lg">
-              The 2026–27 pitch season is open
-            </h2>
-            <a href="#stages" className="hp-btn hp-btn--sm hp-btn--white">
-              See how it works
-              <Arrow />
-            </a>
-          </div>
-          <p className="hp-banner__tag" aria-hidden="true">
-            <b>pitfund</b> season 26–27
-          </p>
-        </div>
-      </div>
-    </section>
-  )
-}
-
 /*
  * "The backbone of global commerce": a centered title, four stats that act as a menu (the active one
  * is ink, the rest quiet; a gradient hairline slides above and below the active one)
