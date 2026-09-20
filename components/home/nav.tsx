@@ -34,7 +34,6 @@ const MENUS: Array<{ key: string; label: string; columns: Array<{ heading: strin
         items: [
           { href: '#bento-verified', title: 'Verification', body: 'Checked against FIRST records', icon: 'shield', tone: '#3b82f6' },
           { href: '#bento-public', title: 'Team pages', body: 'One public link per team', icon: 'file', tone: '#00d4ff' },
-          { href: '#reliable', title: 'Notifications', body: 'Nothing fails silently', icon: 'mail', tone: '#00b261' },
         ],
       },
     ],
@@ -54,7 +53,6 @@ const MENUS: Array<{ key: string; label: string; columns: Array<{ heading: strin
         ],
       },
     ],
-    aside: { title: 'Great decks start with a story', body: 'Five pages that make a sponsor say yes.', href: '#guide', cta: 'Read the guide' },
   },
   {
     key: 'companies',
@@ -80,7 +78,6 @@ const MENUS: Array<{ key: string; label: string; columns: Array<{ heading: strin
         heading: 'Help',
         items: [
           { href: '#faq', title: 'FAQ', body: 'Sharing, review, cost and more', icon: 'question', tone: '#1e40af' },
-          { href: '#guide', title: 'Deck guide', body: 'How to write five strong pages', icon: 'book', tone: '#10b981' },
           { href: 'mailto:ftcexodius@gmail.com', title: 'Email support', body: 'ftcexodius@gmail.com', icon: 'mail', tone: '#00b261' },
         ],
       },

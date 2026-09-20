@@ -28,7 +28,7 @@ The final proof run was made from a **fresh clone in a temporary directory** (se
 
 | Area | How | Result |
 | --- | --- | --- |
-| Every route × persona × width | `npm run qa` (`tests/qa/qa.spec.ts`, routes in `tests/qa/routes.ts`) on `demo`, `edge` and `empty`: HTTP status and redirects, console/network/page errors, horizontal scroll, text overflowing its box, axe serious/critical after animations settle, every dialog/sheet/popover (width, fits viewport, sticky close, focus trap, Esc, focus return), TTFB/LCP/CLS on the production build, ActionButton pending ≤ 100 ms, soft 404s | 582 checks, 0 failures |
+| Every route × persona × width | `npm run qa` (`tests/qa/qa.spec.ts`, routes in `tests/qa/routes.ts`) on `demo`, `edge` and `empty`: HTTP status and redirects, console/network/page errors, horizontal scroll, text overflowing its box, axe serious/critical after animations settle, every dialog/sheet/popover (width, fits viewport, sticky close, focus trap, Esc, focus return), TTFB/LCP/CLS on the production build, ActionButton pending ≤ 100 ms, soft 404s | 603 checks, 0 failures |
 | Screenshots | Every image in `qa/screens/` opened and judged against plan §7; long pages cropped with element screenshots | Findings fixed (section 2) |
 | State machines (§3.2) with fault injection | E2E journeys plus `pitfund-simulate` cookie, `page.route` aborts and CDP network throttling | Matrix in section 3 |
 | Dead clicks | `npm run qa:clicks` (`tests/qa/dead-clicks.ts`): every visible button, tab and summary on every production route, each on a fresh load, must cause a DOM change, focus move, scroll, navigation, router or action request, file chooser or dialog within 150 ms; every link must go somewhere | 0 findings |
@@ -198,9 +198,16 @@ first use, so none of them appear here.
 
 | Page | Performance (≥ 90) | Accessibility (≥ 95) | LCP (≤ 2,000 ms) | CLS (≤ 0.05) | TBT |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `/` | 100 | 100 | 1,515 ms | 0 | 14 ms |
-| `/t/31579` | 100 | 100 | 1,175 ms | 0 | 25 ms |
-| `/login` | 100 | 100 | 689 ms | 0 | 34 ms |
+| `/` | 97 | 100 | **2,462 ms** | 0 | 68 ms |
+| `/t/31579` | 99 | 100 | 1,186 ms | 0 | 69 ms |
+| `/login` | 100 | 100 | 688 ms | 0 | 18 ms |
+
+`/` is the one budget that is not met, and it is the only one in this document. The landing page was
+replaced after v2 shipped, and the new one measured 1,484 ms before that and 2,462 ms after. The cause
+is transfer, not work: the page is 586 KB of HTML (357 KB React payload, 136 KB inlined CSS, ~102 KB
+gzipped), and on Slow 4G that has to arrive before the hero can paint. Getting under 2,000 ms means
+shrinking the server-rendered tree, which is a change to the landing page's structure rather than a
+tuning knob, so it is deliberately open. Nothing else in `npm run perf` regressed.
 
 **Authed pages (queries per request with `DEBUG_QUERIES=1`; render time on the production build; budgets ≤ 5 queries, p95 ≤ 400 ms)**
 
@@ -358,12 +365,12 @@ Cloned from GitHub (`ExodiusFTC/FTC-Pitfund-Source-Code`, branch `rebuild`) into
 | --- | --- |
 | `npm install` | ✓ |
 | `npm run setup` | ✓ local Supabase, migrations, `demo` seed, `.env.local` written |
-| `npm run check` | ✓ typecheck, lint (0 warnings), Vitest 129 / 129 |
+| `npm run check` | ✓ typecheck, lint (0 warnings), Vitest 146 / 146 |
 | `npm run build` | ✓ |
-| `npm run e2e` | ✓ 72 / 72 (starts `npm run dev` and the production build from the clone) |
-| `npm run qa` | ✓ 582 checks, 0 failures (`demo`, `edge`, `empty`) |
-| `npm run perf` | ✓ every budget met; Lighthouse `/` 100 / 100 / 1,484 ms LCP, `/t/31579` 99 / 100 / 1,200 ms, `/login` 100 / 100 / 675 ms |
-| `npm run qa:clicks` | ✓ 57 route checks, 0 findings (re-run at `2da4d56`, see below) |
+| `npm run e2e` | ✓ 74 / 74 (starts `npm run dev` and the production build from the clone) |
+| `npm run qa` | ✓ 603 checks, 0 failures (`demo`, `edge`, `empty`) |
+| `npm run perf` | ✗ one miss: Lighthouse `/` 97 / 100 / **2,462 ms LCP** (budget 2,000). `/t/31579` 99 / 100 / 1,186 ms, `/login` 100 / 100 / 688 ms; bundles, queries, render p95 and action p95 all met (section 6) |
+| `npm run qa:clicks` | ✓ 60 route checks, 0 findings |
 | `npm run security:scan` | ✓ clean |
 | `npm run knip` | ✓ nothing unused |
 

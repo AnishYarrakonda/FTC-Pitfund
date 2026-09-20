@@ -70,7 +70,6 @@ const FOOTER: Array<[string, Array<[string, string]>]> = [
     [
       ['Get started', TEAM_HREF],
       ['Verify your team', '#bento-verified'],
-      ['Deck guide', '#guide'],
       ['Find your path', '#find'],
     ],
   ],

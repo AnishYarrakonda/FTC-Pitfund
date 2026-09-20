@@ -163,7 +163,7 @@ export function Audiences() {
         <div className="hp-features">
           <Feature icon={<I.users />} title="One shared account." body="A team or company is one account. Everyone on it works from the same pitches and the same inbox." link={{ label: 'I coach a team', href: TEAM_HREF }} />
           <Feature icon={<I.user />} title="Owner and editors." body="One owner invites, removes and hands ownership on. Editors can do everything else." link={{ label: 'Read the FAQ', href: '#faq' }} />
-          <Feature icon={<I.mail />} title="Nothing fails silently." body="Every action writes an in-app notification. Email is a copy, queued and rate-limited, never the only record." link={{ label: 'How it’s built', href: '#reliable' }} />
+          <Feature icon={<I.mail />} title="Nothing fails silently." body="Every action writes an in-app notification. Email is a copy, queued and rate-limited, never the only record." />
         </div>
 
         <div className="hp-quotes" id="faq" data-hp-quotes>
@@ -199,17 +199,19 @@ export function Audiences() {
   )
 }
 
-function Feature({ icon, title, body, link }: { icon: ReactNode; title: string; body: string; link: { label: string; href: string } }) {
+function Feature({ icon, title, body, link }: { icon: ReactNode; title: string; body: string; link?: { label: string; href: string } }) {
   return (
     <div className="hp-feature">
       <span className="hp-charm">{icon}</span>
       <p className="hp-text-md hp-feature__body">
         <b>{title}</b> {body}
       </p>
-      <Link href={link.href} prefetch={false} className="hp-link">
-        {link.label}
-        <Arrow />
-      </Link>
+      {link ? (
+        <Link href={link.href} prefetch={false} className="hp-link">
+          {link.label}
+          <Arrow />
+        </Link>
+      ) : null}
     </div>
   )
 }

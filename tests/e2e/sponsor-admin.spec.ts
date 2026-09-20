@@ -133,7 +133,7 @@ test('a pending company is invisible to coaches until an admin approves it', asy
 
   await coach.page.goto(`/sponsors/${SEED.atlasPending}`)
   await expect(coach.page.getByRole('heading', { name: 'We couldn\'t find that page' })).toBeVisible()
-  await coach.page.goto('/sponsors?q=Atlas')
+  await coach.page.goto('/sponsors?q=Allele')
   await expect(coach.page.getByText('No companies match')).toBeVisible()
 
   await admin.page.goto('/admin?tab=companies')
@@ -150,7 +150,7 @@ test('a pending company is invisible to coaches until an admin approves it', asy
 
   await coach.page.goto(`/sponsors/${SEED.atlasPending}`)
   await expect(coach.page.getByRole('heading', { name: 'Allele Components' })).toBeVisible()
-  await coach.page.goto('/sponsors?q=Atlas')
+  await coach.page.goto('/sponsors?q=Allele')
   await expect(coach.page.getByRole('link', { name: /Allele Components/ })).toBeVisible()
   await pending.page.goto('/inbox')
   await expect(pending.page.getByText('No pitches yet')).toBeVisible()
