@@ -25,7 +25,7 @@ export default function PitchRejectedEmail(props: PitchRejectedProps) {
         A reviewer read Team {p.teamNumber}’s pitch and didn’t send it to {p.companyName}.{p.note ? ' Their note:' : ''}
       </Text>
       {p.note ? (
-        <Text style={{ ...text.body, color: '#0B0B0C', whiteSpace: 'pre-wrap', wordBreak: 'break-word', borderLeft: '3px solid #E7E7EA', paddingLeft: '12px' }}>{p.note}</Text>
+        <Text style={{ ...text.body, color: '#061B31', whiteSpace: 'pre-wrap', wordBreak: 'break-word', borderLeft: '3px solid #E7E7EA', paddingLeft: '12px' }}>{p.note}</Text>
       ) : null}
       <Text style={text.body}>You’re welcome to pitch other companies this season.</Text>
       <Section style={{ padding: '4px 0 0' }}>

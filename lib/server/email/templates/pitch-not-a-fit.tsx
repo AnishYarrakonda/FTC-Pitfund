@@ -25,7 +25,7 @@ export default function PitchNotAFitEmail(props: PitchNotAFitProps) {
         {p.companyName} read Team {p.teamNumber}’s pitch and decided not to go ahead this season.
         {p.reason ? ' They said:' : ' They didn’t give a reason.'}
       </Text>
-      {p.reason ? <Text style={{ ...text.body, color: '#0B0B0C', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>“{p.reason}”</Text> : null}
+      {p.reason ? <Text style={{ ...text.body, color: '#061B31', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>“{p.reason}”</Text> : null}
       <Text style={{ ...text.body }}>It happens to every team. Keep pitching the companies that match what you do.</Text>
       <Section style={{ padding: '4px 0 0' }}>
         <EmailButton href={p.pitchUrl}>Open the pitch</EmailButton>

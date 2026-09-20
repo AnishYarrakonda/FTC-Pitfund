@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og'
 
 import { markSrc } from '@/lib/server/og'
 
-/* The home-screen icon: the pine mark, full bleed (iOS rounds the corners itself). Static. */
+/* The home-screen icon: the hexagon-and-spark mark, full bleed (iOS rounds the corners itself). Static. */
 
 export const size = { width: 180, height: 180 }
 export const contentType = 'image/png'

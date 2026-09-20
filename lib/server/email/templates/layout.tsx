@@ -9,14 +9,14 @@ import { FIRST_DISCLAIMER, PRODUCT_NAME, SUPPORT_EMAIL } from '@/lib/shared/bran
  */
 
 export const emailColors = {
-  canvas: '#FAFAFA',
+  canvas: '#F8FAFD',
   surface: '#FFFFFF',
-  border: '#E7E7EA',
-  text: '#0B0B0C',
-  textSecondary: '#52525B',
-  textTertiary: '#71717A',
-  accent: '#1F6F5C',
-  accentSubtle: '#EAF3F0',
+  border: '#E5EDF5',
+  text: '#061B31',
+  textSecondary: '#50617A',
+  textTertiary: '#64748D',
+  accent: '#1E40AF',
+  accentSubtle: '#E8E9FF',
 }
 
 const fontStack =

@@ -33,9 +33,15 @@
 }
 
 /*
- * FTC Pitfund design tokens (plan §7). Light theme only. Tailwind's default palette, type
- * scale, radii and shadows are cleared so only these values exist: if a class isn't built
- * from a token below, it doesn't compile.
+ * FTC Pitfund design tokens (v5). These are the homepage's tokens (app/(public)/home.css, the `.hp`
+ * block) restated for the product, so signing up doesn't hand you a different-looking product: the
+ * same #061b31 ink, the same #1e40af action color, the same cool #e5edf5 hairline and #f8fafd canvas.
+ * What the product does NOT take from the homepage is its marketing chrome — no skewed gradient
+ * canvases, no dot grids, no 300-weight display type. A dense inbox or admin table needs contrast
+ * and quiet, so the product keeps its own type scale, its 4-8px radii and its restrained shadows,
+ * and spends the signature gradient only on the mark and the occasional empty state.
+ * One typeface (Inter) at every size. Tailwind's default palette, type scale, radii and shadows are
+ * cleared so only these values exist: if a class isn't built from a token below, it doesn't compile.
  */
 
 @theme {
@@ -44,29 +50,52 @@
   --color-current: currentColor;
   --color-white: #ffffff;
 
-  --color-canvas: #fafafa;
+  --color-canvas: #f8fafd;
   --color-surface: #ffffff;
-  --color-muted: #f4f4f5; /* neutral hover/selected fill, derived from the border scale */
-  --color-border: #e7e7ea;
-  --color-border-strong: #d4d4d8;
+  --color-muted: #eef3f9;
+  --color-border: #e5edf5;
+  --color-border-strong: #d4dee9;
 
-  --color-text: #0b0b0c;
-  --color-text-secondary: #52525b;
-  --color-text-tertiary: #71717a;
+  --color-text: #061b31;
+  --color-text-secondary: #50617a;
+  --color-text-tertiary: #64748d;
 
-  --color-accent: #1f6f5c;
-  --color-accent-hover: #185a4b;
-  --color-accent-subtle: #eaf3f0;
+  /* The one accent: used for the primary action, links, and "matched/live" states — nowhere else. */
+  --color-accent: #1e40af;
+  --color-accent-hover: #4032c8;
+  --color-accent-subtle: #e8e9ff;
 
-  --color-success: #15803d;
-  --color-success-subtle: #effaf2;
-  --color-warning: #b45309;
-  --color-warning-subtle: #fdf6ea;
-  --color-danger: #b91c1c;
-  --color-danger-hover: #991b1b;
-  --color-danger-subtle: #fdf0f0;
-  --color-info: #1d4ed8;
-  --color-info-subtle: #eff4ff;
+  --color-success: #047857;
+  --color-success-subtle: #e7f6ef;
+  --color-warning: #a4620d;
+  --color-warning-subtle: #fbf2e3;
+  --color-danger: #c22a1f;
+  --color-danger-hover: #a4231a;
+  --color-danger-subtle: #fbeceb;
+  --color-info: #1e40af;
+  --color-info-subtle: #e8e9ff;
+
+  /* The signature gradient, blue → green → lime → yellow. It is the homepage's identity and the
+     one place the product is allowed to be decorative: the mark, and occasionally an empty state or
+     a progress rail. Never behind text, never as a button fill — chrome stays on --color-accent. */
+  --color-brand-blue: #3b82f6;
+  --color-brand-green: #10b981;
+  --color-brand-lime: #84cc16;
+  --color-brand-yellow: #facc15;
+
+  /* The four pipeline stages (draft, review, sent/questions, matched), sampled along that same
+     gradient so a status dot in the product and a stage marker on the homepage are the same color. */
+  --color-stage-draft: #1e40af;
+  --color-stage-review: #3b82f6;
+  --color-stage-sent: #84cc16;
+  --color-stage-matched: #00b261;
+
+  /* Kept because components still reference them; both now sit on the gradient's blue end rather
+     than the old violet/coral pair, which belonged to no part of the homepage. */
+  --color-violet: #4032c8;
+  --color-violet-subtle: #e8e9ff;
+  --color-coral: #0ea5e9;
+  --color-coral-subtle: #e0f4fd;
 
   --font-sans: var(--font-inter), 'Inter Fallback Liberation', 'Inter Fallback Roboto', 'Inter Fallback DejaVu', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
@@ -101,13 +130,15 @@
   --tracking-tighter: -0.022em;
 
   --radius-*: initial;
-  --radius-control: 6px;
-  --radius-menu: 8px;
-  --radius-dialog: 12px;
+  --radius-control: 4px;
+  --radius-menu: 6px;
+  --radius-dialog: 8px;
 
+  /* Cast from the homepage's cool #003770 rather than a neutral black, so a card lifting off the
+     canvas looks the same shade of lifted on both sides of the sign-up. */
   --shadow-*: initial;
-  --shadow-sm: 0 1px 2px rgb(11 11 12 / 0.05), 0 2px 8px rgb(11 11 12 / 0.06);
-  --shadow-lg: 0 8px 24px rgb(11 11 12 / 0.1), 0 24px 64px rgb(11 11 12 / 0.12);
+  --shadow-sm: 0 1px 2px rgb(0 55 112 / 0.05), 0 2px 8px rgb(0 59 137 / 0.05);
+  --shadow-lg: 0 8px 24px rgb(0 55 112 / 0.08), 0 24px 64px rgb(0 59 137 / 0.1);
 
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
@@ -119,6 +150,7 @@
   --container-reading: 720px;
   --container-app: 1080px;
   --container-review: 1280px;
+  --container-marketing: 1180px;
 
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
 
