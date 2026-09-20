@@ -13,6 +13,21 @@ const supabaseUrl = (() => {
 })()
 
 /*
+ * This URL is baked into the deployment: it pins the CSP below and the image optimizer's allowed hosts,
+ * and it is only ever read at build time. Falling back to the local stack is right on this machine and
+ * catastrophic on Vercel — the build stays green and every deployed page then blocks its own Supabase
+ * calls (sign-in, uploads) and 404s every logo. Nothing else would have told us: it is not a crash, a
+ * type error or a failing request during the build. So on Vercel a local URL is a build failure.
+ */
+if (process.env.VERCEL && ['127.0.0.1', 'localhost', ''].includes(supabaseUrl.hostname)) {
+  throw new Error(
+    `NEXT_PUBLIC_SUPABASE_URL must be the hosted Supabase URL when building on Vercel; got ${
+      process.env.NEXT_PUBLIC_SUPABASE_URL ?? '(unset)'
+    }. Set it on the Production and Preview environments (npm run provision:vercel does this).`,
+  )
+}
+
+/*
  * Content-Security-Policy. Inline scripts are allowed because App Router streams inline
  * bootstrap scripts; everything else is pinned to the origins the product actually uses:
  * Supabase (auth, storage), Google (avatars), Sentry (errors) and Vercel BotID (same-origin
@@ -44,6 +59,16 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  /*
+   * `next build` type-checks the whole tsconfig, and Vercel builds from an upload that .vercelignore has
+   * already stripped: no /tests, /docs, /prompts, /qa. The test harness stayed in the root set, so five
+   * scripts and both Playwright configs failed to resolve `../tests/...` and every deployment errored with
+   * TS2307 — a failure no local build or CI run could reproduce, because both have those files on disk.
+   * The build checks what is deployed; `npm run typecheck` still checks everything, scripts and tests
+   * included. Excluding a directory only drops it from the root set, so anything the app really imports
+   * is still type-checked through that import.
+   */
+  typescript: { tsconfigPath: 'tsconfig.build.json' },
   cacheComponents: true,
   poweredByHeader: false,
   reactStrictMode: true,

@@ -10,7 +10,7 @@ All infrastructure belongs to the team Google account **ftcexodius@gmail.com**. 
 | `2` | Waiting on you. The last lines say exactly what to do. Do it, then run the same command again. |
 | `1` | Something failed. The error says what; nothing was left half-done. Fix it and run the command again. |
 
-Before starting: a computer with Node 22+, Docker (only for local development), the [GitHub CLI](https://cli.github.com) and this repository cloned (`npm install`).
+Before starting: a computer with Node 24 (what CI and Vercel build with), Docker (only for local development), the [GitHub CLI](https://cli.github.com) and this repository cloned (`npm install`).
 
 ---
 
