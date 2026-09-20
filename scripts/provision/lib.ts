@@ -1,8 +1,8 @@
 /*
  * Shared plumbing for `npm run provision:*`.
  *
- *   - Secrets and generated values live in `.env.provision` (gitignored, template in
- *     `.env.provision.example`). Scripts read it, and write generated values back into its
+ *   - Secrets and generated values live in `.env.local` (gitignored, template in
+ *     `.env.example`). Scripts read it, and write generated values back into its
  *     "generated" section, so every run can resume where the last one stopped.
  *   - `--dry-run` performs reads only and prints what it would change.
  *   - Every step reports what it did (✓), what it skipped because it was already done (·), what it
@@ -14,16 +14,18 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 
 import { parseDotenv } from '../lib/proc'
 
-export const ENV_FILE = '.env.provision'
-export const TEAM_EMAIL = 'ftcexodius@gmail.com'
-export const GITHUB_REPO = 'ExodiusFTC/FTC-Pitfund-Source-Code'
+export const ENV_FILE = '.env.local'
+/** The Google account that owns the Supabase, Vercel and Resend projects: OWNER_EMAIL in .env.local. */
+export const ownerEmail = () => (getValue('OWNER_EMAIL') ?? 'ftcexodius@gmail.com').toLowerCase()
+export const GITHUB_REPO = 'AnishYarrakonda/FTC-Pitfund'
 export const PRODUCT = 'FTC Pitfund'
 
 /** v1 resources. Provisioning refuses to touch anything that matches (plan §11, prompt 4 §F). */
 export const V1_DENY = {
   vercelProjectIds: ['prj_UsUAQbUSY1I0Zj5dG4akTAWtOXtV'],
   vercelProjectNames: ['ftc-sponsorship-portal'],
-  vercelTeamIds: ['team_SpSX5ks20xhEjk8s0PhBAobj'],
+  // Was the personal team while v1 lived in it. v1 is deleted, so that account is fine to provision into.
+  vercelTeamIds: [] as string[],
   supabaseRefs: ['qqizqbtwigyedgskoezm'],
 }
 
@@ -91,7 +93,7 @@ export function finish(name: string, error?: unknown): never {
   process.exit(error ? 1 : report.waiting.length ? 2 : 0)
 }
 
-// ─── .env.provision ────────────────────────────────────────────────────────────────────
+// ─── .env.local ────────────────────────────────────────────────────────────────────
 
 let values: Map<string, string> | null = null
 
@@ -111,7 +113,7 @@ export function requireValue(key: string, hint: string): string {
   return v
 }
 
-/** Store a generated value in .env.provision (never in dry runs). Returns the value. */
+/** Store a generated value in .env.local (never in dry runs). Returns the value. */
 export function saveValue(key: string, value: string) {
   load().set(key, value)
   if (dryRun) return value
@@ -129,7 +131,7 @@ export function saveValue(key: string, value: string) {
   return value
 }
 
-/** A value from .env.provision, generated and saved on first use. */
+/** A value from .env.local, generated and saved on first use. */
 export function generatedValue(key: string, make: () => string) {
   return getValue(key) ?? saveValue(key, make())
 }
@@ -149,13 +151,12 @@ export function config() {
     domain,
     siteUrl: domain ? `https://${domain}` : undefined,
     vercelProject: getValue('VERCEL_PROJECT_NAME') ?? 'ftc-pitfund',
-    supabaseOrg: getValue('SUPABASE_ORG_NAME') ?? PRODUCT,
     supabaseProjects: {
       production: getValue('SUPABASE_PRODUCTION_PROJECT_NAME') ?? 'ftc-pitfund',
       staging: getValue('SUPABASE_STAGING_PROJECT_NAME') ?? 'ftc-pitfund-staging',
     } satisfies Record<Stage, string>,
     stagingBranch: getValue('STAGING_BRANCH') ?? 'staging',
-    adminEmails: (getValue('ADMIN_EMAILS') ?? TEAM_EMAIL)
+    adminEmails: (getValue('ADMIN_EMAILS') ?? ownerEmail())
       .split(',')
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean),

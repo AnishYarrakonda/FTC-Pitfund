@@ -3,7 +3,7 @@
  *
  * Creates (or finds) the Vercel project under the team account, connects the GitHub repo so pushes
  * to `main` deploy production, pins the function region to iad1, sets every environment variable for
- * production (prod Supabase) and preview (staging Supabase), generates CRON_SECRET, creates the
+ * production (prod Supabase) and preview (staging Supabase), generates PRODUCTION_CRON_SECRET, creates the
  * automation bypass the staging Send Email hook uses, creates the `staging` branch for the stable
  * preview alias, adds the domain and prints the DNS records it needs, and starts a production
  * deployment when the env changed. Never touches the v1 project.
@@ -50,7 +50,7 @@ async function ensureProject(): Promise<VercelProject | null> {
     const body = { name, framework: 'nextjs', serverlessFunctionRegion: 'iad1', gitRepository: { type: 'github', repo: GITHUB_REPO } }
     const { status, data } = await api<VercelProject & { error?: { message?: string } }>('POST', '/v11/projects', body, { allow: [400, 403, 404] })
     if (status >= 400) {
-      // Usually: the Vercel GitHub app isn't installed on the ExodiusFTC org yet.
+      // Usually: the Vercel GitHub app isn't installed on the account that owns the repository yet.
       warn(`Vercel couldn't connect ${GITHUB_REPO}: ${data.error?.message ?? status}. Creating the project without Git.`)
       project = (await api<VercelProject>('POST', '/v11/projects', { name, framework: 'nextjs', serverlessFunctionRegion: 'iad1' })).data
     } else {
@@ -66,8 +66,8 @@ async function ensureProject(): Promise<VercelProject | null> {
     fail(`The project is connected to ${project.link.org}/${project.link.repo}, not ${GITHUB_REPO}. Fix that in Vercel → Settings → Git.`)
   } else {
     waitOn(
-      `Connect GitHub: install the Vercel GitHub app on the ExodiusFTC org (github.com/apps/vercel → Configure → ExodiusFTC → ` +
-        `"FTC-Pitfund-Source-Code"), then re-run \`npm run provision:vercel\`.`,
+      `Connect GitHub: install the Vercel GitHub app on ${GITHUB_REPO.split('/')[0]} (github.com/apps/vercel → Configure → ` +
+        `${GITHUB_REPO.split('/')[0]} → only select repositories → "${GITHUB_REPO.split('/')[1]}"), then re-run \`npm run provision:vercel\`.`,
     )
     if (!dryRun) {
       const { status } = await api('POST', `/v9/projects/${project.id}/link`, { type: 'github', repo: GITHUB_REPO }, { allow: [400, 403, 404] })
@@ -137,11 +137,8 @@ function envVars(teamSlug: string): EnvVar[] {
   both('DATABASE_URL', stage('production', 'DATABASE_URL'), stage('staging', 'DATABASE_URL'), true)
   both('SEND_EMAIL_HOOK_SECRET', stage('production', 'SEND_EMAIL_HOOK_SECRET'), stage('staging', 'SEND_EMAIL_HOOK_SECRET'), true)
 
-  const cron = generatedValue('CRON_SECRET', () => randomHex(32))
-  both('CRON_SECRET', cron, cron, true)
-
-  const google = Boolean(getValue('GOOGLE_CLIENT_ID') && getValue('GOOGLE_CLIENT_SECRET'))
-  both('NEXT_PUBLIC_GOOGLE_AUTH_ENABLED', String(google), String(google))
+  const cron = generatedValue('PRODUCTION_CRON_SECRET', () => randomHex(32))
+  both('PRODUCTION_CRON_SECRET', cron, cron, true)
 
   const sendingKey = getValue('RESEND_SENDING_KEY')
   if (sendingKey && domain) {
@@ -152,7 +149,7 @@ function envVars(teamSlug: string): EnvVar[] {
   const webhook = getValue('RESEND_WEBHOOK_SECRET')
   both('RESEND_WEBHOOK_SECRET', webhook, webhook, true)
 
-  for (const key of ['SENTRY_DSN', 'NEXT_PUBLIC_SENTRY_DSN', 'FIRST_API_USERNAME', 'FIRST_API_TOKEN']) {
+  for (const key of ['FIRST_API_USERNAME', 'FIRST_API_TOKEN']) {
     const value = getValue(key)
     both(key, value, value, key === 'FIRST_API_TOKEN')
   }
@@ -162,7 +159,7 @@ function envVars(teamSlug: string): EnvVar[] {
 async function domains(project: VercelProject) {
   const { api } = await vercelScope()
   const { domain } = config()
-  if (!domain) return waitOn('Add PITFUND_DOMAIN to .env.provision, then re-run `npm run provision:vercel`.')
+  if (!domain) return waitOn('Add PITFUND_DOMAIN to .env.local, then re-run `npm run provision:vercel`.')
   const { data } = await api<{ domains: Array<{ name: string; verified: boolean; redirect?: string | null }> }>('GET', `/v9/projects/${project.id}/domains`)
   const wanted = [
     { name: domain, redirect: undefined },
@@ -238,7 +235,7 @@ export async function provisionVercel() {
   ensureStagingBranch()
 
   heading('Environment variables')
-  if (!getValue(KEY('production', 'URL'))) waitOn('Run `npm run provision:supabase` first: the Supabase values are not in .env.provision yet.')
+  if (!getValue(KEY('production', 'URL'))) waitOn('Run `npm run provision:supabase` first: the Supabase values are not in .env.local yet.')
   const before = report.done.length
   await upsertEnv(project, envVars(team.slug))
   const envChanged = report.done.length > before

@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  // The Next.js, Vitest, Playwright, Drizzle and Sentry plugins find app/**, proxy.ts, instrumentation*.ts,
+  // The Next.js, Vitest, Playwright and Drizzle plugins find app/**, proxy.ts, instrumentation*.ts,
   // next/vitest/drizzle configs and their setup files on their own. Listed here: what they can't see.
   "entry": [
     // CLIs run with `node --import tsx` from package.json scripts.

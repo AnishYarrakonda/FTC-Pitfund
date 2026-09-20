@@ -22,7 +22,6 @@ const SECTIONS: LegalSection[] = [
         <h3>About you</h3>
         <ul>
           <li>Your email address and name.</li>
-          <li>If you sign in with Google: the name, email address and profile photo link Google shares with us.</li>
           <li>Your phone number and, for company members, your job title, only if you add them.</li>
           <li>When you accepted these terms, and whether your account is suspended.</li>
         </ul>
@@ -136,13 +135,6 @@ const SECTIONS: LegalSection[] = [
             <strong>Resend</strong>: sending email.
           </li>
           <li>
-            <strong>Sentry</strong>: error reports, with email addresses, sign-in codes, cookies and form contents removed before they are
-            sent.
-          </li>
-          <li>
-            <strong>Google</strong>: signing in, if you choose “Continue with Google”.
-          </li>
-          <li>
             <strong>FTCScout and the FIRST® Events API</strong>: looking up a team’s public record. We send only the team number.
           </li>
         </ul>
@@ -186,7 +178,7 @@ const SECTIONS: LegalSection[] = [
         <p>We keep your data while your account, team or company is active. You can delete your account from the Account page.</p>
         <h3>Deleting your account removes</h3>
         <ul>
-          <li>Your sign-in, name, email, profile photo link, phone number and job title.</li>
+          <li>Your sign-in, name, email, phone number and job title.</li>
           <li>Your team or company membership, your join requests and your notifications.</li>
         </ul>
         <h3>What stays</h3>
@@ -246,7 +238,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy Policy"
-      updated="September 19, 2026"
+      updated="September 20, 2026"
       intro={
         <p>
           FTC Pitfund collects only what it needs to connect FTC teams with sponsors. This page lists what we keep, who can see it, and how

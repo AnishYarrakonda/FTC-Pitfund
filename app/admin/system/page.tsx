@@ -29,7 +29,6 @@ const JOB_LABEL: Record<string, string> = {
 const LINKS = [
   { label: 'Supabase usage', href: 'https://supabase.com/dashboard/project/_/settings/billing/usage' },
   { label: 'Resend', href: 'https://resend.com/emails' },
-  { label: 'Sentry', href: 'https://sentry.io/issues/' },
 ]
 
 export default async function AdminSystemPage() {

@@ -14,12 +14,12 @@
   notifications; history keeps `actor_id = null`.
 
 ## Auth
-- Supabase Auth: Google OAuth (PKCE, browser client → `/auth/callback`) and 6-digit email OTP
+- Supabase Auth: 6-digit email OTP only (no OAuth provider, no `/auth/callback`)
   (`app/actions/auth.ts`: `requestLoginCode` with BotID, `verifyLoginCode`).
 - Supabase says `otp_expired` for both wrong and expired codes; the login page decides by time since sending.
 - Local stack: `supabase/config.toml` (OTP 6 digits / 10 min, `max_frequency` 5 s, Send Email hook →
-  `host.docker.internal:3000`). `supabase/.env` holds the generated hook secret and Google toggle.
-- Production auth settings (site URL, redirect URLs, OTP, Google, Send Email hook) are applied by `npm run provision:supabase`, never by hand.
+  `host.docker.internal:3000`). `supabase/.env` holds the generated hook secret.
+- Production auth settings (site URL, OTP, Send Email hook) are applied by `npm run provision:supabase`, never by hand.
 
 ## Authorization
 - Always `require*` from `lib/server/authz.ts`, then pass the viewer into data functions.

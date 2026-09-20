@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useTransition } from 'react'
 
-import { captureClientException } from '@/lib/client/sentry'
 import { SUPPORT_EMAIL } from '@/lib/shared/brand'
 
 // Error boundaries load with every route, so this view avoids the Button component (Radix Slot,
@@ -14,22 +13,15 @@ const SECONDARY = `${BUTTON} border border-border-strong bg-surface text-text ho
 
 /**
  * Segment error boundary UI (plan §8): a short message, Try again, and a reference id the
- * person can quote to support. Server errors carry Next's digest; client errors get a Sentry id.
+ * person can quote to support. Server errors carry Next's digest (it is in the Vercel runtime logs); a browser-only error has none.
  */
 export function ErrorView({ error, retry, homeHref = '/' }: { error: Error & { digest?: string }; retry: () => void; homeHref?: string }) {
-  const [reference, setReference] = useState<string | null>(error.digest ?? null)
+  const reference = error.digest ?? null
   const [retrying, startRetry] = useTransition()
   const offline = typeof navigator !== 'undefined' && navigator.onLine === false
 
   useEffect(() => {
-    let current = true
-    void captureClientException(error).then((id) => {
-      if (current && !error.digest) setReference(id)
-    })
     console.error(error)
-    return () => {
-      current = false
-    }
   }, [error])
 
   return (

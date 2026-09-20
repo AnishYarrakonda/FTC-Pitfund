@@ -14,7 +14,7 @@ import { PublicFooter, PublicHeader } from './public-chrome'
  * which of the fourteen sections you were in, and nothing on the page that looked like the rest of
  * FTC Pitfund. Now they sit on the app canvas with the app's own controls — the same `← Back` link
  * the welcome pages use, a contents list, the page-header type scale — so a visitor who lands here
- * from the Google consent screen or the footer can see it is the same product.
+ * from the sign-in page or the footer can see it is the same product.
  *
  * Sections are passed as data rather than as free children so each one gets an `id`: the contents
  * list needs them, and a stable `/legal/privacy#what-we-collect` is worth having when someone asks

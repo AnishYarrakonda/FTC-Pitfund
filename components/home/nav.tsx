@@ -46,7 +46,7 @@ const MENUS: Array<{ key: string; label: string; columns: Array<{ heading: strin
       {
         heading: 'For coaches',
         items: [
-          { href: TEAM_HREF, title: 'Get started', body: 'Sign in with Google or an email code', icon: 'bolt', tone: '#1e40af' },
+          { href: TEAM_HREF, title: 'Get started', body: 'Sign in with an email code', icon: 'bolt', tone: '#1e40af' },
           { href: '#bento-verified', title: 'Verify your team', body: 'Team number and a FIRST screenshot', icon: 'shield', tone: '#3b82f6' },
           { href: '#bento-public', title: 'Upload your deck', body: 'Five pages, one PDF, one summary', icon: 'file', tone: '#00d4ff' },
           { href: '#bento-pitch', title: 'Pitch a company', body: 'Answer that company’s questions', icon: 'send', tone: '#10b981' },

@@ -2,14 +2,12 @@
 
 import { useEffect } from 'react'
 
-import { captureClientException } from '@/lib/client/sentry'
-
 import './globals.css'
 
 /* Last-resort boundary when the root layout itself fails. Keeps to plain markup and tokens. */
 export default function GlobalError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   useEffect(() => {
-    void captureClientException(error)
+    console.error(error)
   }, [error])
   return (
     <html lang="en">

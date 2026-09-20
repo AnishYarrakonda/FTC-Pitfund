@@ -2,9 +2,9 @@
  * npm run provision:supabase [-- --dry-run] [--auth-only] [--only production|staging]
  *
  * Creates (or finds) the production and staging Supabase projects in the team org (us-east-1),
- * stores their keys and connection strings in .env.provision, applies the Drizzle migrations,
+ * stores their keys and connection strings in .env.local, applies the Drizzle migrations,
  * creates the storage buckets, pushes the auth settings (site URL, redirect URLs, 6-digit code,
- * Google when credentials exist, the Send Email hook), seeds staging with `demo` (never
+ * the Send Email hook), seeds staging with `demo` (never
  * production) and makes the ADMIN_EMAILS admins. Safe to run again at any point.
  */
 import { createClient } from '@supabase/supabase-js'
@@ -48,18 +48,26 @@ const KEY = (stage: Stage, name: string) => `SUPABASE_${stage.toUpperCase()}_${n
 
 export function managementApi(): Api {
   const token = getValue('SUPABASE_ACCESS_TOKEN')
-  if (!token) fail('SUPABASE_ACCESS_TOKEN is missing from .env.provision (supabase.com → Account → Access Tokens).')
+  if (!token) fail('SUPABASE_ACCESS_TOKEN is missing from .env.local (supabase.com → Account → Access Tokens).')
   return apiClient('https://api.supabase.com', { Authorization: `Bearer ${token}` }, 'Supabase')
 }
 
 export async function findOrg(api: Api) {
   const { data } = await api<Array<{ slug: string; name: string }>>('GET', '/v1/organizations')
   const wanted = getValue('SUPABASE_ORG_SLUG')
-  const org = wanted ? data.find((o) => o.slug === wanted) : data.find((o) => o.name === config().supabaseOrg)
+  const named = getValue('SUPABASE_ORG_NAME')
+  // A personal account has one organization Supabase made for it: use it when nothing narrower is named.
+  const org = wanted
+    ? data.find((o) => o.slug === wanted)
+    : named
+      ? data.find((o) => o.name === named)
+      : data.length === 1
+        ? data[0]
+        : undefined
   if (!org) {
     fail(
-      `No Supabase organization ${wanted ? `with slug "${wanted}"` : `named "${config().supabaseOrg}"`}. ` +
-        `Create it at supabase.com/dashboard (docs/LAUNCH.md step 1). The token can see: ${data.map((o) => `${o.name} (${o.slug})`).join(', ') || 'none'}.`,
+      `No Supabase organization ${wanted ? `with slug "${wanted}"` : named ? `named "${named}"` : 'chosen (the token sees more than one)'}. ` +
+        `Set SUPABASE_ORG_SLUG in .env.local. The token can see: ${data.map((o) => `${o.name} (${o.slug})`).join(', ') || 'none'}.`,
     )
   }
   return org
@@ -94,8 +102,8 @@ async function ensureProject(api: Api, orgSlug: string, stage: Stage): Promise<P
 
   if (!getValue(KEY(stage, 'DB_PASSWORD'))) {
     waitOn(
-      `The database password for existing project "${name}" isn't in .env.provision. Reset it in Supabase → Project Settings → Database, ` +
-        `then add ${KEY(stage, 'DB_PASSWORD')}=… to .env.provision.`,
+      `The database password for existing project "${name}" isn't in .env.local. Reset it in Supabase → Project Settings → Database, ` +
+        `then add ${KEY(stage, 'DB_PASSWORD')}=… to .env.local.`,
     )
     return null
   }
@@ -210,24 +218,22 @@ async function authConfig(api: Api, stage: Stage) {
   let redirects: string[]
   if (stage === 'production') {
     if (!siteUrl || !domain) {
-      waitOn('Add PITFUND_DOMAIN=yourdomain.org to .env.provision (the domain you bought in docs/LAUNCH.md step 3).')
+      waitOn('Add PITFUND_DOMAIN=yourdomain.org to .env.local (the domain you bought in docs/LAUNCH.md step 3).')
       return
     }
     site = siteUrl
-    redirects = [`${siteUrl}/auth/callback`, `https://www.${domain}/auth/callback`]
+    redirects = [siteUrl, `https://www.${domain}`]
   } else {
     if (!vercelToken()) {
-      waitOn('Add VERCEL_TOKEN to .env.provision so staging can allow Vercel preview URLs.')
+      waitOn('Add VERCEL_TOKEN to .env.local so staging can allow Vercel preview URLs.')
       return
     }
     const { team } = await vercelScope()
     site = stagingSiteUrl(vercelProject, team.slug, stagingBranch)
-    redirects = [`${site}/auth/callback`, `https://${vercelProject}-*-${team.slug}.vercel.app/**`, 'http://127.0.0.1:3000/auth/callback']
+    redirects = [site]
     saveValue('STAGING_SITE_URL', site)
   }
 
-  const googleId = getValue('GOOGLE_CLIENT_ID')
-  const googleSecret = getValue('GOOGLE_CLIENT_SECRET')
   const bypass = stage === 'staging' ? getValue('VERCEL_AUTOMATION_BYPASS_SECRET') : undefined
   const hookUrl = `${site}/api/auth/send-email${bypass ? `?x-vercel-protection-bypass=${bypass}` : ''}`
 
@@ -247,12 +253,10 @@ async function authConfig(api: Api, stage: Stage) {
     hook_send_email_enabled: true,
     hook_send_email_uri: hookUrl,
     hook_send_email_secrets: getValue(KEY(stage, 'SEND_EMAIL_HOOK_SECRET')),
-    external_google_enabled: Boolean(googleId && googleSecret),
-    ...(googleId && googleSecret ? { external_google_client_id: googleId, external_google_secret: googleSecret } : {}),
   }
 
   const { data: current } = await api<Record<string, unknown>>('GET', `/v1/projects/${ref}/config/auth`)
-  const changed = Object.entries(desired).filter(([k, v]) => k !== 'hook_send_email_secrets' && k !== 'external_google_secret' && current[k] !== v)
+  const changed = Object.entries(desired).filter(([k, v]) => k !== 'hook_send_email_secrets' && current[k] !== v)
   const secretsDiffer = current.hook_send_email_secrets !== desired.hook_send_email_secrets
   if (changed.length === 0 && !secretsDiffer) {
     skip(`auth settings on ${stage} are current`)
@@ -260,7 +264,7 @@ async function authConfig(api: Api, stage: Stage) {
     plan(`update auth settings on ${stage}: ${[...changed.map(([k]) => k), ...(secretsDiffer ? ['hook_send_email_secrets'] : [])].join(', ')}`)
   } else {
     await api('PATCH', `/v1/projects/${ref}/config/auth`, desired)
-    did(`auth settings pushed to ${stage} (site ${site}, 6-digit codes, Send Email hook${googleId && googleSecret ? ', Google' : ''})`)
+    did(`auth settings pushed to ${stage} (site ${site}, 6-digit codes, Send Email hook)`)
   }
 
   // Supabase's default limit on auth emails is low; the app has its own quota. Best effort: some
@@ -269,17 +273,6 @@ async function authConfig(api: Api, stage: Stage) {
     const { status } = await api('PATCH', `/v1/projects/${ref}/config/auth`, { rate_limit_email_sent: 100 }, { allow: [400, 403, 422] })
     if (status < 300) did(`auth email rate limit on ${stage} raised to 100/hour`)
     else warn(`Supabase didn't allow raising the auth email rate limit on ${stage} (status ${status}); codes may be limited per hour.`)
-  }
-
-  if (!googleId || !googleSecret) {
-    info(`Google sign-in is off on ${stage}. Redirect URI for the Google OAuth client: https://${ref}.supabase.co/auth/v1/callback`)
-    if (stage === 'production') {
-      waitOn(
-        'Google OAuth (docs/LAUNCH.md step 5): create the client with redirect URIs ' +
-          `https://${ref}.supabase.co/auth/v1/callback${getValue(KEY('staging', 'REF')) ? ` and https://${getValue(KEY('staging', 'REF'))}.supabase.co/auth/v1/callback` : ''}, ` +
-          'paste GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET into .env.provision, then run `npm run provision:supabase -- --auth-only` and `npm run provision:vercel`.',
-      )
-    }
   }
 }
 

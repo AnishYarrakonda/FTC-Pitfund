@@ -2,7 +2,7 @@
  * npm run setup — everything a fresh clone needs, with Docker as the only prerequisite.
  *
  *   1. Check Docker is running.
- *   2. Write supabase/.env (hook secret, Google toggle) and start the local Supabase stack.
+ *   2. Write supabase/.env (hook secret) and start the local Supabase stack.
  *   3. Merge local values into .env.local. Existing non-local values are never overwritten.
  *   4. Make sure every storage bucket exists.
  *   5. Apply migrations.
@@ -49,14 +49,7 @@ function writeSupabaseEnv(existing: Map<string, string>): boolean {
     existing.get('SEND_EMAIL_HOOK_SECRET') ||
     current.get('SEND_EMAIL_HOOK_SECRET') ||
     `v1,whsec_${randomBytes(32).toString('base64')}`
-  const googleId = existing.get('GOOGLE_CLIENT_ID') ?? ''
-  const googleSecret = existing.get('GOOGLE_CLIENT_SECRET') ?? ''
-  const next = new Map([
-    ['SEND_EMAIL_HOOK_SECRET', secret],
-    ['SUPABASE_AUTH_EXTERNAL_GOOGLE_ENABLED', googleId && googleSecret ? 'true' : 'false'],
-    ['SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID', googleId],
-    ['SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET', googleSecret],
-  ])
+  const next = new Map([['SEND_EMAIL_HOOK_SECRET', secret]])
   const changed = [...next].some(([k, v]) => current.get(k) !== v)
   if (changed) {
     writeFileSync(
@@ -136,8 +129,6 @@ function mergeEnvLocal(existing: Map<string, string>, stack: Map<string, string>
   set('SMTP_URL', `smtp://127.0.0.1:${smtpPort}`, { onlyIfMissing: true })
   set('MAILPIT_URL', stack.get('MAILPIT_URL') ?? 'http://127.0.0.1:54324', { onlyIfMissing: true })
   set('CRON_SECRET', randomBytes(24).toString('hex'), { onlyIfMissing: true })
-  const googleReady = Boolean(existing.get('GOOGLE_CLIENT_ID') && existing.get('GOOGLE_CLIENT_SECRET'))
-  set('NEXT_PUBLIC_GOOGLE_AUTH_ENABLED', googleReady ? 'true' : 'false', { local: true })
 
   if (changes.length === 0) {
     console.log('  Up to date')

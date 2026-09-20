@@ -4,9 +4,9 @@
  * Adds the sending domain to Resend and prints its DNS records (SPF, DKIM, plus a DMARC record),
  * asks Resend to verify it, creates the bounce/complaint webhook to /api/webhooks/resend, creates a
  * sending-only API key for the app, and stores the key and the webhook signing secret in
- * .env.provision and the Vercel env (production and preview).
+ * .env.local and the Vercel env (production and preview).
  */
-import { apiClient, config, did, dryRun, fail, finish, getValue, heading, info, plan, saveValue, skip, TEAM_EMAIL, waitOn, type Api } from './lib'
+import { apiClient, config, did, dryRun, fail, finish, getValue, heading, info, plan, saveValue, skip, ownerEmail, waitOn, type Api } from './lib'
 import { findProject, upsertEnv, vercelToken } from './vercel-api'
 
 type Domain = { id: string; name: string; status: string; region: string; records?: Array<{ record: string; name: string; type: string; value: string; priority?: number; status: string }> }
@@ -16,7 +16,7 @@ const WEBHOOK_EVENTS = ['email.bounced', 'email.complained']
 
 function resendApi(): Api {
   const key = getValue('RESEND_FULL_ACCESS_KEY')
-  if (!key) fail('RESEND_FULL_ACCESS_KEY is missing from .env.provision (resend.com → API Keys).')
+  if (!key) fail('RESEND_FULL_ACCESS_KEY is missing from .env.local (resend.com → API Keys).')
   return apiClient('https://api.resend.com', { Authorization: `Bearer ${key}` }, 'Resend')
 }
 
@@ -41,7 +41,7 @@ async function ensureDomain(api: Api, domainName: string): Promise<Domain | null
 
   info(`DNS records for sending email from ${domainName}:`)
   const lines = (domain.records ?? []).map((r) => `${r.type.padEnd(5)} ${r.name.padEnd(28)} ${r.value}${r.priority !== undefined ? ` (priority ${r.priority})` : ''}  [${r.record}: ${r.status}]`)
-  lines.push(`TXT   _dmarc                       v=DMARC1; p=none; rua=mailto:${TEAM_EMAIL}`)
+  lines.push(`TXT   _dmarc                       v=DMARC1; p=none; rua=mailto:${ownerEmail()}`)
   for (const l of lines) info(`  ${l}`)
   if (!dryRun) {
     await api('POST', `/domains/${domain.id}/verify`, undefined, { allow: [400, 422] })
@@ -82,7 +82,7 @@ export async function provisionResend() {
   const api = resendApi()
   const { domain: domainName, siteUrl } = config()
   if (!domainName || !siteUrl) {
-    waitOn('Add PITFUND_DOMAIN to .env.provision (docs/LAUNCH.md step 3), then re-run.')
+    waitOn('Add PITFUND_DOMAIN to .env.local (docs/LAUNCH.md step 3), then re-run.')
     return
   }
   heading('Resend domain')

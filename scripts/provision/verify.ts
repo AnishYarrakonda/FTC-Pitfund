@@ -12,7 +12,7 @@ import postgres from 'postgres'
 
 import { argValue } from '../lib/env'
 
-import { config, did, fail, finish, getValue, heading, info, TEAM_EMAIL, waitOn, warn, type Stage } from './lib'
+import { config, did, fail, finish, getValue, heading, info, ownerEmail, waitOn, warn, type Stage } from './lib'
 
 let failures = 0
 function check(ok: boolean, text: string, detail?: string) {
@@ -35,7 +35,7 @@ async function get(base: string, path: string, init?: RequestInit) {
 async function main() {
   const stage = (argValue('stage') ?? 'production') as Stage
   const base = argValue('url') ?? (stage === 'production' ? config().siteUrl : getValue('STAGING_SITE_URL'))
-  if (!base) fail('No site URL: set PITFUND_DOMAIN in .env.provision or pass --url.')
+  if (!base) fail('No site URL: set PITFUND_DOMAIN in .env.local or pass --url.')
   heading(`Smoke test ${base}`)
 
   const health = await get(base, '/api/health')
@@ -48,8 +48,7 @@ async function main() {
   }
 
   const login = await get(base, '/login')
-  check(login.status === 200 && login.text.includes('Continue with Google') && login.text.includes('Email me a code'), '/login offers Google and an email code', `status ${login.status}`)
-  check(login.text.includes('Continue with Google') && !/Google sign-in isn.t available/.test(login.text), 'login page renders without errors')
+  check(login.status === 200 && login.text.includes('Email me a code'), '/login offers the email code', `status ${login.status}`)
 
   for (const path of ['/dev', '/dev/ui', '/api/dev/sign-in?persona=admin']) {
     const res = await get(base, path)
@@ -62,7 +61,7 @@ async function main() {
   check(sitemap.status === 200 && sitemap.text.includes('<urlset'), 'sitemap.xml renders')
 
   heading('Cron and email')
-  const cronSecret = getValue('CRON_SECRET')
+  const cronSecret = getValue('PRODUCTION_CRON_SECRET')
   const refused = await get(base, '/api/cron/daily')
   check(refused.status === 401, 'cron refuses a request without the secret', `status ${refused.status}`)
 
@@ -74,7 +73,7 @@ async function main() {
       const key = `provision-verify:${new Date().toISOString().slice(0, 10)}:${randomUUID()}`
       const [row] = await sql<Array<{ id: string }>>`
         insert into public.email_outbox (to_email, template, payload, priority, dedupe_key, send_after)
-        values (${TEAM_EMAIL}, 'notice', ${sql.json({
+        values (${ownerEmail()}, 'notice', ${sql.json({
           subject: 'FTC Pitfund is live: test email',
           title: 'Email delivery works',
           paragraphs: [`This test was queued by npm run provision:verify at ${new Date().toISOString()} and sent by the daily job.`],
@@ -82,13 +81,13 @@ async function main() {
         })}, 2, ${key}, now())
         returning id`
       outboxId = row.id
-      info(`queued a test email to ${TEAM_EMAIL} (outbox ${outboxId})`)
+      info(`queued a test email to ${ownerEmail()} (outbox ${outboxId})`)
     } else {
-      warn('No database URL in .env.provision: skipping the outbox email test.')
+      warn('No database URL in .env.local: skipping the outbox email test.')
     }
 
     if (!cronSecret) {
-      waitOn('CRON_SECRET is not in .env.provision: run `npm run provision:vercel` first.')
+      waitOn('PRODUCTION_CRON_SECRET is not in .env.local: run `npm run provision:vercel` first.')
     } else {
       const cron = await get(base, '/api/cron/daily', { headers: { Authorization: `Bearer ${cronSecret}` } })
       check(cron.status === 200 && cron.text.includes('"ok":true'), 'cron runs with the secret and every job succeeds', `${cron.status} ${cron.text.slice(0, 200)}`)
@@ -101,8 +100,8 @@ async function main() {
         status = row.status
         if (status !== 'sent') await new Promise((r) => setTimeout(r, 3000))
       }
-      check(status === 'sent', `test email to ${TEAM_EMAIL} was sent through the outbox`, `status ${status}`)
-      if (status === 'sent') info(`check the ${TEAM_EMAIL} inbox for "FTC Pitfund is live: test email"`)
+      check(status === 'sent', `test email to ${ownerEmail()} was sent through the outbox`, `status ${status}`)
+      if (status === 'sent') info(`check the ${ownerEmail()} inbox for "FTC Pitfund is live: test email"`)
     }
   } finally {
     await sql?.end({ timeout: 5 })

@@ -9,7 +9,7 @@ capacity caps, ledger) is gone; it is preserved at git tag `legacy-v1`.
 ## Product
 
 FTC Pitfund connects FIRST® Tech Challenge teams with companies that sponsor robotics teams.
-Adult coaches sign in (Google or a 6-digit email code), create or join one shared team account,
+Adult coaches sign in (a 6-digit email code), create or join one shared team account,
 upload a sponsorship deck PDF (≤5 pages, ≤10 MB) and a one-line summary, and pitch **approved**
 companies by answering each company's own questions (≤10, or 3 defaults). **Teams and companies are
 both admin-reviewed before they reach the app**, and **an admin reviews every pitch** before the
@@ -28,7 +28,7 @@ No money handling, no caps, no messaging. $0 budget except the domain.
 - Pitches go only to approved companies. Pending companies are invisible to coaches.
 - Every pitch is admin-reviewed before a company sees it.
 - One pitch per team × company × season; withdrawing before a response frees the slot.
-- Sign-in is Google or email code. **No passwords, no MFA.**
+- Sign-in is an email code. **No passwords, no MFA, no third-party (Google) sign-in.**
 - Email is capped at 100/day: it is always queued through the outbox, quota-aware, and never fails silently.
   The in-app notification is always written; email is a copy.
 - Contact details are returned only for matched pitches, only to the two orgs involved.
@@ -41,7 +41,7 @@ No money handling, no caps, no messaging. $0 budget except the domain.
 Next.js 16 App Router (`cacheComponents: true`) · React 19 · TypeScript strict · Tailwind v4 + Radix
 (`radix-ui`, loaded on demand) · Supabase Auth (`@supabase/ssr`) · Postgres via **Drizzle** (`postgres` driver,
 `prepare: false`) · Supabase Storage · Resend + React Email (`react-email`) + `email_outbox` ·
-Sentry (lazy) · Vercel BotID · Vitest · Playwright + axe + Lighthouse · Vercel Hobby (`iad1`), one cron.
+Vercel BotID · Vitest · Playwright + axe + Lighthouse · Vercel Hobby (`iad1`), one cron.
 
 ## Module layout
 
@@ -54,7 +54,7 @@ app/sitemap.ts robots.ts apple-icon.tsx, **/opengraph-image.tsx (lib/server/og.t
 lib/server/        server-only: db, schema, env, authz, viewer, result, audit, notify, storage, uploads,
                    ftc-records, jobs, digest, page-guards, transaction, supabase(-admin), og, data/*, email/*
 lib/shared/        types, labels, format, season, questions, personas, result, cn, nav, schemas/* (client-safe)
-lib/client/        use-action, toast (lazy Sonner), lazy (useLazyComponent), pdf, upload, image, sentry, supabase
+lib/client/        use-action, toast (lazy Sonner), lazy (useLazyComponent), pdf, upload, image
 components/ui/     the design system          components/app/  shell, top bar, bell, menus, landing island
 components/members/  members + invites section (server) with client controls
 drizzle/           generated migrations       scripts/  setup, db-*, seed/, admin-grant, provision/, prod, perf,
@@ -101,8 +101,8 @@ Client side: `useAction(action)` or `<ActionButton action pendingLabel>`; never 
 | `npm run db:generate` / `db:migrate` / `db:reset` | Drizzle migrations (migrate refuses non-local hosts without `--remote` + `CONFIRM_REMOTE=1`) |
 | `npm run seed -- --scenario demo\|empty\|edge` | idempotent fixtures |
 | `npm run admin:grant -- email` · `email:drain` · `cron:run` · `db:backup` | local ops (`cron:run` calls `/api/cron/daily` on :3000) |
-| `npm run provision` · `provision:check\|supabase\|vercel\|resend\|sentry\|verify` | build production from `.env.provision` (docs/LAUNCH.md) |
-| `npm run prod -- backup\|admin email [--revoke]` | ops against the hosted database using `.env.provision` |
+| `npm run provision` · `provision:check\|supabase\|vercel\|resend\|verify` | build production from `.env.local` (docs/LAUNCH.md) |
+| `npm run prod -- backup\|admin email [--revoke]` | ops against the hosted database using `.env.local` |
 | `npm run screenshots:marketing` | recapture the landing page screenshots from the seeded production build |
 
 ## Rules for agents

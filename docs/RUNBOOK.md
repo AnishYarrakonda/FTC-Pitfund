@@ -1,10 +1,10 @@
 # Running FTC Pitfund
 
-For whoever operates FTC Pitfund day to day. You don't need to write code. A few tasks need a terminal in this repository with `npm install` done and the team's `.env.provision` file (from the password manager) in the repository folder.
+For whoever operates FTC Pitfund day to day. You don't need to write code. A few tasks need a terminal in this repository with `npm install` done and the team's `.env.local` file (from the password manager) in the repository folder.
 
-- **Admin console:** `https://<your domain>/admin`. Sign in as an admin (Google or an email code).
+- **Admin console:** `https://<your domain>/admin`. Sign in as an admin (an email code).
 - **Support inbox:** ftcexodius@gmail.com. Companies and coaches write here, and the daily summary arrives here.
-- **Dashboards** (all owned by ftcexodius@gmail.com): [Vercel](https://vercel.com/dashboard) (site, logs), [Supabase](https://supabase.com/dashboard) (database, storage), [Resend](https://resend.com/emails) (email), [Sentry](https://sentry.io) (errors, if set up). The System page links to each.
+- **Dashboards** (all owned by ftcexodius@gmail.com): [Vercel](https://vercel.com/dashboard) (site, logs), [Supabase](https://supabase.com/dashboard) (database, storage), [Resend](https://resend.com/emails) (email). The System page links to each.
 
 ## Every day (about 10 minutes)
 
@@ -29,7 +29,7 @@ For whoever operates FTC Pitfund day to day. You don't need to write code. A few
 
 | You see | What it means | What to do |
 | --- | --- | --- |
-| **"The daily job hasn't run in over 36 hours"** | Vercel's cron didn't call the app: queued email, the digest, upload cleanup and the database keepalive stopped. | Vercel → project `ftc-pitfund` → Settings → Cron Jobs: make sure `/api/cron/daily` is listed and enabled. Open Logs, filter `/api/cron/daily`, look for errors. To run it by hand: `curl -H "Authorization: Bearer <CRON_SECRET from .env.provision>" https://<your domain>/api/cron/daily`. |
+| **"The daily job hasn't run in over 36 hours"** | Vercel's cron didn't call the app: queued email, the digest, upload cleanup and the database keepalive stopped. | Vercel → project `ftc-pitfund` → Settings → Cron Jobs: make sure `/api/cron/daily` is listed and enabled. Open Logs, filter `/api/cron/daily`, look for errors. To run it by hand: `curl -H "Authorization: Bearer <CRON_SECRET from .env.local>" https://<your domain>/api/cron/daily`. |
 | **"Some daily jobs need attention"** + a red job | One step (email, digest, cleanup, FIRST re-check, keepalive) failed last time. The detail says why. | Usually temporary (FIRST's API or Resend was down). If it's red two days in a row, send the error text to whoever maintains the code. |
 | **Emails in the last 24 h** is orange (≥80) or red (≥90) | Resend's free plan sends 100 emails a day. Sign-in codes always go first; everything else stops at 90. | One busy day is fine: email is delayed, never lost. If it's **80 or more most days**, upgrade to Resend Pro ($20/month) in Resend → Billing. No code change is needed. |
 | **Queued email** has rows | Waiting to send, or retrying after a provider error (1, 2, 4, 8 minutes; 5 tries). | Nothing, unless a row is older than a day. **Send now** retries it; **Dismiss** drops it (the in-app notification was already delivered). |
@@ -66,28 +66,27 @@ Rotate a secret when someone with access leaves, or if it may have leaked.
 
 | Secret | How |
 | --- | --- |
-| **Supabase access, Vercel, Resend or Sentry tokens** (used only by `npm run provision`) | Revoke the old token in that service's dashboard, create a new one, paste it into `.env.provision`, then `npm run provision:check`. |
-| **CRON_SECRET** | Delete the `CRON_SECRET=` line from `.env.provision`, then `npm run provision:vercel` (makes a new one, updates Vercel, redeploys). |
-| **Send Email hook secret** | Delete `SUPABASE_PRODUCTION_SEND_EMAIL_HOOK_SECRET=` (and the staging one) from `.env.provision`, then `npm run provision:supabase -- --auth-only` and `npm run provision:vercel`. Sign-in codes may fail for a minute while the two sides update. |
-| **Resend sending key** | Resend → API Keys: revoke `ftc-pitfund-app`. Delete `RESEND_SENDING_KEY=` from `.env.provision`, then `npm run provision:resend`. |
-| **Supabase secret key** | Supabase → Project Settings → API Keys: create a new secret key, delete the old one. Delete `SUPABASE_PRODUCTION_SECRET_KEY=` from `.env.provision`, then `npm run provision:supabase` and `npm run provision:vercel`. |
-| **Database password** | Supabase → Project Settings → Database → Reset password. Put it in `.env.provision` as `SUPABASE_PRODUCTION_DB_PASSWORD`, delete the two `…DATABASE_URL=` lines, then `npm run provision:supabase` and `npm run provision:vercel`. |
-| **Google OAuth client secret** | Google Cloud → Clients → FTC Pitfund → add a new secret. Paste it as `GOOGLE_CLIENT_SECRET`, run `npm run provision:supabase -- --auth-only`, then disable the old secret. |
+| **Supabase access, Vercel or Resend tokens** (used only by `npm run provision`) | Revoke the old token in that service's dashboard, create a new one, paste it into `.env.local`, then `npm run provision:check`. |
+| **CRON_SECRET** | Delete the `CRON_SECRET=` line from `.env.local`, then `npm run provision:vercel` (makes a new one, updates Vercel, redeploys). |
+| **Send Email hook secret** | Delete `SUPABASE_PRODUCTION_SEND_EMAIL_HOOK_SECRET=` (and the staging one) from `.env.local`, then `npm run provision:supabase -- --auth-only` and `npm run provision:vercel`. Sign-in codes may fail for a minute while the two sides update. |
+| **Resend sending key** | Resend → API Keys: revoke `ftc-pitfund-app`. Delete `RESEND_SENDING_KEY=` from `.env.local`, then `npm run provision:resend`. |
+| **Supabase secret key** | Supabase → Project Settings → API Keys: create a new secret key, delete the old one. Delete `SUPABASE_PRODUCTION_SECRET_KEY=` from `.env.local`, then `npm run provision:supabase` and `npm run provision:vercel`. |
+| **Database password** | Supabase → Project Settings → Database → Reset password. Put it in `.env.local` as `SUPABASE_PRODUCTION_DB_PASSWORD`, delete the two `…DATABASE_URL=` lines, then `npm run provision:supabase` and `npm run provision:vercel`. |
 
 After any rotation: `npm run provision:verify`.
 
 ## Handing over to a new captain
 
 1. Change the ftcexodius@gmail.com password and 2-step verification to the new owner's phone; update the password manager.
-2. GitHub: make the new captain an **Owner** of the `ExodiusFTC` org; remove graduates.
-3. Supabase org, Resend team, Sentry: invite the new captain; remove graduates.
+2. GitHub: give the new captain admin on the `AnishYarrakonda/FTC-Pitfund` repo (or transfer it); remove graduates.
+3. Supabase org, Resend team: invite the new captain; remove graduates.
 4. Make them an admin (above); revoke graduates' admin access.
-5. Rotate the tokens in `.env.provision` (above) and give them the file through the password manager.
+5. Rotate the tokens in `.env.local` (above) and give them the file through the password manager.
 6. Walk through this runbook together once.
 
 ## When something goes wrong
 
-**Sign-in codes don't arrive.** Check spam. Resend → Emails: look for the address. If nothing was sent, check Supabase → Authentication → Hooks (the Send Email hook must point at `https://<your domain>/api/auth/send-email`), then run `npm run provision:supabase -- --auth-only`. Google sign-in still works meanwhile.
+**Sign-in codes don't arrive.** Check spam. Resend → Emails: look for the address. If nothing was sent, check Supabase → Authentication → Hooks (the Send Email hook must point at `https://<your domain>/api/auth/send-email`), then run `npm run provision:supabase -- --auth-only`.
 
 **Emails stopped.** System page: if the 24-hour count is at 100, email is delayed until the window frees up (sign-in codes still go). Resend → Domains must show **Verified**; if DNS records were changed, re-add the records from `npm run provision:resend`. Resend → Emails shows provider errors.
 

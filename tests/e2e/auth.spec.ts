@@ -5,8 +5,7 @@ import { expect, test } from '../support/fixtures'
 import { messagesTo, waitForLoginCode } from '../support/mailpit'
 
 /*
- * Sign in (plan §3.2): the email-code state machine with every branch, Google's button and
- * cancel copy, and sign out. Codes are read from Mailpit, so the whole path is real:
+ * Sign in (plan §3.2): the email-code state machine with every branch, and sign out. Codes are read from Mailpit, so the whole path is real:
  * Supabase Auth → Send Email hook → outbox → SMTP → Mailpit.
  */
 
@@ -108,7 +107,7 @@ test('asking for another code too soon is rate limited with a wait time', async 
   await expect(page.getByText(/Too many attempts\. Try again in \d+ (seconds|minutes)\./)).toBeVisible()
 })
 
-test('when the email cannot be sent, the page says so and offers Google', async ({ page }) => {
+test('when the email cannot be sent, the page says so', async ({ page }) => {
   const email = freshEmail('nosend')
   // Exhaust the daily email limit: the auth code has nowhere to go.
   const rows = await db()`
@@ -119,27 +118,18 @@ test('when the email cannot be sent, the page says so and offers Google', async 
     await page.goto('/login')
     await page.getByLabel('Email').fill(email)
     await page.getByRole('button', { name: 'Email me a code' }).click()
-    await expect(page.getByText("We couldn't send the email right now. Continue with Google, or try again in a few minutes.")).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible()
+    await expect(page.getByText("We couldn't send the email right now. Try again in a few minutes.")).toBeVisible()
   } finally {
     await db()`delete from email_outbox where id = any(${rows.map((r) => r.id)})`
   }
 })
 
-test('Google: the button renders, explains when unavailable, and shows cancel copy', async ({ page }) => {
+test('sign-in offers an email code and never a password', async ({ page }) => {
   await page.goto('/login')
-  const google = page.getByRole('button', { name: 'Continue with Google' })
-  await expect(google).toBeVisible()
-  // Plan §1 rule 10: Google or an email code, never a password.
+  await expect(page.getByRole('button', { name: 'Email me a code' })).toBeVisible()
+  // Plan §1 rule 10: an email code, never a password (and no third-party sign-in).
   await expect(page.locator('input[type="password"]')).toHaveCount(0)
-  if (process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED !== 'true') {
-    await google.click()
-    await expect(page.getByText("Google sign-in isn't available yet. Use an email code instead.")).toBeVisible()
-  }
-  await page.goto('/login?error=google_cancelled')
-  await expect(page.getByText('Google sign-in was cancelled.')).toBeVisible()
-  await page.goto('/auth/callback?error=access_denied&error_description=The+user+denied+access')
-  await expect(page).toHaveURL(/\/login\?error=google_cancelled/)
+  await expect(page.getByRole('button', { name: /google/i })).toHaveCount(0)
 })
 
 test('signs out from the account menu, and signed-out pages go to login and back', async ({ page, problems }) => {

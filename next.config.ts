@@ -1,4 +1,3 @@
-import { withSentryConfig } from '@sentry/nextjs/config'
 import { withBotId } from 'botid/next/config'
 import type { NextConfig } from 'next'
 
@@ -30,16 +29,16 @@ if (process.env.VERCEL && ['127.0.0.1', 'localhost', ''].includes(supabaseUrl.ho
 /*
  * Content-Security-Policy. Inline scripts are allowed because App Router streams inline
  * bootstrap scripts; everything else is pinned to the origins the product actually uses:
- * Supabase (auth, storage), Google (avatars), Sentry (errors) and Vercel BotID (same-origin
+ * Supabase (auth, storage) and Vercel BotID (same-origin
  * rewrites plus vercel.live in previews).
  */
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://vercel.live`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${supabaseUrl.origin} https://lh3.googleusercontent.com`,
+  `img-src 'self' data: blob: ${supabaseUrl.origin}`,
   "font-src 'self' data:",
-  `connect-src 'self' ${supabaseUrl.origin} https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://vercel.live${isDev ? ' ws: http://127.0.0.1:* http://localhost:*' : ''}`,
+  `connect-src 'self' ${supabaseUrl.origin} https://vercel.live${isDev ? ' ws: http://127.0.0.1:* http://localhost:*' : ''}`,
   "worker-src 'self' blob:",
   `frame-src 'self' ${supabaseUrl.origin} https://vercel.live`,
   "object-src 'none'",
@@ -89,7 +88,6 @@ const nextConfig: NextConfig = {
         port: supabaseUrl.port,
         pathname: '/storage/v1/object/public/**',
       },
-      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
     ],
     // Local Supabase serves from 127.0.0.1, which the optimizer refuses by default (dev and the local
     // production build used by QA); a hosted Supabase project never needs it.
@@ -100,11 +98,4 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withSentryConfig(withBotId(nextConfig), {
-  silent: true,
-  telemetry: false,
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  authToken: process.env.SENTRY_AUTH_TOKEN,
-  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
-})
+export default withBotId(nextConfig)

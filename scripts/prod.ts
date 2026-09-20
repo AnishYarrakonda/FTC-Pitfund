@@ -2,7 +2,7 @@
  * npm run prod -- <task> [args] [--staging]
  *
  * Runs an operations script against the hosted database, using the values `npm run provision`
- * saved in .env.provision (so nobody copies connection strings by hand):
+ * saved in .env.local (so nobody copies connection strings by hand):
  *
  *   npm run prod -- backup                         pg_dump + storage listing into backups/
  *   npm run prod -- admin someone@example.com      make an existing user an admin
@@ -31,7 +31,7 @@ async function main() {
   const value = (name: string) => {
     const v = getValue(`SUPABASE_${stage}_${name}`)
     if (!v) {
-      console.error(`SUPABASE_${stage}_${name} isn't in .env.provision. Run \`npm run provision:supabase\` first.`)
+      console.error(`SUPABASE_${stage}_${name} isn't in .env.local. Run \`npm run provision:supabase\` first.`)
       process.exit(1)
     }
     return v

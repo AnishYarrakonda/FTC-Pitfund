@@ -15,7 +15,7 @@ import { signInDestination } from '@/lib/shared/viewer'
  * code request can be bot-checked and every Supabase error maps to one of our messages.
  */
 
-const SEND_FAILED = "We couldn't send the email right now. Continue with Google, or try again in a few minutes."
+const SEND_FAILED = "We couldn't send the email right now. Try again in a few minutes."
 
 function waitSeconds(message: string): number | null {
   const match = message.match(/after (\d+) seconds?/i)
@@ -44,7 +44,7 @@ export const requestLoginCode = defineAction(emailSchema, async ({ email }) => {
       throw new AppError('VALIDATION', 'Enter a valid email address, like name@example.com', { field: 'email' })
     }
     if (error.code === 'signup_disabled' || error.code === 'email_provider_disabled') {
-      throw new AppError('UNAVAILABLE', 'Email sign-in is turned off right now. Continue with Google instead.')
+      throw new AppError('UNAVAILABLE', 'Sign-in is turned off right now. Try again later.')
     }
     console.error('[auth] signInWithOtp failed', error.status, error.code)
     throw new AppError('UNAVAILABLE', SEND_FAILED)

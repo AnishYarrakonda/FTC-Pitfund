@@ -13,7 +13,7 @@ export type ActionError = {
   field?: string
   /** Every field error from validation, keyed by field path. */
   fieldErrors?: Record<string, string>
-  /** Sentry event id (or a local reference) for unexpected errors. */
+  /** Reference id for unexpected errors; it appears in the server log next to the error. */
   reference?: string
   /** Where the fix lives, e.g. the existing pitch behind a season conflict. */
   href?: string

@@ -24,7 +24,7 @@ export function Avatar({
     >
       <span aria-hidden="true">{initials(name)}</span>
       {src ? (
-        // eslint-disable-next-line @next/next/no-img-element -- avatars are tiny and come from Google or storage
+        // eslint-disable-next-line @next/next/no-img-element -- avatars are tiny and come from storage
         <img src={src} alt="" className="absolute inset-0 size-full object-cover" referrerPolicy="no-referrer" loading="lazy" decoding="async" />
       ) : null}
     </span>

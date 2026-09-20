@@ -45,7 +45,7 @@ const SECTIONS: LegalSection[] = [
           Before a team can pitch, we check that it is real and that you are part of it, which is why we ask for a screenshot of your FIRST®
           Dashboard. Only our admins ever see it.
         </li>
-        <li>You sign in with Google or a 6-digit code sent to your email. Keep access to that email account secure.</li>
+        <li>You sign in with a 6-digit code sent to your email. Keep access to that email account secure.</li>
         <li>
           You confirm you are 18 or older and accept these terms when you create your account, join a team or company, or accept an invite.
         </li>
@@ -208,7 +208,7 @@ export default function TermsPage() {
   return (
     <LegalPage
       title="Terms"
-      updated="September 19, 2026"
+      updated="September 20, 2026"
       intro={<p>These terms explain the rules for using FTC Pitfund. By creating an account or using the site, you agree to them.</p>}
       sections={SECTIONS}
       other={{ href: '/legal/privacy', title: 'Privacy Policy', description: 'What we keep, who can see it, and how to delete it.' }}

@@ -41,7 +41,7 @@ npm run security:scan  # secrets, database exposure, dev tools in production
 ## Stack
 
 Next.js 16 · React 19 · TypeScript · Tailwind v4 + Radix · Supabase (Auth, Postgres, Storage) ·
-Drizzle · Resend + React Email · Sentry · Vercel. See [`CLAUDE.md`](CLAUDE.md) for the architecture
+Drizzle · Resend + React Email · Vercel. See [`CLAUDE.md`](CLAUDE.md) for the architecture
 and conventions.
 
 Questions: ftcexodius@gmail.com

@@ -1,6 +1,5 @@
 import 'server-only'
 
-import * as Sentry from '@sentry/nextjs'
 import { unstable_rethrow } from 'next/navigation'
 import type { z } from 'zod'
 
@@ -85,14 +84,9 @@ function zodFieldErrors(error: z.ZodError): Record<string, string> {
 
 /** Report an unexpected error and return a reference id the user can quote. */
 export function reportUnexpected(e: unknown, context?: Record<string, unknown>): string {
-  let reference = ''
-  try {
-    reference = Sentry.captureException(e, context ? { extra: context } : undefined) ?? ''
-  } catch {
-    // Sentry must never break a request.
-  }
-  if (!reference) reference = crypto.randomUUID().replace(/-/g, '').slice(0, 12)
-  console.error(`[unexpected ${reference}]`, e)
+  const reference = crypto.randomUUID().replace(/-/g, '').slice(0, 12)
+  // Vercel keeps console output as the function's runtime logs: search them for the reference.
+  console.error(`[unexpected ${reference}]`, e, ...(context ? [context] : []))
   return reference
 }
 

@@ -64,10 +64,6 @@ const PUBLIC: Record<string, PublicEntry> = {
   'app/actions/dev.ts#fakeUnexpectedFailure': DEV_ONLY,
   'app/actions/dev.ts#fakeFieldFailure': DEV_ONLY,
 
-  'app/auth/callback/route.ts#GET': {
-    reason: 'OAuth / email-link return; Supabase Auth validates the PKCE code or the token hash before a session exists.',
-    patterns: [/\.auth\.exchangeCodeForSession\(code\)/, /\.auth\.verifyOtp\(\{ token_hash: tokenHash, type \}\)/, /return toLogin\('google_failed'\)/],
-  },
   'app/api/auth/send-email/route.ts#POST': {
     reason: 'Supabase Auth Send Email hook; the Standard Webhooks signature is verified with SEND_EMAIL_HOOK_SECRET.',
     calls: [{ name: 'verifyWebhook', from: '@/lib/server/webhooks' }],
@@ -403,7 +399,7 @@ describe('authz coverage (static)', () => {
     // Every file under app/actions is a 'use server' module.
     const actionDir = readdirSync(join(ROOT, 'app/actions')).filter((f) => /\.tsx?$/.test(f)).map((f) => `app/actions/${f}`)
     expect(actionFiles).toEqual(expect.arrayContaining(actionDir))
-    expect(routeFiles.length).toBeGreaterThanOrEqual(7)
+    expect(routeFiles.length).toBeGreaterThanOrEqual(6)
     expect(entries.filter((e) => e.kind === 'action').length).toBeGreaterThanOrEqual(60)
     expect(entries.filter((e) => e.kind === 'route').length).toBe(routeFiles.length)
   })

@@ -155,14 +155,14 @@ const AUTHORED: Authored[] = [
   },
   {
     id: 'account',
-    text: 'There is no password to create: you sign in with Google or with a 6-digit code emailed to you. One account per person, and one shared account per team or company.',
+    text: 'There is no password to create: you sign in with a 6-digit code emailed to you. One account per person, and one shared account per team or company.',
     cta: 'Sign in',
     href: '/login',
     also: 'How signing in works',
     // Second-factor words are left out on purpose even though people ask about them: that is a
     // non-goal, `npm run security:scan` greps app code for it, and a keyword list is not worth an
     // allowlist entry that blunts the guard. Those questions still land here on the `sign in` phrase.
-    terms: 'password^1.7 login^1.3 signin^1.4 signup^1.3 register^1.4 google^1.4 otp^1.5 authenticate^1.4 passwordless^1.7',
+    terms: 'password^1.7 login^1.3 signin^1.4 signup^1.3 register^1.4 otp^1.5 authenticate^1.4 passwordless^1.7',
     phrases: ['sign in^1.5', 'log in^1.6', 'sign up^1.4', 'create an account^1.6', 'need a password^2', 'email code^1.8', 'forgot my^1.6'],
   },
   {

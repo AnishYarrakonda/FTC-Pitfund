@@ -1,8 +1,8 @@
 /*
  * Vercel REST API helpers (https://vercel.com/docs/rest-api). The project always lives under the
- * team-owned account, never the v1 personal project (see V1_DENY).
+ * owner's account, never the v1 personal project (see V1_DENY).
  */
-import { apiClient, config, did, dryRun, fail, getValue, plan, skip, V1_DENY, warn, type Api } from './lib'
+import { apiClient, config, did, dryRun, fail, getValue, ownerEmail, plan, skip, V1_DENY, warn, type Api } from './lib'
 
 export type VercelTeam = { id: string; slug: string; name: string }
 export type VercelProject = {
@@ -29,7 +29,7 @@ let cachedTeam: { api: Api; team: VercelTeam; query: string; userEmail: string |
 export async function vercelScope() {
   if (cachedTeam) return cachedTeam
   const token = vercelToken()
-  if (!token) fail('VERCEL_TOKEN is missing from .env.provision (Vercel → Account Settings → Tokens).')
+  if (!token) fail('VERCEL_TOKEN is missing from .env.local (Vercel → Account Settings → Tokens).')
   const bare = apiClient('https://api.vercel.com', { Authorization: `Bearer ${token}` }, 'Vercel')
   const { data: me } = await bare<{ user: { email?: string; defaultTeamId?: string | null } }>('GET', '/v2/user')
   const { data } = await bare<{ teams: VercelTeam[] }>('GET', '/v2/teams?limit=100')
@@ -41,11 +41,11 @@ export async function vercelScope() {
     fail(
       wanted
         ? `The Vercel token can't see a team with slug "${wanted}". Teams it can see: ${data.teams.map((t) => t.slug).join(', ') || 'none'}.`
-        : `Set VERCEL_TEAM_SLUG in .env.provision. The token can see: ${data.teams.map((t) => t.slug).join(', ') || 'no teams'}.`,
+        : `Set VERCEL_TEAM_SLUG in .env.local. The token can see: ${data.teams.map((t) => t.slug).join(', ') || 'no teams'}.`,
     )
   }
   if (V1_DENY.vercelTeamIds.includes(team.id)) {
-    fail(`The Vercel token points at the v1 team (${team.slug}). Create the token while signed in as the ${'team account'} instead.`)
+    fail(`The Vercel token points at the v1 team (${team.slug}). Create the token while signed in as ${ownerEmail()} instead.`)
   }
   const query = `teamId=${team.id}`
   const api: Api = (method, path, body, opts) => bare(method, `${path}${path.includes('?') ? '&' : '?'}${query}`, body, opts)
@@ -98,7 +98,7 @@ export async function upsertEnv(project: VercelProject, vars: EnvVar[]) {
 }
 
 export function warnIfNotTeamAccount(email: string | null) {
-  if (email && email.toLowerCase() !== 'ftcexodius@gmail.com') {
-    warn(`The Vercel token belongs to ${email}, not ftcexodius@gmail.com. Production must be owned by the team account.`)
+  if (email && email.toLowerCase() !== ownerEmail()) {
+    warn(`The Vercel token belongs to ${email}, not ${ownerEmail()}. Production must be owned by the owner account.`)
   }
 }

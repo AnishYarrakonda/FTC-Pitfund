@@ -31,7 +31,6 @@
     "provision:supabase": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/provision/supabase.ts",
     "provision:vercel": "node --import tsx scripts/provision/vercel.ts",
     "provision:resend": "node --import tsx scripts/provision/resend.ts",
-    "provision:sentry": "node --import tsx scripts/provision/sentry.ts",
     "provision:verify": "node --import tsx scripts/provision/verify.ts",
     "screenshots:marketing": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/marketing-screenshots.ts",
     "email:preview": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/email-preview.ts",
@@ -41,7 +40,6 @@
     "qa:clicks": "node --import tsx --import ./scripts/lib/server-only-stub.mjs tests/qa/dead-clicks.ts"
   },
   "dependencies": {
-    "@sentry/nextjs": "^10.74.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
     "botid": "^1.5.11",

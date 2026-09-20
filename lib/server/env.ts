@@ -34,7 +34,6 @@ const schema = z.object({
   RESEND_WEBHOOK_SECRET: optional,
 
   CRON_SECRET: optional,
-  SENTRY_DSN: optional,
   FIRST_API_USERNAME: optional,
   FIRST_API_TOKEN: optional,
 })

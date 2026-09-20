@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 import { env } from './env'
 
 /**
- * Cookie-bound client for auth only (read the session, send/verify codes, OAuth exchange).
+ * Cookie-bound client for auth only (read the session, send/verify codes).
  * Data never goes through Supabase REST: tables have RLS with no policies. The service-role
  * client lives in ./supabase-admin.ts.
  */

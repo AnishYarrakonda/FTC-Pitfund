@@ -7,7 +7,7 @@ import { verifyWebhook } from '@/lib/server/webhooks'
  * every sign-in code is a branded FTC Pitfund email that counts against the same quota.
  * It enqueues at priority 0 and sends synchronously: the hook has a short timeout, and a
  * code that arrives late is useless, so a failure is reported back and the login page
- * tells the person to use Google or try again.
+ * tells the person to try again.
  */
 
 type HookPayload = {

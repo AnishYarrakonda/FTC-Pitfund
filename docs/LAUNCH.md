@@ -1,8 +1,8 @@
 # Launching FTC Pitfund
 
-This is the only launch document. Every step here needs a person: creating accounts, paying for the domain, OAuth consent and DNS. Everything else is `npm run provision`. It creates the production and staging Supabase projects, applies migrations, creates storage buckets, configures sign-in and the Send Email hook, seeds staging and grants admins. It creates the Vercel project connected to GitHub with every environment variable, adds the domain, and sets up the Resend sending domain, webhook and a sending-only key. Every step is idempotent: re-run it after each human step and it picks up where it stopped. It never touches the v1 app (the personal Vercel project `ftc-sponsorship-portal`, Clerk or Supabase `qqizqbtwigyedgskoezm`).
+This is the only launch document. Every step here needs a person: creating accounts, paying for the domain and DNS. Everything else is `npm run provision`. It creates the production and staging Supabase projects, applies migrations, creates storage buckets, configures sign-in and the Send Email hook, seeds staging and grants admins. It creates the Vercel project connected to GitHub with every environment variable, adds the domain, and sets up the Resend sending domain, webhook and a sending-only key. Every step is idempotent: re-run it after each human step and it picks up where it stopped. It never touches the v1 app (the personal Vercel project `ftc-sponsorship-portal`, Clerk or Supabase `qqizqbtwigyedgskoezm`).
 
-All infrastructure belongs to the team Google account **ftcexodius@gmail.com**. Do every step while signed in as that account.
+All infrastructure belongs to the owner Google account (`OWNER_EMAIL` in `.env.local`). Do every step while signed in as that account.
 
 | `npm run provision*` exit code | Meaning |
 | --- | --- |
@@ -16,36 +16,33 @@ Before starting: a computer with Node 24 (what CI and Vercel build with), Docker
 
 ## 1. Create the accounts
 
-Open a private browser window signed in only to **ftcexodius@gmail.com**, then create:
+Open a private browser window signed in only to the owner account, then create:
 
 | Service | What to create | Plan |
 | --- | --- | --- |
-| [GitHub](https://github.com) | Accept or ask for **Owner** on the `ExodiusFTC` organization. The repo is `ExodiusFTC/FTC-Pitfund-Source-Code`. | Free |
-| [Vercel](https://vercel.com/signup) | Sign up with GitHub or the Google account. | Hobby (free) |
-| [Supabase](https://supabase.com/dashboard) | Sign up with the Google account, then create an organization named **FTC Pitfund** (plan: Free). | Free |
-| [Resend](https://resend.com/signup) | Sign up with the Google account. | Free |
-| [Google Cloud](https://console.cloud.google.com) | Create a project named **FTC Pitfund**. | Free |
-| [Sentry](https://sentry.io/signup/) (optional) | Sign up and create an organization. | Developer (free) |
+| [GitHub](https://github.com) | Nothing to create: the repo is `AnishYarrakonda/FTC-Pitfund`. Sign in with `gh auth login`. | Free |
+| [Vercel](https://vercel.com/signup) | Sign up with the owner email or GitHub. | Hobby (free) |
+| [Supabase](https://supabase.com/dashboard) | Sign up with the owner email. Supabase creates a personal organization for you; use it (no new organization). | Free |
+| [Resend](https://resend.com/signup) | Sign up with the owner email. | Free |
 
-Add teammates where the free plan allows: GitHub org members, Supabase org members, Resend team members. Put every login in the team's password manager.
+Everything is personal: no organizations or teams. Put every login in your password manager.
 
-**Done when:** you can open each dashboard as ftcexodius@gmail.com, and `gh auth login` works with a GitHub account that owns `ExodiusFTC`.
+**Done when:** you can open each dashboard as the owner account, and `gh auth login` works with the GitHub account that owns the repo.
 
 ## 2. Create the tokens
 
-1. `cp .env.provision.example .env.provision` (gitignored; never commit it).
-2. Paste these into `.env.provision`:
+1. `cp .env.example .env.local` (gitignored; never commit it).
+2. Paste these into `.env.local`:
 
 | Variable | Where |
 | --- | --- |
 | `SUPABASE_ACCESS_TOKEN` | Supabase → Account → [Access Tokens](https://supabase.com/dashboard/account/tokens) → Generate new token, name `ftc-pitfund-provision` |
 | `VERCEL_TOKEN` | Vercel → Account Settings → [Tokens](https://vercel.com/account/settings/tokens) → Create, scope: your Hobby team, name `ftc-pitfund-provision` |
 | `RESEND_FULL_ACCESS_KEY` | Resend → [API Keys](https://resend.com/api-keys) → Create API key, permission **Full access** (the app itself gets a separate sending-only key) |
-| `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` (optional) | Sentry → Settings → Auth Tokens, scopes `org:read`, `project:read`, `project:write`; the org slug from the URL |
 
 3. Run `npm run provision:check`.
 
-**Done when:** `provision:check` shows each token belongs to ftcexodius@gmail.com and prints no warning in capitals.
+**Done when:** `provision:check` shows each token belongs to `OWNER_EMAIL` and prints no warning in capitals.
 
 ## 3. Buy the domain
 
@@ -58,7 +55,7 @@ The app needs its own domain (exodiusftc.com stays the team website). Suggested:
 
 Prices checked 2026-09-14 ([Cloudflare](https://tld-list.com/registrars/cloudflare), [Porkbun](https://porkbun.com/products/domains)). Turn off any add-ons (email hosting, site builders). WHOIS privacy should be on.
 
-Then set `PITFUND_DOMAIN=ftcpitfund.org` (your domain, no `https://`) in `.env.provision`.
+Then set `PITFUND_DOMAIN=ftcpitfund.org` (your domain, no `https://`) in `.env.local`.
 
 **Done when:** `npm run provision:check` says the domain is registered.
 
@@ -68,10 +65,9 @@ Then set `PITFUND_DOMAIN=ftcpitfund.org` (your domain, no `https://`) in `.env.p
 npm run provision
 ```
 
-It runs Supabase, Vercel, Resend and Sentry in order and stops (exit 2) when it needs you. Expect to come back here two or three times:
+It runs Supabase, Vercel and Resend in order and stops (exit 2) when it needs you. Expect to come back here two or three times:
 
-- **"Connect GitHub"**: install the Vercel GitHub app on the ExodiusFTC org: [github.com/apps/vercel](https://github.com/apps/vercel) → Configure → ExodiusFTC → Only select repositories → `FTC-Pitfund-Source-Code`. Re-run.
-- **"Google OAuth"**: step 5. Email-code sign-in works without it, so you can finish the rest first.
+- **"Connect GitHub"**: install the Vercel GitHub app on your GitHub account: [github.com/apps/vercel](https://github.com/apps/vercel) → Configure → AnishYarrakonda → Only select repositories → `FTC-Pitfund`. Re-run.
 - **"Add these DNS records"**: step 6.
 
 **Done when:** `npm run provision` ends with "Everything that can be automated is done" (exit 0).
@@ -83,20 +79,9 @@ uploads to prove they coach their team). `verification` is never emptied and mus
 public — an admin reads a screenshot through a link that expires in 15 minutes. If you ever recreate
 a bucket by hand in the Supabase dashboard, leave "Public bucket" off for those two.
 
-## 5. Google sign-in
+## 5. Sign-in
 
-In [Google Cloud Console](https://console.cloud.google.com) with the **FTC Pitfund** project selected:
-
-1. **Google Auth Platform → Branding.** App name `FTC Pitfund`. User support email `ftcexodius@gmail.com`. Developer contact `ftcexodius@gmail.com`. App home page `https://<your domain>`, privacy policy `https://<your domain>/legal/privacy`, terms `https://<your domain>/legal/terms`. Authorized domains: `<your domain>` and `supabase.co`. **Don't upload a logo**: a logo triggers Google's brand verification, which takes days.
-2. **Audience.** User type **External**, then **Publish app** (status: In production). The requested scopes aren't sensitive, so no verification is needed.
-3. **Data Access.** Add scopes `openid`, `.../auth/userinfo.email`, `.../auth/userinfo.profile`.
-4. **Clients → Create client.** Type **Web application**, name `FTC Pitfund`.
-   - Authorized JavaScript origins: `https://<your domain>`
-   - Authorized redirect URIs: the two URIs `npm run provision` printed, `https://<production ref>.supabase.co/auth/v1/callback` and `https://<staging ref>.supabase.co/auth/v1/callback` (the refs are also in `.env.provision` as `SUPABASE_PRODUCTION_REF` / `SUPABASE_STAGING_REF`).
-5. Copy the client ID and secret into `.env.provision` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
-6. Run `npm run provision:supabase -- --auth-only`, then `npm run provision:vercel` (it turns the Google button on and redeploys).
-
-**Done when:** "Continue with Google" on `https://<your domain>/login` signs you in.
+Nothing to set up. Sign-in is a 6-digit code sent by email through Resend (no Google or other provider), so it starts working once the Resend domain is verified in step 6.
 
 ## 6. DNS records
 
@@ -121,13 +106,13 @@ On Cloudflare, set the proxy status of the Vercel records to **DNS only** (grey 
 npm run provision:verify
 ```
 
-It checks the site, security headers, both sign-in methods, that `/dev` is unreachable, robots and sitemap, the daily job with and without its secret, and sends a test email through the outbox.
+It checks the site, security headers, the email-code sign-in page, that `/dev` is unreachable, robots and sitemap, the daily job with and without its secret, and sends a test email through the outbox.
 
-**Done when:** it exits 0 and the ftcexodius@gmail.com inbox has **"FTC Pitfund is live: test email"** (check spam; mark it "Not spam").
+**Done when:** it exits 0 and the `OWNER_EMAIL` inbox has **"FTC Pitfund is live: test email"** (check spam; mark it "Not spam").
 
 If Vercel shows the production deployment as **Canceled** with "Ignored Build Step", the project isn't exposing system environment variables to builds: Vercel → project → Settings → Environment Variables → turn on **Automatically expose System Environment Variables** → Deployments → Redeploy. (`npm run provision:vercel` turns it on; this only happens if it was switched off.)
 
-Then sign in at `https://<your domain>/login` with ftcexodius@gmail.com. The admin console is at `/admin`. Day-to-day operation is in [RUNBOOK.md](RUNBOOK.md).
+Then sign in at `https://<your domain>/login` with `OWNER_EMAIL` (or any address in `ADMIN_EMAILS`). The admin console is at `/admin`. Day-to-day operation is in [RUNBOOK.md](RUNBOOK.md).
 
 ## 8. Legal review
 

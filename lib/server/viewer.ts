@@ -98,7 +98,7 @@ function metaString(meta: Record<string, unknown> | undefined, ...keys: string[]
   return null
 }
 
-/** First sign-in: create the users row from auth metadata (Google provides name and avatar). */
+/** First sign-in: create the users row. An email code carries no name; the welcome page asks for it. */
 export async function ensureUserRow(claims: AuthClaims) {
   const email = (claims.email ?? metaString(claims.user_metadata, 'email') ?? '').toLowerCase()
   if (!email) return
@@ -108,7 +108,6 @@ export async function ensureUserRow(claims: AuthClaims) {
       id: claims.sub,
       email,
       name: (metaString(claims.user_metadata, 'full_name', 'name') ?? '').slice(0, 120),
-      avatarUrl: metaString(claims.user_metadata, 'avatar_url', 'picture'),
     })
     .onConflictDoNothing()
 }

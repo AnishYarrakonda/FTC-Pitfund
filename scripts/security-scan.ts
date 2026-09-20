@@ -38,7 +38,7 @@ function walk(dir: string): string[] {
 
 function secrets() {
   console.log('\n▸ Secrets in the build output')
-  const names = ['SUPABASE_SECRET_KEY', 'DATABASE_URL', 'SEND_EMAIL_HOOK_SECRET', 'CRON_SECRET', 'RESEND_API_KEY', 'RESEND_WEBHOOK_SECRET', 'RECEIPT_SECRET', 'SENTRY_AUTH_TOKEN']
+  const names = ['SUPABASE_SECRET_KEY', 'DATABASE_URL', 'SEND_EMAIL_HOOK_SECRET', 'CRON_SECRET', 'RESEND_API_KEY', 'RESEND_WEBHOOK_SECRET', 'RECEIPT_SECRET']
   const values = new Map<string, string>()
   for (const name of names) {
     const v = process.env[name]

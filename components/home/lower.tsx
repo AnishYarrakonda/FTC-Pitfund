@@ -41,7 +41,7 @@ export function FooterCta() {
             <I.bolt />
           </span>
           <p className="hp-text-md">
-            <b>Start in minutes.</b> Sign in with Google or an email code. No password to create.
+            <b>Start in minutes.</b> Sign in with an email code. No password to create.
           </p>
           <Link href="/login" prefetch={false} className="hp-link">
             Sign in

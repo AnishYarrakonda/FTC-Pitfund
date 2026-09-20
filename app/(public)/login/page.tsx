@@ -13,8 +13,6 @@ import { LoginFlow } from './login-flow'
 
 export const metadata: Metadata = { title: 'Sign in' }
 
-const GOOGLE_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === 'true'
-
 export default function LoginPage({ searchParams }: PageProps<'/login'>) {
   return (
     <div className="flex min-h-dvh flex-col">
@@ -22,8 +20,8 @@ export default function LoginPage({ searchParams }: PageProps<'/login'>) {
         <div className="w-full max-w-auth">
           <Wordmark className="mb-10" />
           {/* The form is part of the static shell (it paints before any request-time work) and reads
-              ?intent, ?next and ?error in the browser; the gate only redirects signed-in visitors. */}
-          <LoginFlow googleEnabled={GOOGLE_ENABLED} />
+              ?intent and ?next in the browser; the gate only redirects signed-in visitors. */}
+          <LoginFlow />
           <Suspense fallback={null}>
             <SignedInRedirect searchParams={searchParams} />
           </Suspense>

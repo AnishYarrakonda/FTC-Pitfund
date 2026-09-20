@@ -16,10 +16,9 @@ import { NETWORK_ERROR_MESSAGE } from '@/lib/shared/result'
 import { parseIntent, safeNext } from '@/lib/shared/sign-in'
 
 /*
- * Sign in (plan §3.2): Google, or a 6-digit email code. Every branch has its own copy:
- * sending, wrong code, expired code, rate limited, email couldn't be sent, network down,
- * Google cancelled. Supabase can't tell a wrong code from an expired one, so expiry is
- * judged from when the code was sent (10 minutes).
+ * Sign in (plan §3.2): a 6-digit email code. Every branch has its own copy: sending, wrong
+ * code, expired code, rate limited, email couldn't be sent, network down. Supabase can't tell
+ * a wrong code from an expired one, so expiry is judged from when the code was sent (10 minutes).
  */
 
 const CODE_TTL_MS = 10 * 60 * 1000
@@ -31,25 +30,18 @@ const SUBTITLE = {
   any: 'Coaches and company teams both sign in here. No password needed.',
 }
 
-const ERRORS: Record<string, string> = {
-  google_cancelled: 'Google sign-in was cancelled.',
-  google_failed: "Google sign-in didn't work. Try again, or use an email code.",
-  link_expired: 'That sign-in link has expired. Send yourself a new code.',
-}
-
 const noSubscription = () => () => {}
 
 type CodeError = { kind: 'invalid' | 'expired' | 'rate' | 'network' | 'other'; message: string }
 
-export function LoginFlow({ googleEnabled }: { googleEnabled: boolean }) {
+export function LoginFlow() {
   const router = useRouter()
   // Read in the browser so the page stays static: ?intent (from the landing page; preselects the
-  // /welcome branch), ?next, ?error (Google or link failures), ?signed_out and ?deleted.
+  // /welcome branch), ?next, ?signed_out and ?deleted.
   const search = useSyncExternalStore(noSubscription, () => window.location.search, () => '')
   const params = new URLSearchParams(search)
   const next = safeNext(params.get('next')) ?? undefined
   const intent = parseIntent(params.get('intent'))
-  const paramError = ERRORS[params.get('error') ?? ''] ?? null
   const notice = params.has('signed_out') ? 'You’re signed out.' : params.has('deleted') ? 'Your account was deleted.' : null
   const [step, setStep] = useState<'email' | 'code'>('email')
   const [email, setEmail] = useState('')
@@ -59,10 +51,6 @@ export function LoginFlow({ googleEnabled }: { googleEnabled: boolean }) {
   const [now, setNow] = useState(0)
   const [codeError, setCodeError] = useState<CodeError | null>(null)
   const [resent, setResent] = useState(false)
-  const [googleState, setGoogleState] = useState<'idle' | 'opening'>('idle')
-  // undefined until something happens on this page: until then the ?error from the URL shows.
-  const [pageError, setTopError] = useState<string | null | undefined>(undefined)
-  const topError = pageError === undefined ? paramError : pageError
   const codeInput = useRef<HTMLInputElement>(null)
   const lastSubmitted = useRef('')
 
@@ -82,7 +70,6 @@ export function LoginFlow({ googleEnabled }: { googleEnabled: boolean }) {
       setCode('')
       lastSubmitted.current = ''
       setCodeError(null)
-      setTopError(null)
       setResent(step === 'code')
       setStep('code')
       requestAnimationFrame(() => codeInput.current?.focus())
@@ -117,28 +104,6 @@ export function LoginFlow({ googleEnabled }: { googleEnabled: boolean }) {
     setCodeError(null)
     setResent(false)
     void verify.run({ email, code: value, next, intent: intent ?? undefined })
-  }
-
-  const startGoogle = async () => {
-    setTopError(null)
-    if (!googleEnabled) {
-      setTopError("Google sign-in isn't available yet. Use an email code instead.")
-      return
-    }
-    setGoogleState('opening')
-    try {
-      const query = new URLSearchParams()
-      if (next) query.set('next', next)
-      if (intent) query.set('intent', intent)
-      const redirectTo = `${window.location.origin}/auth/callback${query.size ? `?${query}` : ''}`
-      // The Supabase client (~60 KB) loads only when someone chooses Google.
-      const { createSupabaseBrowserClient } = await import('@/lib/client/supabase')
-      const { error } = await createSupabaseBrowserClient().auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
-      if (error) throw error
-    } catch {
-      setGoogleState('idle')
-      setTopError("Google sign-in didn't work. Try again, or use an email code.")
-    }
   }
 
   const resendIn = Math.max(0, Math.ceil((sentAt + RESEND_AFTER_MS - now) / 1000))
@@ -261,31 +226,11 @@ export function LoginFlow({ googleEnabled }: { googleEnabled: boolean }) {
         <p className="text-body text-text-secondary">{SUBTITLE[intent ?? 'any']}</p>
       </div>
 
-      {notice && !topError ? (
+      {notice ? (
         <p role="status" className="text-small text-text-secondary">
           {notice}
         </p>
       ) : null}
-      {topError ? <Banner tone="danger" title={topError} /> : null}
-
-      <Button
-        variant="secondary"
-        size="lg"
-        className="w-full"
-        data-action-button=""
-        loading={googleState === 'opening'}
-        loadingLabel="Opening Google…"
-        onClick={() => void startGoogle()}
-      >
-        <GoogleMark />
-        Continue with Google
-      </Button>
-
-      <div className="flex items-center gap-3 text-caption text-text-tertiary" aria-hidden="true">
-        <span className="h-px flex-1 bg-border" />
-        or
-        <span className="h-px flex-1 bg-border" />
-      </div>
 
       <form
         noValidate
@@ -320,16 +265,5 @@ export function LoginFlow({ googleEnabled }: { googleEnabled: boolean }) {
         </Button>
       </form>
     </section>
-  )
-}
-
-function GoogleMark() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 18 18" className="size-4.5">
-      <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z" />
-      <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18Z" />
-      <path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33Z" />
-      <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58Z" />
-    </svg>
   )
 }
