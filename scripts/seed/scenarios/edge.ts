@@ -40,11 +40,11 @@ export async function applyEdge(world: World) {
   }
 
   // A max-size 5-page PDF on the coach's team.
-  const pdf = await generateDeckPdf({ teamName: 'Exodius', teamNumber: 31579, location: 'Austin, TX', color: '#1F6F5C', pages: 5, maxSize: true })
+  const pdf = await generateDeckPdf({ teamName: 'Exodius', teamNumber: 31579, location: 'Austin, TX', color: '#1E40AF', pages: 5, maxSize: true })
   const pdfPath = `teams/${exodiusId}/deck-${crypto.randomUUID()}.pdf`
   const thumbPath = `teams/${exodiusId}/thumb-${crypto.randomUUID()}.png`
   await uploadObject(BUCKETS.public, pdfPath, pdf, 'application/pdf')
-  await uploadObject(BUCKETS.public, thumbPath, generateDeckThumbnail('#1F6F5C'), 'image/png')
+  await uploadObject(BUCKETS.public, thumbPath, generateDeckThumbnail('#1E40AF'), 'image/png')
   await db.update(teams).set({ pdfPath, pdfThumbPath: thumbPath, pdfPages: 5, pdfBytes: pdf.byteLength, pdfUpdatedAt: now }).where(eq(teams.id, exodiusId))
   console.log(`  max-size deck: ${(pdf.byteLength / 1024 / 1024).toFixed(2)} MB`)
 
@@ -52,7 +52,7 @@ export async function applyEdge(world: World) {
   await db.update(teams).set({ suspendedAt: ago(now, DAY) }).where(eq(teams.id, world.teamIds.get(20443)!))
 
   // Companies: 10 questions at max length on the sponsor persona's company; long everything.
-  const brightlineId = world.sponsorIds.get('Brightline Engineering')!
+  const ribosomeId = world.sponsorIds.get('Ribosome Robotics')!
   await db
     .update(sponsors)
     .set({
@@ -63,7 +63,7 @@ export async function applyEdge(world: World) {
         required: i % 3 !== 2,
       })),
     })
-    .where(eq(sponsors.id, brightlineId))
+    .where(eq(sponsors.id, ribosomeId))
   await db.update(sponsors).set({ name: sql`left(${sponsors.name} || ${long(60, 'Incorporated')}, 60)`, about: long(5000, 'About'), region: long(5000, 'Region'), statusNote: long(5000, 'Note') })
 
   // Enough approved companies for a second directory page (25 per page).

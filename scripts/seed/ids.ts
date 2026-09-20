@@ -24,10 +24,10 @@ export const SEED_INVITE_TOKENS = {
   expired: 'seed-invite-expired-exodius',
   /** Team Exodius → revoked.invite@pitfund.test, revoked yesterday. */
   revoked: 'seed-invite-revoked-exodius',
-  /** Brightline Engineering → member-brightline@pitfund.test, accepted. */
-  used: 'seed-invite-used-brightline',
-  /** Brightline Engineering → finance@pitfund.test (no account yet), open. */
-  sponsorValid: 'seed-invite-valid-brightline-finance',
+  /** Ribosome Robotics → member-ribosome@pitfund.test, accepted. */
+  used: 'seed-invite-used-ribosome',
+  /** Ribosome Robotics → finance@pitfund.test (no account yet), open. */
+  sponsorValid: 'seed-invite-valid-ribosome-finance',
 } as const
 
 /** Named seeded rows the tests and QA routes use. */
@@ -37,18 +37,18 @@ export const SEED = {
   tidal: { number: 14398, id: seedTeamId(14398) },
   /** Suspended in `edge` only. */
   ironLotus: { number: 20443, id: seedTeamId(20443) },
-  brightline: seedSponsorId('Brightline Engineering'),
-  meridian: seedSponsorId('Meridian Machine Works'),
-  lakeshore: seedSponsorId('Lakeshore Medical Devices'),
-  summit: seedSponsorId('Summit Fabrication'),
-  northpeak: seedSponsorId('Northpeak Software'),
-  keystone: seedSponsorId('Keystone Robotics Foundation'),
-  atlasPending: seedSponsorId('Atlas Components'),
-  greenfieldPending: seedSponsorId('Greenfield Analytics'),
-  quickcashRejected: seedSponsorId('QuickCash Promotions'),
-  vantageSuspended: seedSponsorId('Vantage Promotions'),
-  cedar: seedSponsorId('Cedar Valley Credit Union'),
-  harbor: seedSponsorId('Harbor Point Energy'),
+  ribosome: seedSponsorId('Ribosome Robotics'),
+  meridian: seedSponsorId('Mitochondria Machine Works'),
+  lakeshore: seedSponsorId('Lysosome Medical Devices'),
+  summit: seedSponsorId('Synapse Fabrication'),
+  northpeak: seedSponsorId('NeuroPeak Software'),
+  keystone: seedSponsorId('BioBuzz Foundation'),
+  atlasPending: seedSponsorId('Allele Components'),
+  greenfieldPending: seedSponsorId('Genome Analytics'),
+  quickcashRejected: seedSponsorId('QuickClone Promotions'),
+  vantageSuspended: seedSponsorId('Vacuole Promotions'),
+  cedar: seedSponsorId('Nucleotide Credit Union'),
+  harbor: seedSponsorId('Plasmid Point Energy'),
   reports: {
     /** Open: Tidal Robotics, from a parent. */
     tidal: seedUuid('report', 'tidal'),
@@ -56,29 +56,29 @@ export const SEED = {
     quokkas: seedUuid('report', 'quokkas'),
   },
   pitches: {
-    exodiusMatched: seedPitchId(31579, 'Brightline Engineering'),
-    exodiusSent: seedPitchId(31579, 'Cedar Valley Credit Union'),
-    exodiusInReview: seedPitchId(31579, 'Meridian Machine Works'),
-    exodiusChanges: seedPitchId(31579, 'Northpeak Software'),
-    exodiusRejected: seedPitchId(31579, 'Harbor Point Energy'),
-    exodiusDeclined: seedPitchId(31579, 'Ridgeway Aerospace'),
+    exodiusMatched: seedPitchId(31579, 'Ribosome Robotics'),
+    exodiusSent: seedPitchId(31579, 'Nucleotide Credit Union'),
+    exodiusInReview: seedPitchId(31579, 'Mitochondria Machine Works'),
+    exodiusChanges: seedPitchId(31579, 'NeuroPeak Software'),
+    exodiusRejected: seedPitchId(31579, 'Plasmid Point Energy'),
+    exodiusDeclined: seedPitchId(31579, 'Telomere Aerospace'),
     /** Partial answers, and Summit changed its questions after the draft started. */
-    exodiusDraft: seedPitchId(31579, 'Summit Fabrication'),
-    exodiusWithdrawn: seedPitchId(31579, 'Lakeshore Medical Devices'),
+    exodiusDraft: seedPitchId(31579, 'Synapse Fabrication'),
+    exodiusWithdrawn: seedPitchId(31579, 'Lysosome Medical Devices'),
     /** Voltage Vultures (coach2) draft: another team's draft. */
-    voltageDraft: seedPitchId(24890, 'Northpeak Software'),
-    // The `sponsor` persona's inbox (Brightline Engineering).
-    voltageToBrightlineSent: seedPitchId(24890, 'Brightline Engineering'),
-    quokkasToBrightlineSent: seedPitchId(18215, 'Brightline Engineering'),
-    gearToBrightlineDeclined: seedPitchId(16072, 'Brightline Engineering'),
-    lotusToBrightlineInReview: seedPitchId(20443, 'Brightline Engineering'),
+    voltageDraft: seedPitchId(24890, 'NeuroPeak Software'),
+    // The `sponsor` persona's inbox (Ribosome Robotics).
+    voltageToRibosomeSent: seedPitchId(24890, 'Ribosome Robotics'),
+    quokkasToRibosomeSent: seedPitchId(18215, 'Ribosome Robotics'),
+    gearToRibosomeDeclined: seedPitchId(16072, 'Ribosome Robotics'),
+    lotusToRibosomeInReview: seedPitchId(20443, 'Ribosome Robotics'),
     /** In review, submitted a few hours ago (not late). */
-    tidalToHarborInReview: seedPitchId(14398, 'Harbor Point Energy'),
+    tidalToHarborInReview: seedPitchId(14398, 'Plasmid Point Energy'),
     /** In review to a suspended company: approval is blocked. */
-    sagesToVantageInReview: seedPitchId(19904, 'Vantage Promotions'),
+    sagesToVantageInReview: seedPitchId(19904, 'Vacuole Promotions'),
     /** `sponsor2`'s inbox (Cedar Valley): sent. */
-    exodiusToCedarSent: seedPitchId(31579, 'Cedar Valley Credit Union'),
-    /** Sent to Brightline, then withdrawn (the company sees a read-only notice). */
-    knightsToBrightlineWithdrawn: seedPitchId(22761, 'Brightline Engineering'),
+    exodiusToCedarSent: seedPitchId(31579, 'Nucleotide Credit Union'),
+    /** Sent to Ribosome, then withdrawn (the company sees a read-only notice). */
+    knightsToRibosomeWithdrawn: seedPitchId(22761, 'Ribosome Robotics'),
   },
 } as const
