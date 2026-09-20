@@ -58,7 +58,10 @@
 
   --color-text: #061b31;
   --color-text-secondary: #50617a;
-  --color-text-tertiary: #64748d;
+  /* Dark enough to clear AA on the tinted panels too, not just white: at the homepage's own
+     #64748d this sits at 3.96 on accent-subtle and 4.25 on success-subtle, which axe fails on
+     the matched-pitch contact list. #5a6980 is the same slate ramp, 4.65 at its worst. */
+  --color-text-tertiary: #5a6980;
 
   /* The one accent: used for the primary action, links, and "matched/live" states — nowhere else. */
   --color-accent: #1e40af;
