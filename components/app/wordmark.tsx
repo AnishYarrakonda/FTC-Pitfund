@@ -15,10 +15,11 @@ import { cn } from '@/lib/shared/cn'
  */
 export function MarkGlyph({ className }: { className?: string }) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 32 32" fill="none" className={className}>
-      <rect width="32" height="32" rx="8" fill="currentColor" />
-      <polygon points="16,6 25,11 25,21 16,26 7,21 7,11" stroke="#fff" strokeWidth="2.5" strokeLinejoin="round" />
-      <path d="M16 10 C16 14.5 14.5 16 10 16 C14.5 16 16 17.5 16 22 C16 17.5 17.5 16 22 16 C17.5 16 16 14.5 16 10 Z" fill="#fff" />
+    <svg aria-hidden="true" viewBox="0 0 32 32" className={className}>
+      <g transform="translate(0, 1)">
+        <rect x="9.5" y="7.5" width="4" height="17" rx="1.6" fill="currentColor" />
+        <path d="M11.5 7.5H18a5.3 5.3 0 0 1 0 10.6h-6.5" stroke="currentColor" strokeWidth="4" strokeLinecap="round" fill="none" />
+      </g>
     </svg>
   )
 }

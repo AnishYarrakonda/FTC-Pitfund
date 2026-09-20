@@ -1,4 +1,5 @@
 import { initBurst } from './canvases'
+import { matchIntent } from './find-match'
 import { type Cleanup, on } from './util'
 
 /* Stats menu + sky, the sticky accordion, the three carousels, and the "find where to start" box. */
@@ -39,23 +40,31 @@ export function initStats(root: HTMLElement): Cleanup {
     )
   })
   select(0)
-  const btn = sec.querySelector<HTMLButtonElement>('[data-hp-time-btn]')!
-  const menu = sec.querySelector<HTMLElement>('[data-hp-time-menu]')!
-  offs.push(
-    on(btn, 'click', () => {
-      menu.hidden = !menu.hidden
-      btn.setAttribute('aria-expanded', String(!menu.hidden))
-    }),
-  )
-  menu.querySelectorAll<HTMLButtonElement>('[data-hp-time]').forEach((b) =>
+  /*
+   * The sky layers and the time picker they belong to were taken out of the markup; the stats sit on
+   * the plain canvas now. This used to assert both were there, so every homepage load threw here and
+   * logged "[home] effect failed" — swallowed as a warning, which is why no gate caught it, and
+   * everything after this point (the burst canvas) silently never wired.
+   */
+  const btn = sec.querySelector<HTMLButtonElement>('[data-hp-time-btn]')
+  const menu = sec.querySelector<HTMLElement>('[data-hp-time-menu]')
+  if (btn && menu) {
     offs.push(
-      on(b, 'click', () => {
-        sec.dataset.time = b.dataset.hpTime!
-        menu.hidden = true
-        btn.setAttribute('aria-expanded', 'false')
+      on(btn, 'click', () => {
+        menu.hidden = !menu.hidden
+        btn.setAttribute('aria-expanded', String(!menu.hidden))
       }),
-    ),
-  )
+    )
+    menu.querySelectorAll<HTMLButtonElement>('[data-hp-time]').forEach((b) =>
+      offs.push(
+        on(b, 'click', () => {
+          sec.dataset.time = b.dataset.hpTime!
+          menu.hidden = true
+          btn.setAttribute('aria-expanded', 'false')
+        }),
+      ),
+    )
+  }
   offs.push(initBurst(sec, () => (TIMES.includes(sec.dataset.time!) ? sec.dataset.time! : 'daytime'), () => active))
   return () => offs.forEach((f) => f())
 }
@@ -142,16 +151,14 @@ export function initCarousels(root: HTMLElement): Cleanup {
   return () => offs.forEach((f) => f())
 }
 
-/* Keyword routing for "Find where to start". Nothing leaves the page. */
-const ROUTES: Array<{ test: RegExp; text: string; href: string; cta: string }> = [
-  { test: /compan|sponsor|business|employer|corporat|donat|fund(ing)? teams|we give|philanthropy|grant|csr|charity|partner|invest|support|give back|foundation/i, text: 'Sounds like you represent a company. Set up your profile and questions; a reviewer approves you before teams can pitch.', href: '/login?intent=company', cta: 'Set up your company' },
-  { test: /free|cost|price|pay|fee|money|charge|subscription|credit card|billing|invoice|dollar|budget|expense|finance|how much/i, text: 'It’s free for teams and companies, and no money moves through FTC Pitfund. Sponsorships are arranged directly between you.', href: '#faq', cta: 'Read the FAQ' },
-  { test: /review|check|approve|reject|note|vet|screen|quality|feedback|edit|proofread|human|admin|moderator/i, text: 'A person reads every pitch before a company sees it, and sends it back with a note if something needs work.', href: '#bento-review', cta: 'How review works' },
-  { test: /student|kid|child|member|youth|teen|high school|middle school|under 18|minor/i, text: 'Accounts are for adults: coaches, mentors and parents. Students are represented by the team page and deck.', href: '#faq', cta: 'Read the FAQ' },
-  { test: /deck|pdf|slides|page|presentation|document|file|upload|size|format|template|example|portfolio|brochure|design/i, text: 'A deck is one PDF of up to five pages and 10 MB, uploaded with a one-line summary.', href: '#bento-pitch', cta: 'See how a pitch works' },
-  { test: /privac|safe|secur|data|share|contact|email|phone|address|spam|protect/i, text: 'Contact details are kept completely private until a match is made. No one can see your email until you both say yes.', href: '#faq', cta: 'Read the FAQ' },
-  { test: /coach|team|mentor|parent|robot|ftc|pitch|field|kit|travel|parts|first tech challenge|first robotics|competition|season|championship|worlds|state|regional|qualifier|outreach|stem|build|programming|java|blocks/i, text: 'Sounds like you coach a team. Verify your team, upload your deck, and pitch any approved company.', href: '/login?intent=team', cta: 'I coach a team' },
-]
+/*
+ * "Find where to start". The matching lives in ./find-match (and is held to a corpus of real
+ * sentences by tests/unit/find-match.test.ts); this is only the wiring. Nothing leaves the page:
+ * no request, no storage, no key, no model.
+ */
+const TYPING_PAUSE = 500
+/* Under this, a live answer would be answering half a sentence; we wait for the pause or for Enter. */
+const LIVE_MIN_CHARS = 12
 
 export function initFind(root: HTMLElement): Cleanup {
   const form = root.querySelector<HTMLFormElement>('[data-hp-find]')
@@ -160,46 +167,74 @@ export function initFind(root: HTMLElement): Cleanup {
   const count = form.querySelector<HTMLElement>('[data-hp-find-count]')!
   const ring = form.querySelector<HTMLElement>('[data-hp-find-ring]')!
   const answer = root.querySelector<HTMLElement>('[data-hp-find-answer]')!
-  const refresh = () => {
-    count.textContent = `${input.value.length}/500`
-    ring.style.setProperty('--p', String(Math.min(1, input.value.trim().split(/\s+/).filter(Boolean).length / 12)))
-    form.dataset.filled = String(input.value.trim().length > 0)
-  }
-  const route = () => {
-    const text = input.value.trim()
-    const hit = ROUTES.find((r) => r.test.test(text))
-    answer.textContent = ''
-    const p = document.createElement('p')
+
+  const button = (label: string, href: string, kind: 'primary' | 'secondary') => {
     const a = document.createElement('a')
+    a.href = href
+    a.className = `hp-btn hp-btn--sm hp-btn--${kind}`
+    a.textContent = label
+    return a
+  }
+  const say = (sentence: string, ...actions: HTMLElement[]) => {
+    const p = document.createElement('p')
+    p.textContent = sentence
+    answer.replaceChildren(p, ...actions)
+  }
+
+  /*
+   * `submitted` is Enter, the send button or a chip; otherwise this is the pause after typing. The
+   * only difference is what happens when nothing matches: mid-sentence we stay quiet rather than
+   * telling someone we don't understand a question they haven't finished asking.
+   */
+  const route = (submitted: boolean) => {
+    const text = input.value.trim()
     if (!text) {
-      p.textContent = 'Tell us a little first: who you are, or what you’re trying to do.'
-      answer.append(p)
+      ring.style.setProperty('--p', '0')
+      if (submitted) say('Tell us who you are, or what you need — a few words is enough.')
+      else answer.replaceChildren()
       return
     }
-    p.textContent = hit ? hit.text : 'We couldn’t tell which side you’re on. Coaches start here; companies use the other door.'
-    a.href = hit ? hit.href : '/login?intent=team'
-    a.className = 'hp-btn hp-btn--sm hp-btn--primary'
-    a.textContent = hit ? hit.cta : 'I coach a team'
-    answer.append(p, a)
-    if (!hit) {
-      const b = document.createElement('a')
-      b.href = '/login?intent=company'
-      b.className = 'hp-btn hp-btn--sm hp-btn--secondary'
-      b.textContent = 'I represent a company'
-      answer.append(b)
+    const match = matchIntent(text)
+    ring.style.setProperty('--p', String(match ? Math.max(0.12, match.confidence) : 0.06))
+    if (!match) {
+      if (!submitted && text.length < LIVE_MIN_CHARS) return
+      say(
+        'We can’t tell from that which side you’re on. Almost everyone here is one of these two:',
+        button('I coach a team', '/login?intent=team', 'primary'),
+        button('I represent a company', '/login?intent=company', 'secondary'),
+      )
+      return
     }
-    answer.dataset.shown = 'true'
+    const actions = [button(match.intent.cta, match.intent.href, 'primary')]
+    // A close second: offer the other reading instead of quietly picking one.
+    if (match.runnerUp) actions.push(button(match.runnerUp.also, match.runnerUp.href, 'secondary'))
+    say(match.intent.text, ...actions)
   }
-  const offs = [
-    on(input, 'input', refresh),
+
+  let timer = 0
+  const meter = () => {
+    count.textContent = `${input.value.length}/500`
+    form.dataset.filled = String(input.value.trim().length > 0)
+  }
+  const submit = () => {
+    clearTimeout(timer)
+    route(true)
+  }
+  const offs: Cleanup[] = [
+    () => clearTimeout(timer),
+    on(input, 'input', () => {
+      meter()
+      clearTimeout(timer)
+      timer = window.setTimeout(() => route(false), TYPING_PAUSE)
+    }),
     on(form, 'submit', (e: SubmitEvent) => {
       e.preventDefault()
-      route()
+      submit()
     }),
     on(input, 'keydown', (e: KeyboardEvent) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault()
-        route()
+        submit()
       }
     }),
   ]
@@ -207,11 +242,11 @@ export function initFind(root: HTMLElement): Cleanup {
     offs.push(
       on(b, 'click', () => {
         input.value = b.dataset.hpChip!
-        refresh()
-        route()
+        meter()
+        submit()
       }),
     ),
   )
-  refresh()
+  meter()
   return () => offs.forEach((f) => f())
 }

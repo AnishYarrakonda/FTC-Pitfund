@@ -22,20 +22,20 @@ function Title({ as: As, className, ...rest }: { as: 'h1' | 'div'; className: st
   )
 }
 
-/* Kinds of organizations that sponsor FTC teams. A category strip, not a customer list. */
-const SPONSOR_KINDS: Array<{ name: string; glyph: ReactNode; style?: string }> = [
-  { name: 'Aerospace', glyph: <path d="M3 13.5 21 6l-4.5 12-3.5-4.5L3 13.5Z" /> },
-  { name: 'Semiconductors', glyph: <path d="M7 7h10v10H7zM10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4" />, style: 'mono' },
-  { name: 'Robotics', glyph: <path d="M8 9h8v8H8zM12 5v4M6 13H4M20 13h-2M10 12.5h.01M14 12.5h.01" /> },
-  { name: 'Engineering', glyph: <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 5.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />, style: 'wide' },
-  { name: 'Manufacturing', glyph: <path d="M3 20V10l6 3.5V10l6 3.5V6h6v14H3Z" />, style: 'heavy' },
-  { name: 'Energy', glyph: <path d="M13 2 5 13.5h6L10 22l8-11h-6l1-9Z" /> },
-  { name: 'Software', glyph: <path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14" />, style: 'mono' },
-  { name: 'Automotive', glyph: <path d="M4 15.5 6 10h12l2 5.5M4 15.5h16v3H4zM7.5 18.5v1.5M16.5 18.5v1.5" />, style: 'heavy' },
-  { name: 'Medical devices', glyph: <path d="M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6V4Z" /> },
-  { name: 'Credit unions', glyph: <path d="M3 9.5 12 4l9 5.5M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18" />, style: 'wide' },
-  { name: 'Telecom', glyph: <path d="M12 12v9M7.5 7.5a6.4 6.4 0 0 0 0 9M16.5 7.5a6.4 6.4 0 0 1 0 9M4.5 4.5a10.6 10.6 0 0 0 0 15M19.5 4.5a10.6 10.6 0 0 1 0 15" /> },
-  { name: 'Utilities', glyph: <path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11Z" />, style: 'heavy' },
+/* Words associated with FTC Pitfund for the scrolling marquee. */
+const APP_WORDS: Array<{ name: string; glyph: ReactNode; style?: string }> = [
+  { name: 'Pitches', glyph: <path d="M3 13.5 21 6l-4.5 12-3.5-4.5L3 13.5Z" /> },
+  { name: 'Sponsors', glyph: <path d="M7 7h10v10H7zM10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4" />, style: 'mono' },
+  { name: 'Teams', glyph: <path d="M8 9h8v8H8zM12 5v4M6 13H4M20 13h-2M10 12.5h.01M14 12.5h.01" /> },
+  { name: 'Matches', glyph: <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 5.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />, style: 'wide' },
+  { name: 'Funding', glyph: <path d="M3 20V10l6 3.5V10l6 3.5V6h6v14H3Z" />, style: 'heavy' },
+  { name: 'Connections', glyph: <path d="M13 2 5 13.5h6L10 22l8-11h-6l1-9Z" /> },
+  { name: 'Robotics', glyph: <path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14" />, style: 'mono' },
+  { name: 'Grants', glyph: <path d="M4 15.5 6 10h12l2 5.5M4 15.5h16v3H4zM7.5 18.5v1.5M16.5 18.5v1.5" />, style: 'heavy' },
+  { name: 'STEM', glyph: <path d="M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6V4Z" /> },
+  { name: 'Outreach', glyph: <path d="M3 9.5 12 4l9 5.5M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18" />, style: 'wide' },
+  { name: 'Companies', glyph: <path d="M12 12v9M7.5 7.5a6.4 6.4 0 0 0 0 9M16.5 7.5a6.4 6.4 0 0 1 0 9M4.5 4.5a10.6 10.6 0 0 0 0 15M19.5 4.5a10.6 10.6 0 0 1 0 15" /> },
+  { name: 'Feedback', glyph: <path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11Z" />, style: 'heavy' },
 ]
 
 export function Hero() {
@@ -151,11 +151,11 @@ export function Hero() {
       </div>
 
       <div className="hp-logos">
-        <h2 className="hp-sr">Kinds of companies that sponsor FTC teams</h2>
+        <h2 className="hp-sr">Key concepts in FTC Pitfund</h2>
         <div className="hp-logos__viewport" data-hp-marquee>
           <ul className="hp-logos__track">
             {[0, 1].map((copy) =>
-              SPONSOR_KINDS.map((k) => (
+              APP_WORDS.map((k) => (
                 <li key={`${copy}-${k.name}`} className={`hp-logos__item hp-logos__item--${k.style ?? 'plain'}`} aria-hidden={copy === 1 ? true : undefined}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     {k.glyph}

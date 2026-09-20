@@ -83,6 +83,9 @@ React + Next alone is ~145 KB, so client code on any page gets ~25 KB. Keep it t
   first open, carousels), one short task per effect. Below-the-fold sections use `content-visibility: auto`; QA's
   `settle()` renders them before screenshots, overflow checks and axe. `/login` renders the form in the static shell
   and reads `?intent`, `?next`, `?error` in the browser (a Suspense fallback swap would wipe what the user typed).
+  "Find where to start" routes what a visitor types with `effects/find-match.ts`: a scored, weighted word index
+  with prefix and edit-distance fallbacks, no model and no request. Change the weights only against
+  `tests/unit/find-match.test.ts`, and add the sentence to that corpus first.
 - **CSS is inlined into the HTML** (`experimental.inlineCss`): a render-blocking stylesheet request competing with the scripts
   held `/login` first paint to ~2 s on Slow 4G. Images are served AVIF first (`images.formats`); the landing hero is the LCP.
 - **The logo cropper loads on file pick** (`components/uploads/logo-cropper-impl.tsx`), like the dialog and

@@ -4,6 +4,13 @@
  * effects/ draws (the dotted globe and the line wave).
  */
 
+/*
+ * A button in the product is always the one accent color; only a team's own avatar carries the
+ * team's color. These mock-ups used to tint the buttons with the team color too, which made the
+ * screens in the bento look like a product with a different palette on every card.
+ */
+const CHROME = { background: '#e8e9ff', color: '#1e40af' }
+
 const TEAMS = [
   { team: 'Exodius', number: '31579', city: 'Austin, TX', color: '#1e40af', company: 'BioBuzz Foundation', slug: 'biobuzz', ask: 'Help with our $2,400 field kit', q: 'Tell us how your team started.', a: 'Four parents started Exodius in a garage in 2021. Two coaches and a mentor run it today.' },
   { team: 'Spore Sprinters', number: '8402', city: 'Columbus, OH', color: '#047857', company: 'Northwind Aero', slug: 'northwind', ask: 'Travel to the state championship', q: 'What does a season cost your team?', a: 'About $6,000: parts, registration, and two competition trips.' },
@@ -42,7 +49,7 @@ export function PitchGraphic() {
                   <dd>2026–27</dd>
                 </div>
               </dl>
-              <span className="hp-g-btn" style={{ background: `${t.color}22`, color: t.color }}>
+              <span className="hp-g-btn" style={CHROME}>
                 View pitch
               </span>
             </div>
@@ -86,7 +93,7 @@ export function PitchGraphic() {
                     <span className="hp-g-radio" />
                     Upload a new deck
                   </div>
-                  <span className="hp-g-btn hp-g-btn--full" style={{ background: `${t.color}26`, color: t.color }}>
+                  <span className="hp-g-btn hp-g-btn--full" style={CHROME}>
                     Submit for review
                   </span>
                 </div>
@@ -194,7 +201,7 @@ export function ReviewGraphic() {
       <div className="hp-g-card hp-g-note">
         <p className="hp-g-label">Note to Petri Prowlers</p>
         <p>Your deck is great. Please answer question 3 with a rough budget, then resubmit.</p>
-        <span className="hp-g-btn" style={{ background: '#e8e9ff', color: '#1e40af' }}>
+        <span className="hp-g-btn" style={CHROME}>
           Send back with note
         </span>
       </div>
