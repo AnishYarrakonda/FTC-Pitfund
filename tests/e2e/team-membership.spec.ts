@@ -1,5 +1,6 @@
 import type { Browser, Page } from '@playwright/test'
 
+import { SUPPORT_EMAIL } from '../../lib/shared/brand'
 import type { PersonaKey } from '../../lib/shared/personas'
 import { SEED, SEED_INVITE_TOKENS } from '../../scripts/seed/ids'
 import { closeTestDb, db } from '../support/db'
@@ -170,7 +171,7 @@ test('the only member of a team is told how to leave instead', async ({ browser 
   await coach.goto('/team')
   const members = coach.locator('#members')
   await expect(
-    members.getByText('You own this team and you’re its only member. To leave, invite another coach and make them the owner, or email ftcexodius@gmail.com to delete the team.'),
+    members.getByText(`You own this team and you’re its only member. To leave, invite another coach and make them the owner, or email ${SUPPORT_EMAIL} to delete the team.`),
   ).toBeVisible()
   await expect(members.getByRole('button', { name: 'Leave team' })).toHaveCount(0)
   await coach.context().close()

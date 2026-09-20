@@ -149,6 +149,8 @@ function envVars(teamSlug: string): EnvVar[] {
   const webhook = getValue('RESEND_WEBHOOK_SECRET')
   both('RESEND_WEBHOOK_SECRET', webhook, webhook, true)
 
+  const support = getValue('NEXT_PUBLIC_SUPPORT_EMAIL')
+  both('NEXT_PUBLIC_SUPPORT_EMAIL', support, support)
   for (const key of ['FIRST_API_USERNAME', 'FIRST_API_TOKEN']) {
     const value = getValue(key)
     both(key, value, value, key === 'FIRST_API_TOKEN')

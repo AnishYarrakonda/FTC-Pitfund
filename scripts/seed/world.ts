@@ -354,7 +354,7 @@ export async function buildWorld(mode: 'demo' | 'empty', now = new Date()): Prom
   return world
 }
 
-const CRON_JOBS = ['drain-outbox', 'admin-digest', 'clean-staging', 'recheck-records', 'keepalive'] as const
+const CRON_JOBS = ['drain-outbox', 'admin-digest', 'clean-staging', 'ftc-directory', 'recheck-records', 'keepalive'] as const
 
 /**
  * Three days of daily-cron history, one row per job per run. `lastRunHoursAgo` over 36 makes System
@@ -371,6 +371,7 @@ export function cronHistory(now: Date, { lastRunHoursAgo }: { lastRunHoursAgo: n
         'drain-outbox': { claimed: 4 - day, sent: 4 - day, deferred: 0, retried: 0, failed: 0 },
         'admin-digest': { queued: 2, deduped: 0, recipients: 2, emailsSent24h: 4 - day, sent: 2 },
         'clean-staging': { deleted: day },
+        'ftc-directory': { skipped: 'synced within the last 6 days' },
         'recheck-records': { checked: 1, matched: 0, not_found: 0, unavailable: 1 },
         keepalive: { result: 1 },
       }[job]

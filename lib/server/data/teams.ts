@@ -12,7 +12,7 @@ import { audit } from '../audit'
 import { getDb } from '../db'
 import { lookupFtcTeam, type FtcLookup } from '../ftc-records'
 import { AppError } from '../result'
-import { ftcTeamCache, invites, sponsorMembers, teamJoinRequests, teamMembers, teams, users } from '../schema'
+import { invites, sponsorMembers, teamJoinRequests, teamMembers, teams, users } from '../schema'
 import { BUCKETS, promoteFromStaging, publicUrl, uploadObject } from '../storage'
 import {
   assertOwnStagingPath,
@@ -63,24 +63,26 @@ export type CreateTeamData = {
   name: string
   location: string
   country?: string | null
-  source: 'matched' | 'manual' | 'unchecked'
 }
 
-export async function createTeam(viewer: Viewer, input: CreateTeamData) {
+/**
+ * Creates the team. `record` is FIRST's answer for the number (looked up before the transaction opens, since it can
+ * take seconds), and it decides whether the team may exist: a number FIRST doesn't list is
+ * refused (whatever the browser claims), a listed one is `matched`, and while FIRST is unreachable the
+ * team is created `unchecked` and re-checked by the daily job. An admin still reviews who the coach is.
+ */
+export async function createTeam(viewer: Viewer, input: CreateTeamData, record: FtcLookup) {
   if (viewer.team || viewer.sponsor) throw new AppError('CONFLICT', 'You’re already part of a team or company.')
   if (viewer.pendingJoin) {
     throw new AppError('CONFLICT', `Cancel your request to join Team ${viewer.pendingJoin.teamNumber} first.`)
   }
   const db = getDb()
 
-  // "matched" is only believed when FIRST records actually list this number.
-  let recordStatus = input.source
-  let country = input.country ?? null
-  if (input.source === 'matched') {
-    const [record] = await db.select({ country: ftcTeamCache.country }).from(ftcTeamCache).where(eq(ftcTeamCache.number, input.number)).limit(1)
-    if (record) country = country ?? record.country
-    else recordStatus = 'unchecked'
+  if (record.status === 'not_found') {
+    throw new AppError('VALIDATION', `FIRST doesn't list an FTC team ${input.number}. Check the number, or pick your team from the list.`, { field: 'number' })
   }
+  const recordStatus = record.status === 'found' ? 'matched' : 'unchecked'
+  const country = input.country ?? (record.status === 'found' ? record.record.country : null)
 
   const [team] = await db
     .insert(teams)

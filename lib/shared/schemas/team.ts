@@ -13,6 +13,9 @@ const teamNumberSchema = z.coerce
 
 export const lookupTeamSchema = z.object({ number: teamNumberSchema })
 
+/** What the coach has typed in either box of the team finder: part of a number, a name or a city. */
+export const searchTeamsSchema = z.object({ query: z.string().trim().min(1).max(60) })
+
 /**
  * One line, written by the team. FTC runs worldwide, so a city/state pair would be wrong for most of
  * the world — "Kuala Lumpur, Malaysia" and "Austin, Texas, USA" both belong in the same box.
@@ -35,8 +38,6 @@ export const createTeamSchema = z.object({
   name: teamNameSchema,
   location: locationSchema,
   country: z.string().trim().max(80).optional().nullable(),
-  /** How the details were confirmed: from FIRST records, typed after "not found", or typed while records were down. */
-  source: z.enum(['matched', 'manual', 'unchecked']),
   adult: z.literal(true, { message: 'Confirm that you’re 18 or older and coach or mentor this team' }),
   terms: z.literal(true, { message: 'Accept the Terms and Privacy Policy to continue' }),
 })

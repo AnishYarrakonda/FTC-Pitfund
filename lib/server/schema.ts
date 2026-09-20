@@ -430,6 +430,8 @@ export const reports = pgTable(
 export const ftcTeamCache = pgTable('ftc_team_cache', {
   number: integer('number').primaryKey(),
   name: text('name').notNull(),
+  /** FIRST's long registered name (often a school or sponsor); searched alongside `name`. */
+  fullName: text('full_name'),
   city: text('city'),
   state: text('state'),
   country: text('country'),

@@ -1,0 +1,1 @@
+ALTER TABLE "ftc_team_cache" ADD COLUMN "full_name" text;

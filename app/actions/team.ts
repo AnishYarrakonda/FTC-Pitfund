@@ -31,11 +31,13 @@ import { simulated } from '@/lib/server/dev'
 import { scheduleDrain } from '@/lib/server/email/drain'
 import { enqueueEmail, PRIORITY } from '@/lib/server/email/outbox'
 import { absoluteUrl } from '@/lib/server/env'
+import { suggestTeams } from '@/lib/server/ftc-directory'
+import { lookupFtcTeam } from '@/lib/server/ftc-records'
 import { notifyAdmins, notifyTeam, notifyUsers } from '@/lib/server/notify'
 import { defineAction } from '@/lib/server/result'
 import { inTransaction } from '@/lib/server/transaction'
 import { discard } from '@/lib/server/uploads'
-import { createTeamSchema, lookupTeamSchema, teamProfileSchema } from '@/lib/shared/schemas/team'
+import { createTeamSchema, lookupTeamSchema, searchTeamsSchema, teamProfileSchema } from '@/lib/shared/schemas/team'
 import { subjectKey } from '@/lib/shared/notifications'
 import { teamLabel } from '@/lib/shared/team'
 import { displayName } from '@/lib/shared/viewer'
@@ -56,11 +58,22 @@ export const lookupTeam = defineAction(lookupTeamSchema, async ({ number }) => {
   return result.status === 'unavailable' ? { status: 'unavailable' as const, reason: '' } : result
 })
 
+/** Suggestions for the team finder: FIRST teams whose number, name or city match what was typed. */
+export const searchTeams = defineAction(searchTeamsSchema, async ({ query }) => {
+  await requireViewer()
+  return { teams: await suggestTeams(query) }
+})
+
 export const createTeamAction = defineAction(
   createTeamSchema,
   async (input) => {
     const viewer = await requireViewer()
-    const team = await inTransaction(() => createTeam(viewer, input))
+    // Never trust the browser's claim that FIRST lists the team: ask again, outside the transaction.
+    const record = await lookupFtcTeam(
+      input.number,
+      (await simulated('ftc-timeout')) ? { fetch: (() => Promise.reject(new Error('Simulated timeout'))) as typeof fetch, firstCredentials: null } : {},
+    )
+    const team = await inTransaction(() => createTeam(viewer, input, record))
     updateTag(TAGS.teamNumber(team.number))
     // A new team is a draft: it finishes its setup page and sends itself for review before it can pitch.
     return { teamId: team.id, redirectTo: '/welcome/team' }

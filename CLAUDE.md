@@ -9,7 +9,7 @@ capacity caps, ledger) is gone; it is preserved at git tag `legacy-v1`.
 ## Product
 
 FTC Pitfund connects FIRST® Tech Challenge teams with companies that sponsor robotics teams.
-Adult coaches sign in (a 6-digit email code), create or join one shared team account,
+Adult coaches sign in (a 6-digit email code), find their team in FIRST's list (by number or name; a team FIRST doesn't list can't be created), create or join one shared team account,
 upload a sponsorship deck PDF (≤5 pages, ≤10 MB) and a one-line summary, and pitch **approved**
 companies by answering each company's own questions (≤10, or 3 defaults). **Teams and companies are
 both admin-reviewed before they reach the app**, and **an admin reviews every pitch** before the
@@ -100,7 +100,7 @@ Client side: `useAction(action)` or `<ActionButton action pendingLabel>`; never 
 | `npm run knip` | zero unused files, exports and dependencies |
 | `npm run db:generate` / `db:migrate` / `db:reset` | Drizzle migrations (migrate refuses non-local hosts without `--remote` + `CONFIRM_REMOTE=1`) |
 | `npm run seed -- --scenario demo\|empty\|edge` | idempotent fixtures |
-| `npm run admin:grant -- email` · `email:drain` · `cron:run` · `db:backup` | local ops (`cron:run` calls `/api/cron/daily` on :3000) |
+| `npm run admin:grant -- email` · `email:drain` · `cron:run` · `ftc:sync` · `db:backup` | local ops (`cron:run` calls `/api/cron/daily` on :3000; `ftc:sync` copies FIRST's team list into `ftc_team_cache`) |
 | `npm run provision` · `provision:check\|supabase\|vercel\|resend\|verify` | build production from `.env.local` (docs/LAUNCH.md) |
 | `npm run prod -- backup\|admin email [--revoke]` | ops against the hosted database using `.env.local` |
 | `npm run screenshots:marketing` | recapture the landing page screenshots from the seeded production build |

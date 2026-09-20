@@ -3,7 +3,7 @@
 For whoever operates FTC Pitfund day to day. You don't need to write code. A few tasks need a terminal in this repository with `npm install` done and the team's `.env.local` file (from the password manager) in the repository folder.
 
 - **Admin console:** `https://<your domain>/admin`. Sign in as an admin (an email code).
-- **Support inbox:** ftcexodius@gmail.com. Companies and coaches write here, and the daily summary arrives here.
+- **Support inbox:** `NEXT_PUBLIC_SUPPORT_EMAIL` (ftcexodius@gmail.com at launch). Companies and coaches write here, and the daily summary arrives here. To change it everywhere (site, legal pages, emails, digest), change that Vercel env var and redeploy.
 - **Dashboards** (all owned by ftcexodius@gmail.com): [Vercel](https://vercel.com/dashboard) (site, logs), [Supabase](https://supabase.com/dashboard) (database, storage), [Resend](https://resend.com/emails) (email). The System page links to each.
 
 ## Every day (about 10 minutes)
@@ -31,6 +31,7 @@ For whoever operates FTC Pitfund day to day. You don't need to write code. A few
 | --- | --- | --- |
 | **"The daily job hasn't run in over 36 hours"** | Vercel's cron didn't call the app: queued email, the digest, upload cleanup and the database keepalive stopped. | Vercel → project `ftc-pitfund` → Settings → Cron Jobs: make sure `/api/cron/daily` is listed and enabled. Open Logs, filter `/api/cron/daily`, look for errors. To run it by hand: `curl -H "Authorization: Bearer <CRON_SECRET from .env.local>" https://<your domain>/api/cron/daily`. |
 | **"Some daily jobs need attention"** + a red job | One step (email, digest, cleanup, FIRST re-check, keepalive) failed last time. The detail says why. | Usually temporary (FIRST's API or Resend was down). If it's red two days in a row, send the error text to whoever maintains the code. |
+| **"Refresh FIRST team list"** is red | The weekly copy of FIRST's team list failed (FIRST's API was down, or the `FIRST_API_USERNAME`/`FIRST_API_TOKEN` in Vercel are wrong). The team search on the setup page keeps the old copy, and a team's number still looks up directly, so coaches aren't blocked. | It retries every day on its own. If it stays red, check the two variables, then `npm run ftc:sync -- --remote` from your laptop. |
 | **Emails in the last 24 h** is orange (≥80) or red (≥90) | Resend's free plan sends 100 emails a day. Sign-in codes always go first; everything else stops at 90. | One busy day is fine: email is delayed, never lost. If it's **80 or more most days**, upgrade to Resend Pro ($20/month) in Resend → Billing. No code change is needed. |
 | **Queued email** has rows | Waiting to send, or retrying after a provider error (1, 2, 4, 8 minutes; 5 tries). | Nothing, unless a row is older than a day. **Send now** retries it; **Dismiss** drops it (the in-app notification was already delivered). |
 | **Failed and bounced** has rows | The email copy didn't arrive (bad address, full inbox, marked as spam). The in-app notification still did. | If it's a coach or company contact, email them from ftcexodius@gmail.com to fix the address. Dismiss when handled. |

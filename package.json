@@ -25,6 +25,7 @@
     "qa": "playwright test --config playwright.qa.config.ts",
     "knip": "knip --no-progress",
     "email:drain": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/drain-outbox.ts",
+    "ftc:sync": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/ftc-sync.ts",
     "cron:run": "node --import tsx scripts/cron-run.ts",
     "provision": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/provision/index.ts",
     "provision:check": "node --import tsx scripts/provision/check.ts",

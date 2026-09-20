@@ -50,7 +50,7 @@ describe('website normalization', () => {
     })
     // An empty Instagram box is not an error; it just means they don't have one.
     expect(teamProfileSchema.parse({ name: 'E', location: 'Austin', summary: '', website: '', instagram: '' })).toMatchObject({ instagram: null, website: null })
-    expect(createTeamSchema.safeParse({ number: '31579', name: 'Exodius', location: 'Austin, Texas, USA', source: 'matched', adult: false, terms: true }).success).toBe(false)
+    expect(createTeamSchema.safeParse({ number: '31579', name: 'Exodius', location: 'Austin, Texas, USA', adult: false, terms: true }).success).toBe(false)
     expect(reportSchema.parse({ teamNumber: 31579, reason: 'spam', details: '', email: '' })).toMatchObject({ details: null, email: null })
   })
 })

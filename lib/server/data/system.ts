@@ -15,7 +15,7 @@ import { cronRuns, emailOutbox } from '../schema'
 const STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024
 const DB_LIMIT_BYTES = 500 * 1024 * 1024
 export const CRON_STALE_MS = 36 * 60 * 60 * 1000
-const CRON_JOBS = ['drain-outbox', 'admin-digest', 'clean-staging', 'recheck-records', 'keepalive'] as const
+const CRON_JOBS = ['drain-outbox', 'admin-digest', 'clean-staging', 'ftc-directory', 'recheck-records', 'keepalive'] as const
 
 export type SystemEmail = {
   id: string

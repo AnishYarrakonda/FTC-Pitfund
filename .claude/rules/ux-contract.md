@@ -40,5 +40,5 @@ focus return, scroll lock, visible close, labelled title — all from `component
 
 ## Copy
 Plain, specific, second person. Never "dispatch", "submission", "RLS", "token", "Supabase". Buttons are verbs.
-Status labels come from `lib/shared/labels.ts`. Support email `ftcexodius@gmail.com`; footer disclaimer
+Status labels come from `lib/shared/labels.ts`. Support email comes from `SUPPORT_EMAIL` (`lib/shared/brand.ts`, set by `NEXT_PUBLIC_SUPPORT_EMAIL`, default `ftcexodius@gmail.com`); never hardcode it; footer disclaimer
 "Not affiliated with or endorsed by FIRST®."

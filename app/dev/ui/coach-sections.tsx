@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { fakeSlowSuccess } from '@/app/actions/dev'
 import { PitchView } from '@/components/pitch/pitch-view'
@@ -11,6 +11,8 @@ import { LogoUpload } from '@/components/uploads/logo-upload'
 import { ActionButton } from '@/components/ui/action-button'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/feedback'
+import { TeamFinderInput } from '@/components/team/team-finder-input'
+import { TeamSuggestions, type TeamSuggestion } from '@/components/team/team-suggestions'
 import { directoryState, formatAsk, type PitchViewData } from '@/lib/shared/pitch'
 import { err, type Result } from '@/lib/shared/result'
 
@@ -35,6 +37,33 @@ function Specimen({ label, children, wide }: { label: string; children: ReactNod
       <p className="text-caption font-medium text-text-tertiary">{label}</p>
       <div className="min-w-0 rounded-dialog border border-border bg-surface p-5">{children}</div>
     </div>
+  )
+}
+
+const FINDER_TEAMS: TeamSuggestion[] = [
+  { number: 31579, name: 'Exodius', fullName: 'Bin To Better', city: 'Fremont', state: 'CA', country: 'USA', onPitfund: true },
+  { number: 31580, name: 'Exodus Robotics', fullName: null, city: 'Austin', state: 'TX', country: 'USA', onPitfund: false },
+  { number: 23014, name: 'Robo Ravens', fullName: 'Raven Valley High School Robotics Club', city: 'Boise', state: 'ID', country: 'USA', onPitfund: false },
+  { number: 40001, name: LONG.slice(0, 60), fullName: LONG.slice(0, 120), city: LONG.slice(0, 40), state: null, country: 'USA', onPitfund: false },
+]
+
+/** A working box over a fixed list: type "exo", "robo" or "31" to see it suggest, or "zzz" for none. */
+function FinderSpecimen({ label, searching = false }: { label: string; searching?: boolean }) {
+  const [value, setValue] = useState('')
+  const q = value.trim().toLowerCase()
+  const matches = q ? FINDER_TEAMS.filter((t) => `${t.number} ${t.name} ${t.city ?? ''}`.toLowerCase().includes(q)) : []
+  return (
+    <TeamFinderInput
+      label={label}
+      ariaLabel={label}
+      hint="Type exo, robo, 31 or zzz."
+      value={value}
+      onValueChange={setValue}
+      suggestions={matches}
+      searching={searching}
+      noMatches={q.length >= 2 && matches.length === 0}
+      onPick={(t) => setValue(`${t.number} · ${t.name}`)}
+    />
   )
 }
 
@@ -121,6 +150,28 @@ export function CoachSections({ deck }: { deck: Deck }) {
           </Specimen>
           <Specimen label="Logo: current image, long name">
             <LogoUpload name={LONG.slice(0, 60)} currentUrl={deck?.logo ?? null} createUpload={() => slowUnavailable()} finalize={() => slowUnavailable()} />
+          </Specimen>
+        </div>
+      </section>
+
+      <section id="team-finder" aria-labelledby="team-finder-title" className="grid min-w-0 scroll-mt-20 gap-5">
+        <div className="grid gap-1">
+          <h2 id="team-finder-title" className="text-h3 font-semibold tracking-tight text-text">
+            Team finder
+          </h2>
+          <p className="text-body text-text-secondary">
+            The boxes on the team setup page. Each suggests teams from FIRST’s list; a team already on FTC Pitfund says so. Arrow keys, Enter and Esc work.
+          </p>
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Specimen label="Box with suggestions and a no-match message">
+            <FinderSpecimen label="Search by name" />
+          </Specimen>
+          <Specimen label="Box while searching">
+            <FinderSpecimen label="Searching" searching />
+          </Specimen>
+          <Specimen label="The list: second row highlighted, then long names" wide>
+            <TeamSuggestions id="finder-specimen" suggestions={FINDER_TEAMS} activeIndex={1} onPick={() => {}} />
           </Specimen>
         </div>
       </section>

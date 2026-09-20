@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
 
+import { SUPPORT_EMAIL } from '../../lib/shared/brand'
 import { closeTestDb, db } from '../support/db'
 import { expect, test } from '../support/fixtures'
 import { messagesTo, waitForLoginCode } from '../support/mailpit'
@@ -55,7 +56,7 @@ test('the email is branded FTC Pitfund and never mentions Supabase', async ({ pa
   expect(body.From.Name).toBe('FTC Pitfund')
   expect(`${body.HTML}${body.Text}`).not.toMatch(/supabase|my application/i)
   expect(body.Text).toContain('Not affiliated with or endorsed by FIRST®')
-  expect(body.Text).toContain('ftcexodius@gmail.com')
+  expect(body.Text).toContain(SUPPORT_EMAIL)
 })
 
 test('resend unlocks after 30 seconds and sends a new code', async ({ page }) => {

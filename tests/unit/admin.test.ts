@@ -460,13 +460,13 @@ describe('the daily cron', () => {
       const fetchImpl: typeof fetch = async () => Response.json({ data: { teamByNumber: null } })
       const before = (await getDb().select().from(cronRuns)).length
 
-      const first = await runDailyCron({ now: NOW, transport, fetch: fetchImpl, skipStorage: true })
+      const first = await runDailyCron({ now: NOW, transport, fetch: fetchImpl, skipStorage: true, skipDirectory: true })
       expect(first.ok).toBe(true)
-      expect(first.results.map((r) => r.name)).toEqual(['drain-outbox', 'admin-digest', 'clean-staging', 'recheck-records', 'keepalive'])
+      expect(first.results.map((r) => r.name)).toEqual(['drain-outbox', 'admin-digest', 'clean-staging', 'ftc-directory', 'recheck-records', 'keepalive'])
       expect((await getDb().select().from(teams).where(eq(teams.id, unchecked.id)))[0].recordStatus).toBe('manual')
       const digestsAfterFirst = await getDb().select().from(emailOutbox).where(eq(emailOutbox.template, 'admin-digest'))
 
-      const second = await runDailyCron({ now: new Date(NOW.getTime() + 60_000), transport, fetch: fetchImpl, skipStorage: true })
+      const second = await runDailyCron({ now: new Date(NOW.getTime() + 60_000), transport, fetch: fetchImpl, skipStorage: true, skipDirectory: true })
       expect(second.ok).toBe(true)
       const digestsAfterSecond = await getDb().select().from(emailOutbox).where(eq(emailOutbox.template, 'admin-digest'))
       expect(digestsAfterSecond.length).toBe(digestsAfterFirst.length)
@@ -474,7 +474,7 @@ describe('the daily cron', () => {
       expect(recheck.checked).toBeLessThanOrEqual((first.results.find((r) => r.name === 'recheck-records')?.result as { checked: number }).checked)
 
       const runs = await getDb().select().from(cronRuns)
-      expect(runs.length - before).toBe(10)
+      expect(runs.length - before).toBe(12)
       expect(runs.filter((r) => r.startedAt >= new Date(0)).every((r) => r.finishedAt !== null)).toBe(true)
       const system = await getSystemStatus(new Date(NOW.getTime() + 120_000))
       expect(system.cron.find((j) => j.job === 'keepalive')).toMatchObject({ ok: true, stale: false })

@@ -2,6 +2,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
+import { SUPPORT_EMAIL } from '@/lib/shared/brand'
+
 import { COMPANY_HREF, FAQS, STAGES, TEAM_HREF } from './content'
 import { Arrow, I } from './icons'
 
@@ -84,7 +86,7 @@ export function Audiences() {
           <h3 className="hp-h-md">Help from real people, when you need it</h3>
           <div className="hp-features">
             <Feature icon={<I.eye />} title="Review notes." body="When a pitch needs work, a reviewer sends it back with a note on exactly what to fix." link={{ label: 'How review works', href: '#bento-review' }} />
-            <Feature icon={<I.mail />} title="Email support." body="Write to ftcexodius@gmail.com and a person on the team answers, usually the same day." link={{ label: 'Email us', href: 'mailto:ftcexodius@gmail.com' }} />
+            <Feature icon={<I.mail />} title="Email support." body={`Write to ${SUPPORT_EMAIL} and a person on the team answers, usually the same day.`} link={{ label: 'Email us', href: `mailto:${SUPPORT_EMAIL}` }} />
             <Feature icon={<I.flag />} title="Report a page." body="Anyone can report a team page. A reviewer looks at every report and takes down anything that shouldn’t be there." link={{ label: 'Read the rules', href: '/legal/terms' }} />
           </div>
         </div>

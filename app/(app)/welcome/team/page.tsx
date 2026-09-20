@@ -78,7 +78,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <header className="mt-6 grid gap-2">
         <h1 className="text-h1 font-semibold tracking-tighter text-text">Set up your team</h1>
         <p className="text-lead text-text-secondary">
-          Find your team by its FTC number. Your team gets one shared account that every coach on it can use.
+          Find your team by its FTC number or name. Your team gets one shared account that every coach on it can use.
         </p>
       </header>
       {children}

@@ -22,6 +22,7 @@ const JOB_LABEL: Record<string, string> = {
   'drain-outbox': 'Send queued email',
   'admin-digest': 'Admin digest',
   'clean-staging': 'Clean abandoned uploads',
+  'ftc-directory': 'Refresh FIRST team list',
   'recheck-records': 'Re-check FIRST records',
   keepalive: 'Database keepalive',
 }

@@ -18,6 +18,7 @@ import { chromium } from '@playwright/test'
 
 import { smtpTransport } from '@/lib/server/email/send'
 import { renderEmail, type TemplateName, type TemplatePayload } from '@/lib/server/email/templates'
+import { SUPPORT_EMAIL } from '@/lib/shared/brand'
 
 import { checkOverflow } from '../tests/qa/checks'
 
@@ -374,7 +375,7 @@ function checkMessage(msg: MailpitMessage): string[] {
     if (urls.length && (urls.length > 1 || line.trim() !== urls[0])) failures.push(`text URL shares a line: "${line.trim().slice(0, 100)}"`)
   }
   if (/dispatch|submission|token|supabase|\bRLS\b/i.test(msg.Text.replace(/https?:\/\/\S+/g, ''))) failures.push('jargon in copy')
-  if (!msg.Text.includes('ftcexodius@gmail.com')) failures.push('no support email')
+  if (!msg.Text.includes(SUPPORT_EMAIL)) failures.push('no support email')
   if (!msg.Text.includes('Not affiliated with or endorsed by FIRST®')) failures.push('no FIRST disclaimer')
   return failures
 }

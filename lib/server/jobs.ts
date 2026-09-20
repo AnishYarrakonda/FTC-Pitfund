@@ -1,11 +1,13 @@
 import 'server-only'
 
-import { and, asc, eq, isNull, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm'
 
 import { enqueueAdminDigest } from './digest'
 import { getDb } from './db'
 import { drainOutbox } from './email/outbox'
 import type { EmailTransport } from './email/send'
+import { env } from './env'
+import { directorySize, MIN_DIRECTORY_SIZE, syncFtcDirectory } from './ftc-directory'
 import { recheckTeamRecord } from './data/admin-orgs'
 import { reportUnexpected } from './result'
 import { cronRuns, teams } from './schema'
@@ -21,6 +23,7 @@ import { BUCKETS, listStaleStagingObjects, removeObjects } from './storage'
 
 const STAGING_TTL_MS = 24 * 60 * 60 * 1000
 const RECHECK_LIMIT = 20
+const DIRECTORY_REFRESH_MS = 6 * 24 * 60 * 60 * 1000
 
 type JobResult = { name: string; ok: boolean; result?: unknown; error?: string; reference?: string }
 
@@ -31,6 +34,8 @@ export type CronOptions = {
   fetch?: typeof fetch
   /** Skip the storage sweep (tests run without touching storage). */
   skipStorage?: boolean
+  /** Skip copying FIRST's team list (tests never call the real API). */
+  skipDirectory?: boolean
 }
 
 async function job(name: string, run: () => Promise<unknown>, now: Date): Promise<JobResult> {
@@ -80,6 +85,20 @@ export async function runDailyCron(options: CronOptions = {}) {
       const stale = await listStaleStagingObjects(STAGING_TTL_MS, now)
       await removeObjects(BUCKETS.staging, stale)
       return { deleted: stale.length }
+    }),
+    // Weekly: the copy of FIRST's team list that the team setup page searches. Runs at once when it is empty.
+    await step('ftc-directory', async () => {
+      if (options.skipDirectory) return { skipped: 'disabled for this run' }
+      if (!env().FIRST_API_USERNAME || !env().FIRST_API_TOKEN) return { skipped: 'FIRST API credentials are not configured' }
+      const [last] = await getDb()
+        .select({ finishedAt: cronRuns.finishedAt })
+        .from(cronRuns)
+        .where(and(eq(cronRuns.job, 'ftc-directory'), eq(cronRuns.ok, true), sql`${cronRuns.detail} #>> '{result,teams}' is not null`))
+        .orderBy(desc(cronRuns.startedAt))
+        .limit(1)
+      const fresh = last?.finishedAt && now.getTime() - last.finishedAt.getTime() < DIRECTORY_REFRESH_MS
+      if (fresh && (await directorySize()) >= MIN_DIRECTORY_SIZE) return { skipped: 'synced within the last 6 days' }
+      return syncFtcDirectory({ fetch: options.fetch, now })
     }),
     await step('recheck-records', async () => {
       const unchecked = await getDb()

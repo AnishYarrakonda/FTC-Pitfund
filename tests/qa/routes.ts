@@ -191,6 +191,21 @@ export const QA_ROUTES: QaRoute[] = [
     budget: 'authed',
     interactions: [
       lookup('on-pitfund', '31579'),
+      {
+        name: 'search-by-name',
+        run: async (page) => {
+          await page.getByRole('combobox', { name: 'Search by name' }).fill('robo raven')
+          await expect(page.getByRole('option', { name: /23014 · Robo Ravens/ })).toBeVisible({ timeout: 20_000 })
+        },
+      },
+      {
+        name: 'not-listed',
+        run: async (page) => {
+          await page.context().addCookies([{ name: 'pitfund-simulate', value: 'ftc-not-found', domain: new URL(page.url()).hostname, path: '/' }])
+          await page.getByLabel('FTC team number').fill('612345')
+          await expect(page.getByText('FIRST doesn’t list an FTC team 612345')).toBeVisible({ timeout: 20_000 })
+        },
+      },
       lookup('found', '23014', async (page) => {
         await page.getByRole('button', { name: 'Yes, that’s my team' }).click()
         await expect(page.getByLabel('Team name')).toHaveValue('Robo Ravens')

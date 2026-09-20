@@ -2,6 +2,7 @@ import 'server-only'
 
 import { and, asc, desc, eq, gt, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm'
 
+import { SUPPORT_EMAIL } from '@/lib/shared/brand'
 import { placeLabel } from '@/lib/shared/team'
 
 import { getDb } from './db'
@@ -18,7 +19,7 @@ import { auditEvents, emailOutbox, pitches, reports, sponsorMembers, sponsors, t
  */
 
 /** Always receive the summary, whether or not they are an admin account. */
-export const DIGEST_RECIPIENTS = ['anish.yarrakonda456@gmail.com', 'ftcexodius@gmail.com']
+export const DIGEST_RECIPIENTS = [SUPPORT_EMAIL]
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const LIST_LIMIT = 10

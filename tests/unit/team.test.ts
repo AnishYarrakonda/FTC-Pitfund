@@ -18,7 +18,7 @@ import {
 } from '@/lib/server/data/teams'
 import { getDb } from '@/lib/server/db'
 import { mapDbError } from '@/lib/server/result'
-import { ftcTeamCache, teamJoinRequests, teamMembers, teams, users } from '@/lib/server/schema'
+import { teamJoinRequests, teamMembers, teams, users } from '@/lib/server/schema'
 import { BUCKETS, downloadObject, publicUrl, removeObjects, uploadObject } from '@/lib/server/storage'
 import { assertOwnStagingPath, hasPdfMagic, imageKind, readReceipt, signReceipt, verifyImageBytes, verifyPdfBytes } from '@/lib/server/uploads'
 import { loadViewer } from '@/lib/server/viewer'
@@ -48,29 +48,33 @@ const PNG_1PX = Uint8Array.from(
 
 describe('team creation', () => {
   it(
-    'creates the team, the membership and terms acceptance; "matched" needs a FIRST record',
+    'creates the team, the membership and terms acceptance, and lets FIRST decide whether the team exists',
     dbTest(async () => {
       const user = await createUser({ acceptedTermsAt: null })
       const number = 700_000 + Math.floor(Math.random() * 99_999)
-      const team = await createTeamForViewer(await viewerOf(user.id), { number, name: 'Fresh', location: 'Austin, Texas, USA', source: 'matched' })
+      const listed = { status: 'found', source: 'first', record: { number, name: 'Fresh', city: 'Austin', state: 'TX', country: 'USA' } } as const
+      const team = await createTeamForViewer(await viewerOf(user.id), { number, name: 'Fresh', location: 'Austin, Texas, USA' }, listed)
       const [row] = await getDb().select().from(teams).where(eq(teams.id, team.id))
-      expect(row.recordStatus).toBe('unchecked')
+      expect(row).toMatchObject({ recordStatus: 'matched', country: 'USA' })
       const [member] = await getDb().select().from(teamMembers).where(eq(teamMembers.userId, user.id))
-      expect(member.teamId).toBe(team.id)
+      expect(member).toMatchObject({ teamId: team.id, role: 'owner' })
       const [person] = await getDb().select({ acceptedTermsAt: users.acceptedTermsAt }).from(users).where(eq(users.id, user.id))
       expect(person.acceptedTermsAt).not.toBeNull()
 
-      const other = await createUser()
-      const recorded = number + 1
-      await getDb().insert(ftcTeamCache).values({ number: recorded, name: 'Recorded', city: 'Austin', state: 'TX', country: 'USA', source: 'first' })
-      const matched = await createTeamForViewer(await viewerOf(other.id), { number: recorded, name: 'Recorded', location: 'Austin, Texas, USA', source: 'matched' })
-      const [matchedRow] = await getDb().select().from(teams).where(eq(teams.id, matched.id))
-      expect(matchedRow).toMatchObject({ recordStatus: 'matched', country: 'USA' })
+      // FIRST unreachable: the team is created unchecked and the daily job re-checks it.
+      const offline = await createUser()
+      const outage = await createTeamForViewer(await viewerOf(offline.id), { number: number + 1, name: 'Offline', location: 'A, B' }, { status: 'unavailable', reason: 'down' })
+      expect((await getDb().select().from(teams).where(eq(teams.id, outage.id)))[0].recordStatus).toBe('unchecked')
+
+      // A number FIRST doesn't list is refused, and nothing is created.
+      const stranger = await createUser()
+      await expectAppError(createTeamForViewer(await viewerOf(stranger.id), { number: number + 2, name: 'Nobody', location: 'A, B' }, { status: 'not_found' }), 'VALIDATION')
+      expect(await getDb().select().from(teams).where(eq(teams.number, number + 2))).toHaveLength(0)
 
       // One team per person, one account per team number.
-      await expectAppError(createTeamForViewer(await viewerOf(user.id), { number: number + 2, name: 'Second', location: 'A, B', source: 'manual' }), 'CONFLICT')
+      await expectAppError(createTeamForViewer(await viewerOf(user.id), { number: number + 3, name: 'Second', location: 'A, B' }, listed), 'CONFLICT')
       const third = await createUser()
-      const duplicate = await createTeamForViewer(await viewerOf(third.id), { number, name: 'Dup', location: 'A, B', source: 'manual' }).catch((e: unknown) => e)
+      const duplicate = await createTeamForViewer(await viewerOf(third.id), { number, name: 'Dup', location: 'A, B' }, listed).catch((e: unknown) => e)
       expect(mapDbError(duplicate, { conflict: { teams_number_key: 'taken' } })).toMatchObject({ code: 'CONFLICT', message: 'taken' })
     }),
   )

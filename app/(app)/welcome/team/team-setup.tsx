@@ -3,9 +3,9 @@
 import { Check, SearchX, WifiOff } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 
-import { createTeamAction, lookupTeam, requestToJoin } from '@/app/actions/team'
+import { createTeamAction, lookupTeam, requestToJoin, searchTeams } from '@/app/actions/team'
 import { ActionButton } from '@/components/ui/action-button'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -14,6 +14,8 @@ import { Field } from '@/components/ui/field'
 import { OrgLogo } from '@/components/ui/identity'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
+import { TeamFinderInput } from '@/components/team/team-finder-input'
+import type { TeamSuggestion } from '@/components/team/team-suggestions'
 import { useAction, useLatestAction } from '@/lib/client/use-action'
 import { SUPPORT_EMAIL } from '@/lib/shared/brand'
 import { MAX_LOCATION_LENGTH, MAX_TEAM_NAME_LENGTH, placeLabel } from '@/lib/shared/team'
@@ -22,23 +24,34 @@ import { MAX_LOCATION_LENGTH, MAX_TEAM_NAME_LENGTH, placeLabel } from '@/lib/sha
 const recordLocation = (r: { city: string | null; state: string | null; country: string | null }) =>
   [r.city, r.state, r.country].filter(Boolean).join(', ')
 
-type Source = 'matched' | 'manual' | 'unchecked'
+type Source = 'matched' | 'unchecked'
 type Details = { name: string; location: string; country: string | null }
+type Box = 'number' | 'name'
 
 const EMPTY: Details = { name: '', location: '', country: null }
+const SEARCH_DELAY_MS = 150
+
+const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
 
 /**
- * Coach first run (plan §3.2): number → debounced FIRST lookup → confirm or type details, or
- * request to join a team already on FTC Pitfund → 18+ and Terms → Create team.
+ * Coach first run (plan §3.2): find the team in FIRST's list (type a number, a name or both; each
+ * box suggests teams and fills the other) → confirm it, or request to join a team already on FTC
+ * Pitfund → 18+ and Terms → Create team. A team FIRST doesn't list can't be created. An admin
+ * still reviews who the coach is before the team reaches the app.
  */
 export function TeamSetup() {
   const router = useRouter()
   const [numberText, setNumberText] = useState('')
+  const [nameText, setNameText] = useState('')
+  // True while the two boxes describe one FIRST team (a pick or an autofill): editing either box drops the other.
+  const [linked, setLinked] = useState(false)
+  const [box, setBox] = useState<Box>('number')
   const [source, setSource] = useState<Source | null>(null)
   const [details, setDetails] = useState<Details>(EMPTY)
   const [adult, setAdult] = useState(false)
   const [terms, setTerms] = useState(false)
   const lookup = useLatestAction(lookupTeam)
+  const search = useLatestAction(searchTeams)
   const create = useAction(createTeamAction, { errorToast: false, onSuccess: (data) => router.push(data.redirectTo) })
   const detailsRef = useRef<HTMLDivElement>(null)
 
@@ -47,25 +60,118 @@ export function TeamSetup() {
   const lookupError = lookup.result && !lookup.result.ok && lookup.input?.number === number ? lookup.result.error : null
   const checking = lookup.pending && lookup.input?.number === number
 
-  // Debounced lookup from 4 digits; shorter (older) team numbers look up on Enter or blur.
-  const { run: runLookup, cancel: cancelLookup } = lookup
-  useEffect(() => {
-    if (!number || numberText.length < 4) return
-    const timer = setTimeout(() => void runLookup({ number }), 400)
-    return () => clearTimeout(timer)
-  }, [number, numberText.length, runLookup])
+  const query = (box === 'number' ? numberText : nameText).trim()
+  const searchable = box === 'number' ? query.length >= 1 : query.length >= 2
+  const answered = search.result?.ok && search.input?.query === query ? search.result.data.teams : null
+  const suggestions = searchable && !linked && answered ? answered : []
+  const searching = searchable && search.pending && search.input?.query === query
+  const noMatches = searchable && answered !== null && answered.length === 0 && !linked
 
-  const changeNumber = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 6)
-    setNumberText(digits)
+  const { run: runLookup, cancel: cancelLookup } = lookup
+  const { run: runSearch, cancel: cancelSearch } = search
+
+  // One FIRST team is settled: both boxes describe it.
+  const link = useCallback(
+    (team: { number: number; name: string }) => {
+      setNumberText(String(team.number))
+      setNameText(team.name)
+      setLinked(true)
+      cancelSearch()
+    },
+    [cancelSearch],
+  )
+
+  // Look a number up; when FIRST lists it, the name box fills itself.
+  const lookUp = useCallback(
+    async (n: number) => {
+      const found = await runLookup({ number: n })
+      if (found?.ok && found.data.status === 'found') {
+        setNameText(found.data.record.name)
+        setLinked(true)
+      }
+      return found
+    },
+    [runLookup],
+  )
+
+  // Debounced lookup from 4 digits; shorter (older) team numbers look up on Enter, blur or by picking a suggestion.
+  useEffect(() => {
+    if (!number || numberText.length < 4 || linked) return
+    const timer = setTimeout(() => void lookUp(number), 400)
+    return () => clearTimeout(timer)
+  }, [number, numberText.length, linked, lookUp])
+
+  // Debounced suggestions as either box changes. Typing a name that is exactly one team fills the number.
+  useEffect(() => {
+    if (!searchable || linked) return
+    const timer = setTimeout(async () => {
+      const found = await runSearch({ query })
+      if (!found?.ok || box !== 'name') return
+      const exact = found.data.teams.filter((t) => sameName(t.name, query))
+      if (exact.length === 1 && found.data.teams[0].number === exact[0].number) {
+        link(exact[0])
+        void lookUp(exact[0].number)
+      }
+    }, SEARCH_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [query, searchable, linked, box, runSearch, link, lookUp])
+
+  const restart = () => {
     setSource(null)
     setDetails(EMPTY)
     create.reset()
-    if (digits.length === 0) cancelLookup()
+  }
+
+  const changeNumber = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 6)
+    setBox('number')
+    setNumberText(digits)
+    if (linked) {
+      setNameText('')
+      setLinked(false)
+    }
+    restart()
+    // A lookup still in flight belongs to the number as it was, and must not fill the name box.
+    cancelLookup()
+    if (digits.length === 0) cancelSearch()
+  }
+
+  const changeName = (value: string) => {
+    setBox('name')
+    setNameText(value)
+    if (linked) {
+      setNumberText('')
+      setLinked(false)
+    }
+    restart()
+    cancelLookup()
+    if (value.trim().length < 2) cancelSearch()
+  }
+
+  const startOver = () => {
+    setNumberText('')
+    setNameText('')
+    setLinked(false)
+    restart()
+    cancelLookup()
+    cancelSearch()
   }
 
   const lookUpNow = () => {
-    if (number && !checking && lookup.input?.number !== number) void runLookup({ number })
+    if (number && !checking && lookup.input?.number !== number) void lookUp(number)
+  }
+
+  const pick = async (team: TeamSuggestion) => {
+    link(team)
+    restart()
+    // Choosing a team from the list is the confirmation: go straight to its details.
+    const found = await lookUp(team.number)
+    if (found?.ok && found.data.status === 'found') confirm(found.data.record)
+  }
+
+  const confirm = (record: { name: string; city: string | null; state: string | null; country: string | null }) => {
+    setSource('matched')
+    setDetails({ name: record.name.slice(0, MAX_TEAM_NAME_LENGTH), location: recordLocation(record), country: record.country })
   }
 
   const enterManually = (next: Source) => {
@@ -77,7 +183,7 @@ export function TeamSetup() {
   const submit = (e: FormEvent) => {
     e.preventDefault()
     if (!number || !source) return
-    void create.run({ number, ...details, source, adult: adult as true, terms: terms as true })
+    void create.run({ number, ...details, adult: adult as true, terms: terms as true })
   }
 
   const errors = create.fieldErrors
@@ -85,29 +191,38 @@ export function TeamSetup() {
 
   return (
     <form noValidate onSubmit={submit} className="mt-10 grid gap-8">
-      <Field
-        label="FTC team number"
-        required
-        error={errors.number}
-        hint={numberText.length > 0 && numberText.length < 4 && !result ? 'Press Enter to look up a shorter team number.' : 'The number FIRST assigned your team, like 31579.'}
-      >
-        <Input
+      <div className="grid gap-5">
+        <TeamFinderInput
+          label="FTC team number"
+          required
+          ariaLabel="FTC team number"
+          error={errors.number}
+          hint={numberText.length > 0 && numberText.length < 4 && !result ? 'Press Enter to look up a shorter team number.' : 'The number FIRST assigned your team, like 31579.'}
           value={numberText}
-          onChange={(e) => changeNumber(e.target.value)}
-          onBlur={lookUpNow}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              lookUpNow()
-            }
-          }}
+          onValueChange={changeNumber}
+          suggestions={box === 'number' ? suggestions : []}
+          searching={box === 'number' && searching}
+          noMatches={box === 'number' && noMatches}
+          onPick={(team) => void pick(team)}
+          onEnter={lookUpNow}
+          onBlurValue={lookUpNow}
           inputMode="numeric"
-          autoComplete="off"
           placeholder="31579"
           className="max-w-48 text-lead tabular"
-          aria-label="FTC team number"
         />
-      </Field>
+        <TeamFinderInput
+          label="Or search by name"
+          ariaLabel="Search by name"
+          hint="Type part of your team’s name or city, then pick yours. We fill in the number."
+          value={nameText}
+          onValueChange={changeName}
+          suggestions={box === 'name' ? suggestions : []}
+          searching={box === 'name' && searching}
+          noMatches={box === 'name' && noMatches}
+          onPick={(team) => void pick(team)}
+          placeholder="Exodius"
+        />
+      </div>
 
       <div aria-live="polite" className="empty:hidden">
         {checking ? (
@@ -119,7 +234,7 @@ export function TeamSetup() {
             tone="danger"
             title={lookupError.message}
             action={
-              <Button variant="secondary" size="sm" onClick={() => number && void runLookup({ number })}>
+              <Button variant="secondary" size="sm" onClick={() => number && void lookUp(number)}>
                 Retry
               </Button>
             }
@@ -134,30 +249,20 @@ export function TeamSetup() {
             </p>
             <p className="text-body text-text-secondary">Is this your team?</p>
             <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={() => {
-                  setSource('matched')
-                  setDetails({ name: result.record.name.slice(0, MAX_TEAM_NAME_LENGTH), location: recordLocation(result.record), country: result.record.country })
-                }}
-              >
+              <Button onClick={() => confirm(result.record)}>
                 <Check aria-hidden="true" />
                 Yes, that’s my team
               </Button>
-              <Button variant="ghost" onClick={() => enterManually('manual')}>
-                No, enter details myself
+              <Button variant="ghost" onClick={startOver}>
+                No, that’s not my team
               </Button>
             </div>
           </div>
         ) : result?.status === 'not_found' && source === null ? (
           <Notice icon={<SearchX aria-hidden="true" className="size-4" />}>
             <p className="text-body text-text">
-              No FTC team {number} in FIRST records. Check the number, or continue and enter the name and city yourself.
+              FIRST doesn’t list an FTC team {number}, so it can’t sign up here. Check the number, or search by your team’s name.
             </p>
-            <div>
-              <Button variant="secondary" onClick={() => enterManually('manual')}>
-                Enter details myself
-              </Button>
-            </div>
           </Notice>
         ) : result?.status === 'unavailable' && source === null ? (
           <Notice icon={<WifiOff aria-hidden="true" className="size-4" />}>

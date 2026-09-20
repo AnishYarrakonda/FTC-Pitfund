@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { LandingSessionActions } from '@/components/app/landing-session-actions'
+import { SUPPORT_EMAIL } from '@/lib/shared/brand'
 
 import { COMPANY_HREF, TEAM_HREF } from './content'
 import { Arrow, Chevron, I, Mark } from './icons'
@@ -78,7 +79,7 @@ const MENUS: Array<{ key: string; label: string; columns: Array<{ heading: strin
         heading: 'Help',
         items: [
           { href: '#faq', title: 'FAQ', body: 'Sharing, review, cost and more', icon: 'question', tone: '#1e40af' },
-          { href: 'mailto:ftcexodius@gmail.com', title: 'Email support', body: 'ftcexodius@gmail.com', icon: 'mail', tone: '#00b261' },
+          { href: `mailto:${SUPPORT_EMAIL}`, title: 'Email support', body: SUPPORT_EMAIL, icon: 'mail', tone: '#00b261' },
         ],
       },
       {

@@ -49,7 +49,7 @@ under a fresh name (never trust the browser's file). Read public objects over HT
 
 ## Jobs
 One Vercel cron: `/api/cron/daily` → `lib/server/jobs.ts` `runDailyCron()`: drain outbox → admin digest
-(`lib/server/digest.ts`, dedupe `digest:{date}:{email}`; sent every day to `DIGEST_RECIPIENTS` plus admins, leading with the emails sent in the last 24 h) → clean staging → re-check ≤20 unchecked FIRST records →
+(`lib/server/digest.ts`, dedupe `digest:{date}:{email}`; sent every day to `DIGEST_RECIPIENTS` plus admins, leading with the emails sent in the last 24 h) → clean staging → copy FIRST's team list into `ftc_team_cache` (`lib/server/ftc-directory.ts`; weekly, or at once when empty; the team setup search runs over it, and `createTeam` refuses a number FIRST doesn't list) → re-check ≤20 unchecked FIRST records →
 keepalive. One `cron_runs` row per job; System warns when a job is older than 36 h. Every job must be safe to run twice.
 Add jobs there. `npm run cron:run` invokes it locally.
 
