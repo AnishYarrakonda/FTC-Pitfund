@@ -7,7 +7,7 @@ import { listNotifications, markNotificationRead } from '@/lib/server/data/notif
 import { getDb } from '@/lib/server/db'
 import { notifyAdmins, notifySponsor, notifyTeam, notifyUsers, resolveNotifications } from '@/lib/server/notify'
 import { notifications } from '@/lib/server/schema'
-import { loadViewer } from '@/lib/server/viewer'
+import { loadViewer, signedInWithEmailCode } from '@/lib/server/viewer'
 import { safeNext } from '@/lib/shared/sign-in'
 import { requestOrigin } from '@/lib/shared/request-origin'
 
@@ -140,6 +140,19 @@ describe('account', () => {
       expect(events.map((e) => e.action)).toEqual(['pitch.created', 'pitch.approved'])
     }),
   )
+})
+
+describe('who counts as signed in', () => {
+  it('accepts only sessions that came from the emailed code, never a password sign-up or a missing amr', () => {
+    expect(signedInWithEmailCode({ amr: [{ method: 'otp' }] })).toBe(true)
+    expect(signedInWithEmailCode({ amr: [{ method: 'magiclink' }] })).toBe(true)
+    expect(signedInWithEmailCode({ amr: [{ method: 'password' }, { method: 'otp' }] })).toBe(true)
+    // POST /auth/v1/signup with autoconfirm returns amr [{ method: 'password' }] for an address nobody verified.
+    expect(signedInWithEmailCode({ amr: [{ method: 'password' }] })).toBe(false)
+    expect(signedInWithEmailCode({ amr: [] })).toBe(false)
+    expect(signedInWithEmailCode({})).toBe(false)
+    expect(signedInWithEmailCode({ amr: 'otp' as never })).toBe(false)
+  })
 })
 
 describe('redirect safety', () => {

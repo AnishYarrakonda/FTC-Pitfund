@@ -88,6 +88,18 @@ type AuthClaims = {
   sub: string
   email?: string
   user_metadata?: Record<string, unknown>
+  /** How the session was established: Supabase adds one entry per method (`otp`, `password`, ...). */
+  amr?: Array<{ method?: string }>
+}
+
+/**
+ * Sign-in is the emailed 6-digit code and nothing else. Supabase's own /auth/v1/signup is public and the
+ * project auto-confirms email, so anyone can mint a session for an address they have never proved they
+ * own (with a password of their choosing). Those sessions say `password` in `amr`; a real code sign-in
+ * says `otp` (and the refresh keeps it). Only sessions that came from a code are accepted.
+ */
+export function signedInWithEmailCode(claims: Pick<AuthClaims, 'amr'>) {
+  return Array.isArray(claims.amr) && claims.amr.some((a) => a?.method === 'otp' || a?.method === 'magiclink')
 }
 
 function metaString(meta: Record<string, unknown> | undefined, ...keys: string[]) {
@@ -120,7 +132,7 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
   const supabase = await createSupabaseServerClient()
   const { data, error } = await supabase.auth.getClaims()
   const claims = data?.claims as AuthClaims | undefined
-  if (error || !claims?.sub) return null
+  if (error || !claims?.sub || !signedInWithEmailCode(claims)) return null
 
   const viewer = await loadViewer(claims.sub)
   if (viewer) return viewer
