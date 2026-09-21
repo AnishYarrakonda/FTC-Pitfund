@@ -190,6 +190,9 @@ describe('company decisions', () => {
       await addSponsorMember(company.id, member.id)
 
       await expectAppError(unsuspendCompany(admin, company.id, NOW), 'CONFLICT')
+      // Suspend then unsuspend would approve a company nobody reviewed, so a pending one can't be suspended.
+      await expectAppError(suspendCompany(admin, company.id, NOW), 'CONFLICT')
+      expect((await getDb().select({ status: sponsors.status }).from(sponsors).where(eq(sponsors.id, company.id)))[0].status).toBe('pending')
       const rejected = await rejectCompany(admin, company.id, 'Couldn’t verify.', NOW)
       expect(rejected.company.status).toBe('rejected')
       expect(rejected.members.map((m) => m.id)).toEqual([member.id])
@@ -539,6 +542,15 @@ describe('the daily cron', () => {
       await requeueEmail(failed.id, NOW)
       expect((await getDb().select().from(emailOutbox).where(eq(emailOutbox.id, failed.id)))[0]).toMatchObject({ status: 'queued', attempts: 0, dismissedAt: null })
       await expectAppError(requeueEmail(failed.id, NOW), 'CONFLICT')
+    }),
+  )
+
+  it(
+    'refuses to retry an email whose contents were scrubbed after sending, instead of queueing one that can only fail',
+    dbTest(async () => {
+      const [scrubbed] = await getDb().insert(emailOutbox).values({ toEmail: 'x@pitfund.test', template: 'login-code', payload: { redacted: true }, priority: 0, status: 'failed', lastError: 'boom' }).returning()
+      await expectAppError(requeueEmail(scrubbed.id, NOW), 'CONFLICT')
+      expect((await getDb().select().from(emailOutbox).where(eq(emailOutbox.id, scrubbed.id)))[0]).toMatchObject({ status: 'failed' })
     }),
   )
 })

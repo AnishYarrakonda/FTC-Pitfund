@@ -114,6 +114,12 @@ export async function getSystemStatus(now = new Date()): Promise<SystemStatus> {
 
 /** Put a failed or bounced email back in the queue. */
 export async function requeueEmail(id: string, now = new Date()) {
+  // Sign-in codes and invite links are scrubbed from the payload once sent or failed (outbox.ts), so there is
+  // nothing left to render: queueing it again would fail at once with a template error while the toast said "Queued".
+  const [existing] = await getDb().select({ payload: emailOutbox.payload }).from(emailOutbox).where(eq(emailOutbox.id, id))
+  if ((existing?.payload as { redacted?: boolean } | null)?.redacted) {
+    throw new AppError('CONFLICT', 'That email’s contents were deleted after sending (sign-in codes and invite links are), so it can’t be retried. Ask the person to sign in again, or send the invite again.')
+  }
   const [row] = await getDb()
     .update(emailOutbox)
     .set({ status: 'queued', attempts: 0, sendAfter: now, lastError: null, dismissedAt: null, updatedAt: now })
