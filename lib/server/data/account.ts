@@ -24,29 +24,39 @@ export async function updateProfile(viewer: Viewer, input: { name: string; phone
   return row
 }
 
-export type DeletionBlocker = { kind: 'team' | 'sponsor'; name: string } | null
+export type DeletionBlocker = { kind: 'team' | 'sponsor'; name: string; reason: 'only-member' | 'owner' } | null
 
-/** A person can't leave an org memberless: the last member must hand over or ask support. */
+/**
+ * A person can't leave an org memberless (the last member must hand over or ask support), and an owner
+ * can't leave it ownerless: with no owner nobody can invite, remove, transfer or approve join requests,
+ * and no screen can assign one. The owner hands the org on first, exactly as with "Leave".
+ */
 export async function accountDeletionBlocker(viewer: Viewer): Promise<DeletionBlocker> {
   if (viewer.team) {
     const [row] = await getDb()
       .select({ n: count() })
       .from(teamMembers)
       .where(and(eq(teamMembers.teamId, viewer.team.id), ne(teamMembers.userId, viewer.id)))
-    if (Number(row?.n ?? 0) === 0) return { kind: 'team', name: `Team ${viewer.team.number} · ${viewer.team.name}` }
+    const name = `Team ${viewer.team.number} · ${viewer.team.name}`
+    if (Number(row?.n ?? 0) === 0) return { kind: 'team', name, reason: 'only-member' }
+    if (viewer.team.role === 'owner') return { kind: 'team', name, reason: 'owner' }
   }
   if (viewer.sponsor) {
     const [row] = await getDb()
       .select({ n: count() })
       .from(sponsorMembers)
       .where(and(eq(sponsorMembers.sponsorId, viewer.sponsor.id), ne(sponsorMembers.userId, viewer.id)))
-    if (Number(row?.n ?? 0) === 0) return { kind: 'sponsor', name: viewer.sponsor.name }
+    if (Number(row?.n ?? 0) === 0) return { kind: 'sponsor', name: viewer.sponsor.name, reason: 'only-member' }
+    if (viewer.sponsor.role === 'owner') return { kind: 'sponsor', name: viewer.sponsor.name, reason: 'owner' }
   }
   return null
 }
 
 export function deletionBlockerMessage(blocker: NonNullable<DeletionBlocker>) {
   const what = blocker.kind === 'team' ? 'team' : 'company'
+  if (blocker.reason === 'owner') {
+    return `You own ${blocker.name}. Make another member the owner first (on the ${what === 'team' ? 'Team' : 'Company'} page), then delete your account.`
+  }
   return `You're the only member of ${blocker.name}. Invite another member first, or email ${SUPPORT_EMAIL} to close the ${what}.`
 }
 

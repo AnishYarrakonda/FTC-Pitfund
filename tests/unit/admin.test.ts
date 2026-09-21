@@ -18,6 +18,7 @@ import {
   unsuspendTeam,
   approveTeam,
   rejectTeam,
+  removeFromOrg,
 } from '@/lib/server/data/admin-orgs'
 import { approvalBlocker, approvePitch, getPitchReview, listPitchQueue, nextInQueue, rejectPitch, reviewCounts, sendBackPitch } from '@/lib/server/data/admin-review'
 import { searchPeople, searchTeams } from '@/lib/server/data/admin-directory'
@@ -29,7 +30,7 @@ import { buildDigest, DIGEST_RECIPIENTS, EMAIL_WARN_AT, enqueueAdminDigest } fro
 import { renderEmail } from '@/lib/server/email/templates'
 import type { EmailTransport } from '@/lib/server/email/send'
 import { runDailyCron } from '@/lib/server/jobs'
-import { auditEvents, cronRuns, emailOutbox, pitches, reports, sponsors, teams, users, type PitchStatus } from '@/lib/server/schema'
+import { auditEvents, cronRuns, emailOutbox, pitches, reports, sponsorMembers, sponsors, teamMembers, teams, users, type PitchStatus } from '@/lib/server/schema'
 import { dismissEmail, getSystemStatus, requeueEmail } from '@/lib/server/data/system'
 import { loadViewer } from '@/lib/server/viewer'
 
@@ -236,6 +237,37 @@ describe('company decisions', () => {
       expect(deleted.proofPath).toBe('teams/x/proof-1.webp')
       expect(deleted.objects).not.toContain('teams/x/proof-1.webp')
       expect((await deleteTeam(admin, (await createTeam({ name: 'No Proof' })).id, 'No Proof')).proofPath).toBeNull()
+    }),
+  )
+})
+
+describe('removing a person from their org', () => {
+  it(
+    'hands ownership to the longest-standing member when the owner is removed, so an org is never left ownerless',
+    dbTest(async () => {
+      const admin = await adminViewer()
+      const team = await createTeam()
+      const [owner, editor, later] = [await createUser(), await createUser(), await createUser()]
+      await addTeamMember(team.id, owner.id, 'owner')
+      await addTeamMember(team.id, editor.id, 'editor')
+      await addTeamMember(team.id, later.id, 'editor')
+      await removeFromOrg(admin, owner.id)
+      const roles = await getDb().select({ userId: teamMembers.userId, role: teamMembers.role }).from(teamMembers).where(eq(teamMembers.teamId, team.id))
+      expect(roles.filter((r) => r.role === 'owner')).toEqual([{ userId: editor.id, role: 'owner' }])
+
+      const sponsor = await createSponsor()
+      const [rep, rep2] = [await createUser(), await createUser()]
+      await addSponsorMember(sponsor.id, rep.id, 'owner')
+      await addSponsorMember(sponsor.id, rep2.id, 'editor')
+      await removeFromOrg(admin, rep.id)
+      const sponsorRoles = await getDb().select({ userId: sponsorMembers.userId, role: sponsorMembers.role }).from(sponsorMembers).where(eq(sponsorMembers.sponsorId, sponsor.id))
+      expect(sponsorRoles).toEqual([{ userId: rep2.id, role: 'owner' }])
+
+      // Removing an editor changes nobody's role, and removing the last member leaves an empty org (no one to promote).
+      await removeFromOrg(admin, later.id)
+      expect((await getDb().select({ role: teamMembers.role }).from(teamMembers).where(eq(teamMembers.teamId, team.id)))).toEqual([{ role: 'owner' }])
+      await removeFromOrg(admin, rep2.id)
+      expect(await getDb().select().from(sponsorMembers).where(eq(sponsorMembers.sponsorId, sponsor.id))).toEqual([])
     }),
   )
 })

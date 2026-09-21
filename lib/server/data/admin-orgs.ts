@@ -379,15 +379,37 @@ export async function setUserSuspended(admin: Viewer, userId: string, suspended:
   return person
 }
 
-/** Remove a person from their team or company (an admin may remove the last member). */
+/**
+ * Remove a person from their team or company (an admin may remove the last member). Removing the owner
+ * hands ownership to the longest-standing remaining member in the same transaction: an org with no owner
+ * can't invite, remove or transfer anything and there is no screen to fix that.
+ */
 export async function removeFromOrg(admin: Viewer, userId: string) {
   const person = await personRef(userId)
   const db = getDb()
-  const team = await db.delete(teamMembers).where(eq(teamMembers.userId, userId)).returning({ teamId: teamMembers.teamId })
-  const company = await db.delete(sponsorMembers).where(eq(sponsorMembers.userId, userId)).returning({ sponsorId: sponsorMembers.sponsorId })
+  const team = await db.delete(teamMembers).where(eq(teamMembers.userId, userId)).returning({ teamId: teamMembers.teamId, role: teamMembers.role })
+  const company = await db.delete(sponsorMembers).where(eq(sponsorMembers.userId, userId)).returning({ sponsorId: sponsorMembers.sponsorId, role: sponsorMembers.role })
   if (!team[0] && !company[0]) throw new AppError('CONFLICT', `${person.label} isn’t on a team or company.`)
-  if (team[0]) await audit({ actorId: admin.id, action: 'team.member_removed', entityType: 'team', entityId: team[0].teamId, data: { userId, by: 'admin' } })
-  if (company[0]) await audit({ actorId: admin.id, action: 'sponsor.member_removed', entityType: 'sponsor', entityId: company[0].sponsorId, data: { userId, by: 'admin' } })
+  if (team[0]) {
+    await audit({ actorId: admin.id, action: 'team.member_removed', entityType: 'team', entityId: team[0].teamId, data: { userId, by: 'admin' } })
+    if (team[0].role === 'owner') {
+      const [next] = await db.select({ userId: teamMembers.userId }).from(teamMembers).where(eq(teamMembers.teamId, team[0].teamId)).orderBy(asc(teamMembers.createdAt)).limit(1)
+      if (next) {
+        await db.update(teamMembers).set({ role: 'owner' }).where(and(eq(teamMembers.teamId, team[0].teamId), eq(teamMembers.userId, next.userId)))
+        await audit({ actorId: admin.id, action: 'team.ownership_transferred', entityType: 'team', entityId: team[0].teamId, data: { to: next.userId, by: 'admin' } })
+      }
+    }
+  }
+  if (company[0]) {
+    await audit({ actorId: admin.id, action: 'sponsor.member_removed', entityType: 'sponsor', entityId: company[0].sponsorId, data: { userId, by: 'admin' } })
+    if (company[0].role === 'owner') {
+      const [next] = await db.select({ userId: sponsorMembers.userId }).from(sponsorMembers).where(eq(sponsorMembers.sponsorId, company[0].sponsorId)).orderBy(asc(sponsorMembers.createdAt)).limit(1)
+      if (next) {
+        await db.update(sponsorMembers).set({ role: 'owner' }).where(and(eq(sponsorMembers.sponsorId, company[0].sponsorId), eq(sponsorMembers.userId, next.userId)))
+        await audit({ actorId: admin.id, action: 'sponsor.ownership_transferred', entityType: 'sponsor', entityId: company[0].sponsorId, data: { to: next.userId, by: 'admin' } })
+      }
+    }
+  }
   return { person, teamId: team[0]?.teamId ?? null, sponsorId: company[0]?.sponsorId ?? null }
 }
 

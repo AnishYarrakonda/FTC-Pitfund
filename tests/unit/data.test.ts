@@ -98,12 +98,20 @@ describe('account', () => {
 
       const partner = await createUser()
       await addTeamMember(team.id, partner.id)
-      expect(await accountDeletionBlocker((await loadViewer(solo.id))!)).toBeNull()
+      // The first member owns the team. Deleting the owner's account would leave it with nobody who can
+      // invite, remove, transfer or approve join requests, so the owner has to hand it over first.
+      expect(await accountDeletionBlocker((await loadViewer(solo.id))!)).toMatchObject({ kind: 'team', reason: 'owner' })
+      expect(await accountDeletionBlocker((await loadViewer(partner.id))!)).toBeNull()
 
       const sponsor = await createSponsor({ name: 'Solo Co' })
       const rep = await createUser()
       await addSponsorMember(sponsor.id, rep.id)
-      expect(await accountDeletionBlocker((await loadViewer(rep.id))!)).toEqual({ kind: 'sponsor', name: 'Solo Co' })
+      expect(await accountDeletionBlocker((await loadViewer(rep.id))!)).toEqual({ kind: 'sponsor', name: 'Solo Co', reason: 'only-member' })
+
+      const rep2 = await createUser()
+      await addSponsorMember(sponsor.id, rep2.id)
+      expect(await accountDeletionBlocker((await loadViewer(rep.id))!)).toMatchObject({ kind: 'sponsor', reason: 'owner' })
+      expect(await accountDeletionBlocker((await loadViewer(rep2.id))!)).toBeNull()
 
       const loner = await createUser()
       expect(await accountDeletionBlocker((await loadViewer(loner.id))!)).toBeNull()
