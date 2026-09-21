@@ -163,3 +163,25 @@ test.describe('a company', () => {
     expect(problems).toEqual([])
   })
 })
+
+test.describe('the top bar', () => {
+  test.use(asPersona('coach'))
+
+  test('keeps keyboard focus on the bell and the account menu when their code arrives, and Enter opens them', async ({ page }) => {
+    await page.goto('/pitches', { waitUntil: 'networkidle' })
+    for (const [name, role] of [
+      [/^Needs your attention/, 'dialog'],
+      ['Account menu', 'menu'],
+    ] as const) {
+      const trigger = page.getByRole('button', { name })
+      await tabTo(page, trigger)
+      // The lookalike button is swapped for the real one when its chunk loads; focus used to fall to <body>.
+      await page.waitForTimeout(500)
+      await expect(trigger).toBeFocused()
+      await page.keyboard.press('Enter')
+      await expect(page.getByRole(role).first()).toBeVisible()
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole(role)).toHaveCount(0)
+    }
+  })
+})

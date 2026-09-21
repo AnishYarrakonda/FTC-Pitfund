@@ -33,7 +33,7 @@ export function AccountMenu(props: AccountMenuProps) {
       aria-expanded={false}
       className={ACCOUNT_TRIGGER_CLASS}
       onPointerEnter={() => void preload()}
-      onFocus={() => void preload()}
+      onFocus={(e) => void preload(e.currentTarget)}
       onClick={open}
     >
       <Avatar name={props.name} src={props.avatarUrl} size="sm" />

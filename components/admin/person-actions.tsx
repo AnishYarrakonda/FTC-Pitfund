@@ -109,7 +109,7 @@ export function PersonActions({ person, isSelf }: { person: Person; isSelf: bool
           aria-haspopup="menu"
           aria-expanded={false}
           onPointerEnter={() => void menu.preload()}
-          onFocus={() => void menu.preload()}
+          onFocus={(e) => void menu.preload(e.currentTarget)}
           onClick={menu.open}
         />
       )}

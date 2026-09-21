@@ -46,7 +46,7 @@ export function NotificationBell({ actionCount }: { actionCount: number }) {
       aria-haspopup="dialog"
       aria-expanded={false}
       onPointerEnter={() => void preload()}
-      onFocus={() => void preload()}
+      onFocus={(e) => void preload(e.currentTarget)}
       onClick={open}
     />
   )

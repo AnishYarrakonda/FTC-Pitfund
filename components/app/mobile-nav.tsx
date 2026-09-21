@@ -27,7 +27,7 @@ export function MobileNav(props: MobileNavProps) {
       aria-haspopup="dialog"
       aria-expanded={false}
       onPointerDown={() => void preload()}
-      onFocus={() => void preload()}
+      onFocus={(e) => void preload(e.currentTarget)}
       onClick={open}
     />
   )
