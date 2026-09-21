@@ -132,7 +132,7 @@ export function AccountForms({
             loadingLabel="Signing out…"
             onClick={() => {
               setSigningOut(true)
-              startTransition(() => signOut())
+              startTransition(async () => window.location.assign((await signOut()).redirectTo))
             }}
           >
             Sign out
