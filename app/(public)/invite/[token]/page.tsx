@@ -40,7 +40,7 @@ export default function InvitePage({ params }: PageProps<'/invite/[token]'>) {
 
 async function InviteState({ params }: Pick<PageProps<'/invite/[token]'>, 'params'>) {
   const { token } = await params
-  const [invite, viewer] = await Promise.all([getInviteByToken(decodeURIComponent(token)), getViewer()])
+  const [invite, viewer] = await Promise.all([getInviteByToken(safeDecode(token)), getViewer()])
 
   if (!invite) {
     return (
@@ -145,6 +145,15 @@ async function InviteState({ params }: Pick<PageProps<'/invite/[token]'>, 'param
   )
 }
 
+/** Next may or may not have decoded the segment; a stray % must read as an invalid link, not throw. */
+function safeDecode(value: string) {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
 function Message({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
   return (
     <section className="grid gap-6">
@@ -168,10 +177,10 @@ function HomeLink({ signedIn }: { signedIn: boolean }) {
 function InviteSkeleton() {
   return (
     <div aria-hidden="true" className="grid gap-6">
-      <Skeleton className="h-10 w-56" />
+      <Skeleton className="h-10 w-56 max-w-full" />
       <Skeleton className="h-9 w-80 max-w-full" />
       <Skeleton className="h-16 w-full" />
-      <Skeleton className="h-11 w-40" />
+      <Skeleton className="h-11 w-40 max-w-full" />
     </div>
   )
 }

@@ -117,7 +117,7 @@ export function FileDrop({
           'group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-menu border border-dashed px-6 py-8 text-center',
           'transition-[border-color,background-color] duration-120',
           'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent',
-          dragging ? 'border-accent bg-accent-subtle' : 'border-border-strong bg-surface hover:border-text-tertiary',
+          dragging ? 'border-accent bg-accent-subtle' : cn('border-border-strong bg-surface', !disabled && 'hover:border-text-tertiary'),
           error && !dragging && 'border-danger',
           disabled && 'cursor-not-allowed opacity-60',
         )}
@@ -129,7 +129,7 @@ export function FileDrop({
           <span className="text-body font-medium text-text">{title}</span>
           <span className="text-small text-text-tertiary">{description}</span>
         </span>
-        <span className="text-small font-medium text-accent group-hover:text-accent-hover">
+        <span className={cn('text-small font-medium text-accent', !disabled && 'group-hover:text-accent-hover')}>
           {dragging ? 'Drop to upload' : 'Choose a file or drag it here'}
         </span>
         <input

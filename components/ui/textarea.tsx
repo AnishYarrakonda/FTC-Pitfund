@@ -1,6 +1,6 @@
 'use client'
 
-import { useLayoutEffect, useRef, useState, type ComponentProps } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ComponentProps } from 'react'
 
 import { cn } from '@/lib/shared/cn'
 
@@ -41,6 +41,13 @@ export function Textarea({ className, minRows = 3, maxRows = 16, counter = 'near
     resize()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- resize reads the DOM; re-run only when the value changes
   }, [props.value])
+
+  // A narrower or wider window re-wraps the text, so the height has to be measured again.
+  useEffect(() => {
+    window.addEventListener('resize', resize)
+    return () => window.removeEventListener('resize', resize)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- resize only reads refs and props that are stable per render
+  }, [])
 
   const showCounter =
     maxLength !== undefined && (counter === 'always' || (counter === 'near-limit' && length >= maxLength * 0.8))

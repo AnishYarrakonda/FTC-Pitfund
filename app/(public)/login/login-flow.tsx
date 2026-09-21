@@ -197,7 +197,6 @@ export function LoginFlow() {
           <button
             type="button"
             disabled={resendIn > 0 || send.pending}
-            aria-disabled={resendIn > 0 || send.pending}
             onClick={() => void send.run({ email })}
             className={cn(
               'inline-flex items-center gap-1.5 rounded-control font-medium',
@@ -250,6 +249,7 @@ export function LoginFlow() {
             }}
             autoComplete="email"
             inputMode="email"
+            readOnly={send.pending}
             placeholder="you@example.com"
             className="h-11"
             spellCheck={false}

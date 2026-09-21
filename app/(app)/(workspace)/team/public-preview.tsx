@@ -28,7 +28,7 @@ export function PublicPreview({ profile }: { profile: TeamProfile }) {
       <span className="relative block aspect-[612/792] w-full overflow-hidden rounded-menu border border-border bg-canvas">
         {profile.deck?.thumbUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- storage-hosted page-1 thumbnail
-          <img src={profile.deck.thumbUrl} alt="" className="size-full object-cover object-top" />
+          <img src={profile.deck.thumbUrl} alt="First page of your sponsorship deck" className="size-full object-cover object-top" />
         ) : (
           <span className="absolute inset-0 grid place-items-center gap-2 px-6 text-center text-small text-text-tertiary">
             <span className="grid justify-items-center gap-2">

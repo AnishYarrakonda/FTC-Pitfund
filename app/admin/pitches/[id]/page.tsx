@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 
 import { ReviewDecisions } from '@/components/admin/review-decisions'
 import { PitchView } from '@/components/pitch/pitch-view'
+import { ClampedText } from '@/components/ui/clamped-text'
 import { Facts } from '@/components/ui/facts'
 import { Banner, StatusBadge } from '@/components/ui/feedback'
 import { OrgLogo } from '@/components/ui/identity'
@@ -94,7 +95,7 @@ export default async function AdminPitchPage({ params }: PageProps<'/admin/pitch
             ) : null
           }
         >
-          {review.reviewNote && (review.status === 'changes_requested' || review.status === 'rejected') ? <span className="line-clamp-4 user-text-block">Note: {review.reviewNote}</span> : null}
+          {review.reviewNote && (review.status === 'changes_requested' || review.status === 'rejected') ? <ClampedText lines={4}>{`Note: ${review.reviewNote}`}</ClampedText> : null}
         </Banner>
       ) : null}
 
@@ -231,6 +232,7 @@ function ExternalLink({ href, children }: { href: string; children: ReactNode })
     <a href={href} target="_blank" rel="noreferrer" className="inline-flex min-w-0 items-center gap-1 font-medium text-accent hover:text-accent-hover">
       <span className="min-w-0 line-clamp-1">{children}</span>
       <ArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
+      <span className="sr-only"> (opens in a new tab)</span>
     </a>
   )
 }

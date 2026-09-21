@@ -132,7 +132,7 @@ export function PdfViewer({ title, pages, thumbnailSrc, downloadHref, src, eager
             onVisiblePage={setCurrent}
           />
         ) : (
-          <PdfPlaceholderPages count={Math.max(1, pages ?? 1)} thumbnailSrc={thumbnailSrc} loading={requested} onRequest={() => setRequested(true)} priority={priority} />
+          <PdfPlaceholderPages count={Math.max(1, pages ?? 1)} thumbnailSrc={thumbnailSrc} title={title} loading={requested} onRequest={() => setRequested(true)} priority={priority} />
         )}
       </div>
     </figure>
@@ -177,7 +177,7 @@ function PdfToolbar({
         </Button>
         <a
           href={href}
-          {...(download ? {} : { target: '_blank', rel: 'noreferrer' })}
+          {...(download ? { download: true } : { target: '_blank', rel: 'noreferrer' })}
           className="ml-1 inline-flex h-8 items-center gap-1.5 rounded-control px-2.5 text-small font-medium text-text-secondary transition-colors duration-120 hover:bg-muted hover:text-text"
         >
           <Download aria-hidden="true" className="size-3.5" />
@@ -192,12 +192,15 @@ function PdfToolbar({
 export function PdfPlaceholderPages({
   count,
   thumbnailSrc,
+  title,
   loading,
   onRequest,
   priority = false,
 }: {
   count: number
   thumbnailSrc?: string | null
+  /** Names the thumbnail for screen readers. */
+  title?: string
   loading: boolean
   onRequest?: () => void
   /** The thumbnail is the page's main image (a public team page). */
@@ -207,7 +210,7 @@ export function PdfPlaceholderPages({
     <div key={i} className="relative overflow-hidden rounded-dialog border border-border bg-surface" style={{ aspectRatio: `1 / ${LETTER_RATIO}` }}>
       {i === 0 && thumbnailSrc ? (
         // Through the image optimizer: same origin as the page (no extra connection before it paints) and sized to the column.
-        <Image src={thumbnailSrc} alt="" fill sizes="(min-width: 880px) 820px, calc(100vw - 32px)" preload={priority} fetchPriority={priority ? 'high' : undefined} className="object-cover object-top" />
+        <Image src={thumbnailSrc} alt={title ? `First page of ${title}` : 'First page of the deck'} fill sizes="(min-width: 880px) 820px, calc(100vw - 32px)" preload={priority} fetchPriority={priority ? 'high' : undefined} className="object-cover object-top" />
       ) : (
         // A page-shaped skeleton: faint text lines on white, not a grey slab.
         <div aria-hidden="true" className="absolute inset-x-[10%] top-[9%] grid animate-pulse gap-3">

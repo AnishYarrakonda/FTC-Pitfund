@@ -32,6 +32,7 @@ export function AcceptInvite({ token, needsTerms }: { token: string; needsTerms:
         <Checkbox
           checked={terms}
           onCheckedChange={setTerms}
+          disabled={pending}
           error={fieldErrors.terms}
           label={
             <>

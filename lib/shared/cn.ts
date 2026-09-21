@@ -71,7 +71,10 @@ const RULES: Array<[RegExp, string]> = [
   [/^table-/, ''],
   [/^content-(normal|center|start|end|between|around|evenly|baseline|stretch|none|\[)/, 'content'],
   [/^content-/, ''],
-  [/^(items|self|order|z|opacity|basis|cursor|select|leading|tracking|whitespace|break|duration|ease|delay|animate|aspect|fill|stroke|list|object|align|origin|appearance|resize|scroll|snap|touch|will|size|isolation|mix|caret|accent|rotate)-/, '$1'],
+  // object-fit and object-position are different properties: `object-cover object-top` keeps both.
+  [/^object-(contain|cover|fill|none|scale-down)$/, 'object-fit'],
+  [/^object-/, 'object-position'],
+  [/^(items|self|order|z|opacity|basis|cursor|select|leading|tracking|whitespace|break|duration|ease|delay|animate|aspect|fill|stroke|list|align|origin|appearance|resize|scroll|snap|touch|will|size|isolation|mix|caret|accent|rotate)-/, '$1'],
   [/^pointer-/, 'pointer-events'],
   [/^justify-(items|self)-/, 'justify-$1'],
   [/^justify-/, 'justify-content'],

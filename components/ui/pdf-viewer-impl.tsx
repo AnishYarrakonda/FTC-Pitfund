@@ -123,7 +123,7 @@ export default function PdfPages({ src, title, pages, thumbnailSrc, priority, co
     )
   }
 
-  if (!doc) return <PdfPlaceholderPages count={Math.max(1, pages ?? 1)} thumbnailSrc={thumbnailSrc} loading priority={priority} />
+  if (!doc) return <PdfPlaceholderPages count={Math.max(1, pages ?? 1)} thumbnailSrc={thumbnailSrc} title={title} loading priority={priority} />
 
   return Array.from({ length: pageCount }, (_, i) => (
     <div

@@ -78,7 +78,7 @@ function Chip({ active, onClick, count, children }: { active: boolean; onClick: 
       className={cn(
         'inline-flex h-8 items-center gap-1.5 rounded-control border px-3 text-small font-medium transition-colors duration-120',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
-        active ? 'border-text bg-text text-white' : 'border-border-strong bg-surface text-text-secondary hover:bg-muted hover:text-text',
+        active ? 'border-text bg-text text-white hover:bg-text/90' : 'border-border-strong bg-surface text-text-secondary hover:bg-muted hover:text-text',
       )}
     >
       {children}

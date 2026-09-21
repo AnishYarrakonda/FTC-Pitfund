@@ -171,6 +171,7 @@ export default async function AdminReviewPage({ searchParams }: PageProps<'/admi
                             <a href={`/t/${r.team.number}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-small font-medium text-accent hover:text-accent-hover">
                               View the reported page
                               <ArrowUpRight aria-hidden="true" className="size-3.5" />
+                              <span className="sr-only"> (opens in a new tab)</span>
                             </a>
                             <ReportActions reportId={r.id} teamNumber={r.team.number} teamSuspended={r.team.suspended} />
                           </div>

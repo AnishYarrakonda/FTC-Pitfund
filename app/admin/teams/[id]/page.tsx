@@ -202,6 +202,7 @@ function ExternalLink({ href, children }: { href: string; children: ReactNode })
     <a href={href} target="_blank" rel="noreferrer" className="inline-flex min-w-0 items-center gap-1 font-medium text-accent hover:text-accent-hover">
       <span className="min-w-0 line-clamp-1">{children}</span>
       <ArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
+      <span className="sr-only"> (opens in a new tab)</span>
     </a>
   )
 }

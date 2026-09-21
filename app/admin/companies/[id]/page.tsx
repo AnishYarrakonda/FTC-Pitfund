@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 
 import { CompanyDecisions, DeleteOrgDialog } from '@/components/admin/org-actions'
 import { SponsorProfile } from '@/components/sponsors/sponsor-profile'
+import { ClampedText } from '@/components/ui/clamped-text'
 import { Facts } from '@/components/ui/facts'
 import { Banner, StatusBadge } from '@/components/ui/feedback'
 import { Avatar } from '@/components/ui/avatar'
@@ -63,7 +64,7 @@ export default async function AdminCompanyPage({ params }: PageProps<'/admin/com
 
       {company.status === 'rejected' && company.statusNote ? (
         <Banner tone="danger" title="Rejection note sent to the company" className="mt-6">
-          <span className="line-clamp-6 user-text-block">{company.statusNote}</span>
+          <ClampedText lines={6}>{company.statusNote}</ClampedText>
         </Banner>
       ) : null}
 
@@ -144,6 +145,7 @@ function ExternalLink({ href, children }: { href: string; children: ReactNode })
     <a href={href} target="_blank" rel="noreferrer nofollow" className="inline-flex min-w-0 items-center gap-1 font-medium text-accent hover:text-accent-hover">
       <span className="min-w-0 line-clamp-1">{children}</span>
       <ArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
+      <span className="sr-only"> (opens in a new tab)</span>
     </a>
   )
 }

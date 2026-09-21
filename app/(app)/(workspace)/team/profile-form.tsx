@@ -98,6 +98,9 @@ export function ProfileForm({ profile }: { profile: TeamProfile }) {
           <Textarea
             value={draft.summary}
             onChange={(e) => set('summary')(e.target.value.replace(/\n/g, ' '))}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.preventDefault()
+            }}
             maxLength={MAX_SUMMARY_LENGTH}
             minRows={2}
             maxRows={5}
