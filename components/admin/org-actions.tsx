@@ -45,7 +45,7 @@ export function CompanyDecisions({ sponsorId, name, status }: { sponsorId: strin
         </ActionButton>
       ) : null}
       {status === 'pending' ? <RejectCompanyDialog sponsorId={sponsorId} name={name} onDone={done} /> : null}
-      {status === 'approved' || status === 'pending' ? (
+      {status === 'approved' ? (
         <ConfirmDialog
           trigger={
             <Button variant="secondary" className="text-danger">

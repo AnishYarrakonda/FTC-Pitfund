@@ -126,8 +126,10 @@ export const approveCompany = (admin: Viewer, sponsorId: string, now = new Date(
 export const rejectCompany = (admin: Viewer, sponsorId: string, note: string, now = new Date()) =>
   setCompanyStatus(admin, sponsorId, ['pending'], 'rejected', note, 'sponsor.rejected', now)
 
+// Only an approved company can be suspended: unsuspending always restores 'approved', so suspending a company
+// that was still waiting for review and then unsuspending it would approve it without anyone reviewing it.
 export const suspendCompany = (admin: Viewer, sponsorId: string, now = new Date()) =>
-  setCompanyStatus(admin, sponsorId, ['approved', 'pending'], 'suspended', null, 'sponsor.suspended', now)
+  setCompanyStatus(admin, sponsorId, ['approved'], 'suspended', null, 'sponsor.suspended', now)
 
 export const unsuspendCompany = (admin: Viewer, sponsorId: string, now = new Date()) =>
   setCompanyStatus(admin, sponsorId, ['suspended'], 'approved', null, 'sponsor.unsuspended', now)
