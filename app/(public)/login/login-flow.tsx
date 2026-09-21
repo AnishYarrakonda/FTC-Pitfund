@@ -1,7 +1,6 @@
 'use client'
 
 import { ArrowLeft } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 import { requestLoginCode, verifyLoginCode } from '@/app/actions/auth'
@@ -35,7 +34,6 @@ const noSubscription = () => () => {}
 type CodeError = { kind: 'invalid' | 'expired' | 'rate' | 'network' | 'other'; message: string }
 
 export function LoginFlow() {
-  const router = useRouter()
   // Read in the browser so the page stays static: ?intent (from the landing page; preselects the
   // /welcome branch), ?next, ?signed_out and ?deleted.
   const search = useSyncExternalStore(noSubscription, () => window.location.search, () => '')
@@ -79,8 +77,9 @@ export function LoginFlow() {
   const verify = useAction(verifyLoginCode, {
     errorToast: false,
     onSuccess: (data) => {
-      router.replace(data.redirectTo)
-      router.refresh()
+      // A full page load: a client navigation would revive pages the previous person on this device left
+      // open (with their unsaved text still in the forms) for whoever signs in next.
+      window.location.assign(data.redirectTo)
     },
     onError: (error) => {
       if (error.code === 'UNAVAILABLE' && error.message === NETWORK_ERROR_MESSAGE) {
@@ -143,7 +142,9 @@ export function LoginFlow() {
               inputMode="numeric"
               autoComplete="one-time-code"
               pattern="[0-9]*"
-              maxLength={6}
+              // Room for a pasted "123 456" or " 123456": onChange keeps the six digits (maxLength={6} cut the
+              // paste to five digits before onChange could strip the space, and nothing happened).
+              maxLength={14}
               autoFocus
               readOnly={verify.pending}
               placeholder="000000"

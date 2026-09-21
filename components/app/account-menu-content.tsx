@@ -49,7 +49,11 @@ export default function AccountMenuContent({ name, email, avatarUrl, isAdmin, wo
           icon={<LogOut aria-hidden="true" />}
           onSelect={() => {
             toast.loading('Signing out…', { id: 'sign-out' })
-            startTransition(() => signOut())
+            startTransition(async () => {
+              // A full page load, not a client navigation: the router keeps visited pages (and what was typed
+              // into them) alive, and the next person to sign in here must not see any of it.
+              window.location.assign((await signOut()).redirectTo)
+            })
           }}
         >
           Sign out

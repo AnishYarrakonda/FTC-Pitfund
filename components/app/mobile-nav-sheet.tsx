@@ -73,7 +73,7 @@ export default function MobileNavSheet({ items, secondary, name, email, defaultO
               <li>
                 <button
                   type="button"
-                  onClick={() => startTransition(() => signOut())}
+                  onClick={() => startTransition(async () => window.location.assign((await signOut()).redirectTo))}
                   className={cn(linkClass, 'w-full text-left text-body text-text-secondary hover:bg-muted hover:text-text')}
                 >
                   Sign out

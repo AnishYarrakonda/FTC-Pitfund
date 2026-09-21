@@ -72,7 +72,7 @@ export function SignOutForInvite({ token }: { token: string }) {
       loadingLabel="Signing out…"
       onClick={() => {
         setPending(true)
-        startTransition(() => signOutForInvite(token))
+        startTransition(async () => window.location.assign((await signOutForInvite(token)).redirectTo))
       }}
     >
       Sign out

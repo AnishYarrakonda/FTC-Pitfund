@@ -1,7 +1,6 @@
 'use server'
 
 import { checkBotId } from 'botid/server'
-import { redirect } from 'next/navigation'
 
 import { AppError, defineAction } from '@/lib/server/result'
 import { createSupabaseServerClient } from '@/lib/server/supabase'
@@ -72,7 +71,9 @@ export const verifyLoginCode = defineAction(codeSchema, async ({ email, code, ne
 export async function signOut() {
   const supabase = await createSupabaseServerClient()
   await supabase.auth.signOut({ scope: 'local' })
-  redirect('/login?signed_out=1')
+  // Returned, not redirect()ed: the browser does a full page load (see below), so nothing the last person
+  // typed or opened stays in memory for the next person on this device.
+  return { redirectTo: '/login?signed_out=1' }
 }
 
 /** Sign out and come back to an invite link, to accept it with the invited address. */
@@ -80,5 +81,5 @@ export async function signOutForInvite(token: string) {
   const supabase = await createSupabaseServerClient()
   await supabase.auth.signOut({ scope: 'local' })
   const next = safeNext(`/invite/${encodeURIComponent(token)}`)
-  redirect(next ? `/login?next=${encodeURIComponent(next)}` : '/login')
+  return { redirectTo: next ? `/login?next=${encodeURIComponent(next)}` : '/login' }
 }
