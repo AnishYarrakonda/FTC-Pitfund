@@ -138,7 +138,7 @@ function envVars(teamSlug: string): EnvVar[] {
   both('SEND_EMAIL_HOOK_SECRET', stage('production', 'SEND_EMAIL_HOOK_SECRET'), stage('staging', 'SEND_EMAIL_HOOK_SECRET'), true)
 
   const cron = generatedValue('PRODUCTION_CRON_SECRET', () => randomHex(32))
-  both('PRODUCTION_CRON_SECRET', cron, cron, true)
+  both('CRON_SECRET', cron, cron, true) // .env.local keeps it as PRODUCTION_CRON_SECRET; the app and Vercel Cron read CRON_SECRET
 
   const sendingKey = getValue('RESEND_SENDING_KEY')
   if (sendingKey && domain) {

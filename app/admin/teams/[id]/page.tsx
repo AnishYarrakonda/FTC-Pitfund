@@ -112,7 +112,7 @@ export default async function AdminTeamPage({ params }: PageProps<'/admin/teams/
               {team.proofUrl ? (
                 <div className="grid gap-3">
                   <p className="text-small text-text-secondary">
-                    Their FIRST Dashboard, showing their own name on the roster. Check the name against the coaches listed below.
+                    Their FIRST Dashboard team page. It can come from any coach or mentor&apos;s account, so the name on it needn&apos;t match the person who signed up. Check the team number and season.
                   </p>
                   {/* eslint-disable-next-line @next/next/no-img-element -- a private signed URL the optimizer can't fetch */}
                   <img

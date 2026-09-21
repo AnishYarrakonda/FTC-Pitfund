@@ -65,8 +65,8 @@ export function ProofUpload({ uploaded }: { uploaded: boolean }) {
         <div className="grid min-w-0 gap-1">
           <p className="text-body font-medium text-text">Proof that you coach this team</p>
           <p className="text-small text-text-secondary">
-            A screenshot of your FIRST Dashboard team page, showing your own name listed as a coach or mentor. Only an FTC Pitfund admin sees it, and
-            we delete it once you&apos;re approved.
+            A screenshot of your team&apos;s page in the FIRST Dashboard. It can come from any coach or mentor&apos;s account, so your coach can send it to you.
+            Only an FTC Pitfund admin sees it, and we delete it once you&apos;re approved.
           </p>
         </div>
       </div>

@@ -245,7 +245,7 @@ function RejectTeamDialog({ teamId, number, onDone }: { teamId: string; number: 
               minRows={4}
               maxRows={10}
               autoFocus
-              placeholder="The screenshot doesn’t show your name on the team roster. Send one from your FIRST Dashboard…"
+              placeholder="The screenshot doesn’t show your team’s FIRST Dashboard page. Send one that shows the team number…"
             />
           </Field>
           {error && !fieldErrors.note ? (
