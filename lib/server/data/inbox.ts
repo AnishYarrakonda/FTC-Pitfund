@@ -182,8 +182,13 @@ async function lockOwnPitch(viewer: SponsorViewer, pitchId: string) {
 }
 
 async function teamFacts(teamId: string) {
-  const [team] = await getDb().select({ id: teams.id, number: teams.number, name: teams.name }).from(teams).where(eq(teams.id, teamId))
+  const [team] = await getDb().select({ id: teams.id, number: teams.number, name: teams.name, suspendedAt: teams.suspendedAt }).from(teams).where(eq(teams.id, teamId))
   return team
+}
+
+/** Suspending a team only withdraws pitches still in review: one already sent must not be answerable, or the company matches with a team that is off the platform. */
+function assertTeamActive(team: { number: number; name: string; suspendedAt: Date | null }) {
+  if (team.suspendedAt) throw new AppError('CONFLICT', `Team ${team.number} · ${team.name} is no longer on FTC Pitfund, so this pitch can’t be answered.`)
 }
 
 function notOpen(status: PitchStatus, team: { number: number; name: string }) {
@@ -223,6 +228,7 @@ export async function respondInterested(viewer: SponsorViewer, pitchId: string, 
   const current = await lockOwnPitch(viewer, pitchId)
   const team = await teamFacts(current.teamId)
   if (current.status !== 'sent') throw notOpen(current.status, team)
+  assertTeamActive(team)
 
   const [coach, [company], [responder]] = await Promise.all([
     submittingCoach(current),
@@ -261,6 +267,7 @@ export async function respondNotAFit(viewer: SponsorViewer, pitchId: string, rea
   const current = await lockOwnPitch(viewer, pitchId)
   const team = await teamFacts(current.teamId)
   if (current.status !== 'sent') throw notOpen(current.status, team)
+  assertTeamActive(team)
   const [row] = await getDb()
     .update(pitches)
     .set({ status: 'declined', respondedBy: viewer.id, respondedAt: now, declineReason: reason, updatedAt: now })

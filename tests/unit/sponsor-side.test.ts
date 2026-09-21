@@ -10,7 +10,7 @@ import { getInboxPitch, listInbox, respondInterested, respondNotAFit } from '@/l
 import { createInvite, inviteOrgFor } from '@/lib/server/data/invites'
 import { getTeamPitch, startPitch } from '@/lib/server/data/pitches'
 import { getDb } from '@/lib/server/db'
-import { auditEvents, pitches, sponsorMembers, sponsors, teamMembers, users, type PitchStatus } from '@/lib/server/schema'
+import { auditEvents, pitches, sponsorMembers, sponsors, teamMembers, teams, users, type PitchStatus } from '@/lib/server/schema'
 import { loadViewer } from '@/lib/server/viewer'
 import { companyChecklist, declineReasonText, normalizeLinkedin } from '@/lib/shared/company'
 import { createCompanySchema, declineSchema, questionsSchema } from '@/lib/shared/schemas/company'
@@ -229,6 +229,24 @@ describe('the inbox', () => {
       await expectAppError(getInboxPitch(stranger, w.pitch.id), 'NOT_FOUND')
       await expectAppError(respondInterested(stranger, w.pitch.id, NOW), 'NOT_FOUND')
       await expectAppError(respondNotAFit(stranger, w.pitch.id, null, NOW), 'NOT_FOUND')
+    }),
+  )
+
+  it(
+    'a pitch that was already sent can’t be answered once its team is suspended',
+    dbTest(async () => {
+      // suspendTeam withdraws only in_review pitches. Without this, the company could still answer Interested
+      // and swap contact details with a team an admin had just taken off the platform.
+      const w = await world('sent')
+      await getDb().update(teams).set({ suspendedAt: NOW }).where(eq(teams.id, w.team.id))
+      await expectAppError(respondInterested(w.repViewer, w.pitch.id, NOW), 'CONFLICT', { message: `Team ${w.team.number} · ${w.team.name} is no longer on FTC Pitfund, so this pitch can’t be answered.` })
+      await expectAppError(respondNotAFit(w.repViewer, w.pitch.id, null, NOW), 'CONFLICT')
+      const [row] = await getDb().select().from(pitches).where(eq(pitches.id, w.pitch.id))
+      expect(row.status).toBe('sent')
+      expect(row.teamContact).toBeNull()
+
+      await getDb().update(teams).set({ suspendedAt: null }).where(eq(teams.id, w.team.id))
+      expect((await respondInterested(w.repViewer, w.pitch.id, NOW)).pitchId).toBe(w.pitch.id)
     }),
   )
 
