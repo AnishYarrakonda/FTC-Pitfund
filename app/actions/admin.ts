@@ -327,6 +327,7 @@ export const deleteTeamAction = defineAction(z.object({ teamId: z.uuid(), confir
   const admin = await requireAdmin()
   const result = await inTransaction(() => deleteTeam(admin, teamId, confirmName))
   after(() => discard('public', result.objects))
+  after(() => discard(BUCKETS.verification, [result.proofPath]))
   invalidateTeam(result.team)
   return { number: result.team.number, redirectTo: '/admin/directory' }
 })

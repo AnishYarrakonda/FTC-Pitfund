@@ -95,8 +95,9 @@ export async function discard(bucket: Bucket, paths: Array<string | null | undef
   try {
     await removeObjects(bucket, paths)
   } catch (e) {
-    // Leftovers are harmless: staging is cleaned daily, and public names are unguessable.
-    console.warn('[uploads] cleanup failed', e instanceof Error ? e.message : e)
+    // Staging is cleaned daily and public names are unguessable, but the private verification bucket is
+    // never swept: name the bucket and paths so a leftover screenshot can be removed by hand.
+    console.error('[uploads] cleanup failed', bucket, paths.filter(Boolean), e instanceof Error ? e.message : e)
   }
 }
 

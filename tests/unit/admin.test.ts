@@ -224,6 +224,20 @@ describe('company decisions', () => {
       expect((await deleteTeam(admin, team.id, 'Gone Robotics')).objects).toEqual(['teams/x/logo.webp', 'teams/x/deck.pdf', 'teams/x/thumb.webp'])
     }),
   )
+
+  it(
+    'deleting a team that still holds a verification screenshot hands the private object back too',
+    dbTest(async () => {
+      // The screenshot shows a third-party dashboard with people's names. The row is the only pointer
+      // to it and no sweeper covers the private bucket, so a delete that forgets it leaves it forever.
+      const admin = await adminViewer()
+      const team = await createTeam({ name: 'Proof Robotics', status: 'pending', proofPath: 'teams/x/proof-1.webp', proofBytes: 4096, proofUploadedAt: NOW })
+      const deleted = await deleteTeam(admin, team.id, 'Proof Robotics')
+      expect(deleted.proofPath).toBe('teams/x/proof-1.webp')
+      expect(deleted.objects).not.toContain('teams/x/proof-1.webp')
+      expect((await deleteTeam(admin, (await createTeam({ name: 'No Proof' })).id, 'No Proof')).proofPath).toBeNull()
+    }),
+  )
 })
 
 describe('team decisions', () => {

@@ -395,10 +395,14 @@ export async function removeFromOrg(admin: Viewer, userId: string) {
 
 const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
 
-/** Delete a team and everything that cascades from it. Returns the storage objects to remove after commit. */
+/**
+ * Delete a team and everything that cascades from it. Returns the storage objects to remove after commit:
+ * `objects` live in the public bucket, `proofPath` (a pending or rejected team's verification screenshot)
+ * in the private one. The row is the only pointer to the screenshot, so it has to be handed back here.
+ */
 export async function deleteTeam(admin: Viewer, teamId: string, confirmName: string) {
   const [team] = await getDb()
-    .select({ id: teams.id, number: teams.number, name: teams.name, logoPath: teams.logoPath, pdfPath: teams.pdfPath, pdfThumbPath: teams.pdfThumbPath })
+    .select({ id: teams.id, number: teams.number, name: teams.name, logoPath: teams.logoPath, pdfPath: teams.pdfPath, pdfThumbPath: teams.pdfThumbPath, proofPath: teams.proofPath })
     .from(teams)
     .where(eq(teams.id, teamId))
     .for('update')
@@ -406,7 +410,7 @@ export async function deleteTeam(admin: Viewer, teamId: string, confirmName: str
   if (!sameName(confirmName, team.name)) throw new AppError('VALIDATION', `Type ${team.name} exactly to delete this team.`, { field: 'confirmName' })
   await getDb().delete(teams).where(eq(teams.id, teamId))
   await audit({ actorId: admin.id, action: 'team.deleted', entityType: 'team', entityId: teamId, data: { number: team.number, name: team.name } })
-  return { team, objects: [team.logoPath, team.pdfPath, team.pdfThumbPath] }
+  return { team, objects: [team.logoPath, team.pdfPath, team.pdfThumbPath], proofPath: team.proofPath }
 }
 
 export async function deleteCompany(admin: Viewer, sponsorId: string, confirmName: string) {
