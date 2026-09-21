@@ -410,7 +410,12 @@ async function lockForDecision(pitchId: string) {
 async function submitter(pitch: { teamId: string; submittedBy: string | null; createdBy: string | null }) {
   const ids = [pitch.submittedBy, pitch.createdBy].filter((v): v is string => Boolean(v))
   if (ids.length) {
-    const rows = await getDb().select({ id: users.id, email: users.email, name: users.name }).from(users).where(and(inArray(users.id, ids), isNull(users.suspendedAt)))
+    // Only someone still on the team: a coach who left or was removed has no business hearing about it.
+    const rows = await getDb()
+      .select({ id: users.id, email: users.email, name: users.name })
+      .from(users)
+      .innerJoin(teamMembers, and(eq(teamMembers.userId, users.id), eq(teamMembers.teamId, pitch.teamId)))
+      .where(and(inArray(users.id, ids), isNull(users.suspendedAt)))
     const found = ids.map((id) => rows.find((r) => r.id === id)).find(Boolean)
     if (found) return found
   }

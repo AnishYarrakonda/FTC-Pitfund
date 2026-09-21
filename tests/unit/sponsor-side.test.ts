@@ -10,7 +10,7 @@ import { getInboxPitch, listInbox, respondInterested, respondNotAFit } from '@/l
 import { createInvite, inviteOrgFor } from '@/lib/server/data/invites'
 import { getTeamPitch, startPitch } from '@/lib/server/data/pitches'
 import { getDb } from '@/lib/server/db'
-import { auditEvents, pitches, sponsorMembers, sponsors, users, type PitchStatus } from '@/lib/server/schema'
+import { auditEvents, pitches, sponsorMembers, sponsors, teamMembers, users, type PitchStatus } from '@/lib/server/schema'
 import { loadViewer } from '@/lib/server/viewer'
 import { companyChecklist, declineReasonText, normalizeLinkedin } from '@/lib/shared/company'
 import { createCompanySchema, declineSchema, questionsSchema } from '@/lib/shared/schemas/company'
@@ -229,6 +229,25 @@ describe('the inbox', () => {
       await expectAppError(getInboxPitch(stranger, w.pitch.id), 'NOT_FOUND')
       await expectAppError(respondInterested(stranger, w.pitch.id, NOW), 'NOT_FOUND')
       await expectAppError(respondNotAFit(stranger, w.pitch.id, null, NOW), 'NOT_FOUND')
+    }),
+  )
+
+  it(
+    'Interested never hands the company a coach who has left the team or is suspended, nor emails them the rep’s details',
+    dbTest(async () => {
+      // The coach who submitted the pitch was removed (or left, or was suspended) before the company answered:
+      // the contact goes to a current member instead, and so does the match email.
+      for (const how of ['removed', 'suspended'] as const) {
+        const w = await world('sent')
+        if (how === 'removed') await getDb().delete(teamMembers).where(and(eq(teamMembers.teamId, w.team.id), eq(teamMembers.userId, w.coach.id)))
+        else await getDb().update(users).set({ suspendedAt: NOW }).where(eq(users.id, w.coach.id))
+
+        const result = await respondInterested(w.repViewer, w.pitch.id, NOW)
+        expect(result.coach?.id, how).toBe(w.coach2.id)
+        expect(result.teamContact.email, how).toBe(w.coach2.email)
+        const [row] = await getDb().select().from(pitches).where(eq(pitches.id, w.pitch.id))
+        expect(row.teamContact?.email, how).toBe(w.coach2.email)
+      }
     }),
   )
 

@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, desc, eq, inArray, isNotNull, like, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, isNull, like, or, sql } from 'drizzle-orm'
 
 import type { PitchViewData } from '@/lib/shared/pitch'
 import { formatAsk } from '@/lib/shared/pitch'
@@ -192,21 +192,29 @@ function notOpen(status: PitchStatus, team: { number: number; name: string }) {
   return new AppError('CONFLICT', 'Someone at your company already marked this pitch not a fit.')
 }
 
-/** The coach who submitted (or, if they've left, whoever created it, else any member). */
+/**
+ * The coach who submitted the pitch, else whoever created it, else the team's oldest current member.
+ * Only people who are on the team now and not suspended qualify: their contact details go to the
+ * company and the company's contact details come back to them, so a coach who left, was removed or was
+ * suspended after submitting must not receive either.
+ */
 async function submittingCoach(pitch: { teamId: string; submittedBy: string | null; createdBy: string | null }) {
   const candidates = [pitch.submittedBy, pitch.createdBy].filter((v): v is string => Boolean(v))
-  const rows = await getDb()
-    .select({ id: users.id, name: users.name, email: users.email, phone: users.phone, onTeam: sql<boolean>`${teamMembers.userId} is not null` })
-    .from(users)
-    .leftJoin(teamMembers, and(eq(teamMembers.userId, users.id), eq(teamMembers.teamId, pitch.teamId)))
-    .where(candidates.length ? inArray(users.id, candidates) : sql`false`)
-  const preferred = candidates.map((id) => rows.find((r) => r.id === id)).find(Boolean)
-  if (preferred) return preferred
+  const current = getDb()
+    .select({ id: users.id, name: users.name, email: users.email, phone: users.phone })
+    .from(teamMembers)
+    .innerJoin(users, eq(users.id, teamMembers.userId))
+  if (candidates.length) {
+    const rows = await current.where(and(eq(teamMembers.teamId, pitch.teamId), inArray(users.id, candidates), isNull(users.suspendedAt)))
+    const preferred = candidates.map((id) => rows.find((r) => r.id === id)).find(Boolean)
+    if (preferred) return preferred
+  }
   const [anyMember] = await getDb()
     .select({ id: users.id, name: users.name, email: users.email, phone: users.phone })
     .from(teamMembers)
     .innerJoin(users, eq(users.id, teamMembers.userId))
-    .where(eq(teamMembers.teamId, pitch.teamId))
+    .where(and(eq(teamMembers.teamId, pitch.teamId), isNull(users.suspendedAt)))
+    .orderBy(asc(teamMembers.createdAt))
     .limit(1)
   return anyMember ?? null
 }
