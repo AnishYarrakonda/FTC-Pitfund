@@ -17,11 +17,27 @@ function encodeCursor(values: Array<string | number>): string {
   return Buffer.from(JSON.stringify(values.map(String))).toString('base64url')
 }
 
-function decodeCursor(value: string | null, length: number): string[] | null {
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})(\.\d+)?(Z|[+-]\d{2}(:?\d{2})?)?$/
+const INTEGER = /^-?\d{1,15}$/
+
+/** Does `value` have the shape Postgres will accept for this cast? A cursor that doesn't must not reach the query. */
+function fitsCast(cast: string, value: string) {
+  if (value.includes('\u0000')) return false
+  if (cast.includes('uuid')) return UUID.test(value)
+  if (cast.includes('timestamp')) {
+    const m = TIMESTAMP.exec(value)
+    return Boolean(m) && +m![2] >= 1 && +m![2] <= 12 && +m![3] >= 1 && +m![3] <= 31 && +m![4] <= 23 && +m![5] <= 59 && +m![6] <= 59
+  }
+  if (cast.includes('int')) return INTEGER.test(value)
+  return true
+}
+
+function decodeCursor(value: string | null, casts: string[]): string[] | null {
   if (!value || value.length > 1000) return null
   try {
     const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as unknown
-    if (Array.isArray(parsed) && parsed.length === length && parsed.every((p) => typeof p === 'string')) return parsed
+    if (Array.isArray(parsed) && parsed.length === casts.length && parsed.every((p, i) => typeof p === 'string' && fitsCast(casts[i], p))) return parsed
   } catch {
     // Start from the beginning.
   }
@@ -42,8 +58,8 @@ export function keyset<Row>(options: {
   cursorOf: (row: Row) => Array<string | number>
 }) {
   const { key, columns, direction, params, casts, cursorOf } = options
-  const after = decodeCursor(params.after, casts.length)
-  const before = after ? null : decodeCursor(params.before, casts.length)
+  const after = decodeCursor(params.after, casts)
+  const before = after ? null : decodeCursor(params.before, casts)
   const value = (parts: string[]) => sql`(${sql.join(parts.map((p, i) => sql`${p}${sql.raw(casts[i])}`), sql`, `)})`
   const forward = direction === 'asc' ? '>' : '<'
   const backward = direction === 'asc' ? '<' : '>'

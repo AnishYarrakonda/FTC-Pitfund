@@ -44,7 +44,8 @@ function decodeCursor(value: string | null): Cursor | null {
   if (!value) return null
   try {
     const parsed = JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as unknown
-    if (Array.isArray(parsed) && parsed.length === 2 && parsed.every((p) => typeof p === 'string')) return parsed as Cursor
+    // The id is cast to uuid in SQL and Postgres refuses NUL in text: a value of the wrong shape must start over, not throw.
+    if (Array.isArray(parsed) && parsed.length === 2 && parsed.every((p) => typeof p === 'string' && !p.includes('\u0000')) && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(parsed[1])) return parsed as Cursor
   } catch {
     // An edited or stale cursor just starts from the beginning.
   }
@@ -90,7 +91,7 @@ export async function queryDirectory(params: DirectoryQuery): Promise<DirectoryP
   const before = after ? null : decodeCursor(params.before)
   const key = sql`(lower(${sponsors.name}), ${sponsors.id})`
   const conditions: SQL[] = [eq(sponsors.status, 'approved')]
-  const q = params.q.trim().toLowerCase().slice(0, 100)
+  const q = params.q.replaceAll('\u0000', '').trim().toLowerCase().slice(0, 100)
 
   // Searching is fuzzy and ranked: company names are easy to mistype ("brightlne", "keystone
   // robotic"), and an exact substring match turns one wrong letter into an empty page. A prefix

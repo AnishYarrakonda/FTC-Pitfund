@@ -15,7 +15,7 @@ import { keyset, type Page, type PageParams } from './keyset'
  */
 
 const escapeLike = (text: string) => text.replace(/[\\%_]/g, (c) => `\\${c}`)
-const pattern = (q: string) => `%${escapeLike(q.trim().toLowerCase().slice(0, 100))}%`
+const pattern = (q: string) => `%${escapeLike(q.replaceAll('\u0000', '').trim().toLowerCase().slice(0, 100))}%`
 
 export type DirectoryTeam = {
   id: string
