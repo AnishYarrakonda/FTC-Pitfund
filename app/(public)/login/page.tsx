@@ -48,7 +48,9 @@ async function SignedInRedirect({ searchParams }: Pick<PageProps<'/login'>, 'sea
   const params = await searchParams
   const viewer = await getViewer()
   if (!viewer) return null
-  const next = typeof params.next === 'string' ? safeNext(params.next) : null
   const home = homeFor(viewer)
+  // A suspended person is sent here by every guard (page-guards.ts), so following ?next would send them
+  // straight back: an endless redirect loop. Their home explains the suspension.
+  const next = !viewer.suspendedAt && typeof params.next === 'string' ? safeNext(params.next) : null
   redirect(next ?? (home === '/welcome' && !viewer.pendingJoin ? welcomePath(parseIntent(params.intent)) : home))
 }
