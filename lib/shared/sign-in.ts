@@ -10,6 +10,9 @@ export function parseIntent(value: unknown): SignInIntent | null {
 /** Only same-site relative paths are allowed as a post-login destination. */
 export function safeNext(next: string | null | undefined): string | null {
   if (!next || !next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\')) return null
+  // The URL parser deletes tab, CR and LF anywhere in the input, so "/<TAB>/host" is really "//host".
+  // No legitimate destination contains a control character or a backslash.
+  if (/[\u0000-\u001f\u007f\\]/.test(next)) return null
   if (next.startsWith('/login') || next.startsWith('/auth/') || next.startsWith('/api/')) return null
   return next
 }

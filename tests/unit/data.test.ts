@@ -145,6 +145,14 @@ describe('redirect safety', () => {
     expect(safeNext(undefined)).toBeNull()
   })
 
+  it('rejects tab, CR and LF smuggled after the slash (the URL parser strips them, leaving //host)', () => {
+    for (const next of ['/\t/evil.example', '/\n/evil.example', '/\r/evil.example', '/\t\\evil.example', '/\t/\t/evil.example', '/pitches\u0000']) {
+      expect(safeNext(next), JSON.stringify(next)).toBeNull()
+    }
+    expect(new URL('/\t/evil.example', 'https://pitfund.org').origin).toBe('https://evil.example')
+    expect(safeNext('/pitches?tab=sent#top')).toBe('/pitches?tab=sent#top')
+  })
+
   it('redirects on the host the browser used', () => {
     const req = new Request('http://localhost:3000/auth/callback', { headers: { host: '127.0.0.1:3000' } })
     expect(requestOrigin(req)).toBe('http://127.0.0.1:3000')
