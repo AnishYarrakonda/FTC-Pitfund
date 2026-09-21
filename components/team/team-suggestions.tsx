@@ -37,7 +37,7 @@ export function TeamSuggestions({
       id={id}
       role="listbox"
       aria-label="Matching FIRST teams"
-      className={cn('max-h-72 overflow-y-auto rounded-menu border border-border bg-surface py-1 shadow-sm', className)}
+      className={cn('rounded-menu border border-border bg-surface py-1 shadow-sm', className)}
     >
       {suggestions.map((team, index) => {
         const place = suggestionPlace(team)
