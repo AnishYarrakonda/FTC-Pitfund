@@ -1,3 +1,5 @@
+import { connection } from 'next/server'
+
 import { markBounced } from '@/lib/server/email/outbox'
 import { env } from '@/lib/server/env'
 import { verifyWebhook } from '@/lib/server/webhooks'
@@ -17,6 +19,7 @@ export async function POST(request: Request) {
   const emailId = event.data?.email_id
   if (!emailId) return Response.json({ ok: true, ignored: true })
 
+  await connection()
   if (event.type === 'email.bounced') {
     const updated = await markBounced(emailId, 'bounced', event.data.bounce?.message ?? event.data.bounce?.subType)
     return Response.json({ ok: true, updated })

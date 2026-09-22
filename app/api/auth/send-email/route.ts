@@ -1,3 +1,5 @@
+import { connection } from 'next/server'
+
 import { enqueueEmail, PRIORITY, sendNow } from '@/lib/server/email/outbox'
 import { env } from '@/lib/server/env'
 import { verifyWebhook } from '@/lib/server/webhooks'
@@ -44,6 +46,7 @@ export async function POST(request: Request) {
   const code = data.token
   if (!/^\d{6}$/.test(code ?? '')) return hookError(400, 'Expected a 6-digit code')
 
+  await connection()
   try {
     const queued = await enqueueEmail({
       to: user.email,

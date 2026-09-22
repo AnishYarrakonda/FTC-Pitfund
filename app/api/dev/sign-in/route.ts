@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { connection, NextResponse } from 'next/server'
 
 import { assertDevTools, signInAsPersona } from '@/lib/server/dev'
 import { devToolsEnabled } from '@/lib/server/env'
@@ -21,6 +21,7 @@ export async function GET(request: Request) {
   const persona = url.searchParams.get('persona') ?? ''
   if (!isPersonaKey(persona)) return Response.json({ error: 'Unknown persona' }, { status: 400 })
 
+  await connection()
   try {
     const user = await signInAsPersona(persona)
     const viewer = user ? await loadViewer(user.id) : null
