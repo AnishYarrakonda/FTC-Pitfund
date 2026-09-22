@@ -68,6 +68,7 @@ const profile = {
   supportTypes: ['funding', 'mentorship'] as Array<'funding' | 'mentorship'>,
   questions: DEFAULT_QUESTIONS.map((q) => ({ ...q, prompt: fillCompany(q.prompt, 'Ribosome Robotics') })),
   usesDefaultQuestions: true,
+  verified: true,
 }
 
 export function SponsorSections() {

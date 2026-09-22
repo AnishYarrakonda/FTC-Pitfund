@@ -27,6 +27,7 @@ test('renders the team, its deck in the viewer, and no personal data', async ({ 
   const response = await page.goto('/t/31579')
   expect(response?.status()).toBe(200)
   await expect(page.getByRole('heading', { level: 1, name: 'Exodius' })).toBeVisible()
+  await expect(page.getByTitle('Checked by FTC Pitfund')).toBeVisible()
   await expect(page.getByText('Team 31579').first()).toBeVisible()
   await expect(page.getByText(/Deck updated/)).toBeVisible()
   await expect(page).toHaveTitle(/Exodius/)

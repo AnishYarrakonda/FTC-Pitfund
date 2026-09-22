@@ -123,7 +123,7 @@ export default async function AdminCompanyPage({ params }: PageProps<'/admin/com
             The profile so far, as teams would see it
           </h2>
           <div className="rounded-dialog border border-border bg-surface p-5 sm:p-8">
-            <SponsorProfile sponsor={company} preview />
+            <SponsorProfile sponsor={{ ...company, verified: company.status === 'approved' }} preview />
           </div>
         </section>
       </div>

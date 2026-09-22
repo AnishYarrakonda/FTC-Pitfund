@@ -42,6 +42,7 @@ export function CompanyEditor({ profile, members }: { profile: CompanyEditorProf
     supportTypes: draft.values.supportTypes as SupportType[],
     questions: questions.list,
     usesDefaultQuestions: questions.usesDefaults,
+    verified: profile.status === 'approved',
   }
 
   const previewPanel = (

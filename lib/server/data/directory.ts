@@ -30,6 +30,7 @@ type DirectoryItem = {
   region: string | null
   about: string | null
   supportTypes: SupportType[]
+  verified: boolean
 }
 
 export type DirectoryPage = { items: DirectoryItem[]; nextCursor: string | null; prevCursor: string | null }
@@ -138,13 +139,13 @@ export async function queryDirectory(params: DirectoryQuery): Promise<DirectoryP
     .limit(q ? SEARCH_RESULT_LIMIT : DIRECTORY_PAGE_SIZE + 1)
 
   if (q) {
-    return { items: rows.map(({ logoPath, ...rest }) => ({ ...rest, logoUrl: publicUrl(logoPath) })), nextCursor: null, prevCursor: null }
+    return { items: rows.map(({ logoPath, ...rest }) => ({ ...rest, logoUrl: publicUrl(logoPath), verified: true })), nextCursor: null, prevCursor: null }
   }
 
   const more = rows.length > DIRECTORY_PAGE_SIZE
   const page = rows.slice(0, DIRECTORY_PAGE_SIZE)
   if (before) page.reverse()
-  const items = page.map(({ logoPath, ...rest }) => ({ ...rest, logoUrl: publicUrl(logoPath) }))
+  const items = page.map(({ logoPath, ...rest }) => ({ ...rest, logoUrl: publicUrl(logoPath), verified: true }))
   const first = items[0]
   const last = items[items.length - 1]
   return {
@@ -191,6 +192,7 @@ export async function queryDirectorySponsor(id: string): Promise<DirectorySponso
     region: row.region,
     about: row.about,
     supportTypes: row.supportTypes,
+    verified: true,
     questions: questionsFor({ name: row.name, questions: row.questions }),
     usesDefaultQuestions: row.questions.length === 0,
   }

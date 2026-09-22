@@ -101,6 +101,7 @@ const SPONSOR: SponsorSummaryData = {
   region: 'Texas and the Southwest',
   about: 'We sponsor teams that document their engineering process and bring robotics to students who would not otherwise see it.',
   supportTypes: ['funding', 'mentorship'],
+  verified: true,
 }
 
 export function CoachSections({ deck }: { deck: Deck }) {

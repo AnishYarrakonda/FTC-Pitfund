@@ -1,3 +1,4 @@
+import { BadgeCheck } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
@@ -21,6 +22,7 @@ export type SponsorSummaryData = {
   region: string | null
   about: string | null
   supportTypes: SupportType[]
+  verified: boolean
 }
 
 export function sponsorPlace(s: Pick<SponsorSummaryData, 'city' | 'state' | 'region'>) {
@@ -35,7 +37,18 @@ export function supportTypesLabel(types: SupportType[]) {
 /** A directory row. `href` null renders it as a static preview (no link). */
 export function SponsorRow({ sponsor, href, action, className }: { sponsor: SponsorSummaryData; href: string | null; action?: ReactNode; className?: string }) {
   const place = sponsorPlace(sponsor)
-  const name = <span className="min-w-0 text-body font-semibold text-text user-text">{sponsor.name}</span>
+  const name = (
+    <span className="flex min-w-0 flex-wrap items-center gap-x-1.5">
+      <span className="min-w-0 text-body font-semibold text-text user-text">{sponsor.name}</span>
+      {sponsor.verified ? (
+        <span className="inline-flex shrink-0 text-accent" title="Checked by FTC Pitfund">
+          <BadgeCheck aria-hidden="true" className="size-4" />
+          <span className="sr-only">Checked by FTC Pitfund</span>
+        </span>
+      ) : null}
+    </span>
+  )
+
   return (
     <div className={cn('flex min-w-0 flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:gap-6 sm:px-5', className)}>
       <div className="flex min-w-0 flex-1 gap-4">

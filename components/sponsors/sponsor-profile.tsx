@@ -1,4 +1,4 @@
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, BadgeCheck } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { OrgLogo } from '@/components/ui/identity'
@@ -35,7 +35,15 @@ export function SponsorProfile({
         <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
           <OrgLogo name={sponsor.name || 'Company'} src={sponsor.logoUrl} size={preview ? 'md' : 'lg'} />
           <div className="grid min-w-0 gap-1">
-            <Title className={cn('font-semibold tracking-tighter text-text user-text', preview ? 'text-h3' : 'text-h2')}>{sponsor.name || 'Your company'}</Title>
+            <Title className={cn('flex min-w-0 flex-wrap items-center gap-x-2.5 font-semibold tracking-tighter text-text', preview ? 'text-h3' : 'text-h2')}>
+              <span className="min-w-0 user-text">{sponsor.name || 'Your company'}</span>
+              {sponsor.verified ? (
+                <span className="inline-flex shrink-0 text-accent" title="Checked by FTC Pitfund">
+                  <BadgeCheck aria-hidden="true" className={preview ? 'size-5 sm:size-6' : 'size-6 sm:size-7'} />
+                  <span className="sr-only">Checked by FTC Pitfund</span>
+                </span>
+              ) : null}
+            </Title>
             {place ? <p className="line-clamp-2 text-body text-text-secondary user-text">{place}</p> : null}
             {sponsor.website ? (
               <a href={sponsor.website} target="_blank" rel="noreferrer nofollow" className="inline-flex min-w-0 items-center gap-1 text-small font-medium text-accent hover:text-accent-hover">

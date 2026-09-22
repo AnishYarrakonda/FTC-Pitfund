@@ -106,8 +106,10 @@ test('a new coach goes from sign-in to a submitted pitch, withdraws it, and can 
   // ─── Directory → composer ──────────────────────────────────────────────────────────────
   await page.goto('/sponsors')
   await expect(page.getByRole('heading', { name: 'Sponsors' })).toBeVisible()
+  await expect(page.getByTitle('Checked by FTC Pitfund').first()).toBeVisible()
   await expect(page.getByText('Allele Components')).toHaveCount(0)
   await page.goto(`/sponsors/${SEED.meridian}`)
+  await expect(page.getByTitle('Checked by FTC Pitfund').first()).toBeVisible()
   await page.getByRole('button', { name: 'Start pitch' }).click()
   await page.waitForURL(`**/sponsors/${SEED.meridian}/pitch`)
   await expect(page.getByRole('heading', { name: 'Pitch Mitochondria Machine Works' })).toBeVisible()
