@@ -1,6 +1,6 @@
 # Architecture (v2)
 
-Source of truth: `prompts/rebuild/00-REBUILD-PLAN.md` §5. This file is the short version.
+This file is the current architecture. The original design (`prompts/rebuild/00-REBUILD-PLAN.md` §5) is history and drifts from it.
 
 ## Rendering
 - `cacheComponents: true`. Anything that reads `cookies()`, `headers()`, `searchParams` or the database must
@@ -40,12 +40,15 @@ Scripts and Vitest stub `server-only` (`scripts/lib/server-only-stub.mjs`, vites
 priority 0 auth 100 · 1 transactional 90 · 2 admin 90 · 3 daily summary 90. Resend `idempotencyKey = outbox.id`.
 Transient failures back off (1, 2, 4, 8 min; 5 attempts). Dev sends to Mailpit over SMTP unless
 `EMAIL_TRANSPORT=resend`. Auth codes come from the Supabase Send Email hook (`/api/auth/send-email`) and are
-sent synchronously; their payload is scrubbed after sending. Templates: `lib/server/email/templates/`.
+sent synchronously and **fail instead of deferring** when the quota is gone (a late code is useless); their payload is
+scrubbed after sending. Templates: `lib/server/email/templates/`.
 
 ## Files
 `lib/server/storage.ts` only. Buckets: `public` (served), `staging` (private, signed uploads, cleaned daily).
 Browser uploads go to `staging` with a signed URL; `lib/server/uploads.ts` re-verifies the bytes and publishes
-under a fresh name (never trust the browser's file). Read public objects over HTTP, not `download()`.
+under a fresh name (never trust the browser's file). Read public objects over HTTP, not `download()`
+(a bucket named `public` makes `storage.from('public').download()` hit the public-object route and fail "Bucket not found").
+Overwriting a signed-upload path is a 409; `staging` refuses `text/html`.
 
 ## Jobs
 One Vercel cron: `/api/cron/daily` → `lib/server/jobs.ts` `runDailyCron()`: drain outbox → admin digest
@@ -67,6 +70,9 @@ React + Next alone is ~145 KB, so client code on any page gets ~25 KB. Keep it t
   `DialogContent`, `DialogClose`, `Sheet*`, `ConfirmDialog`) but loads Radix and the markup (`dialog-impl.tsx`) on hover,
   focus or open. Menus and popovers that must render Radix at once (account menu, bell, mobile nav, admin row menu) use
   `useLazyComponent` (`lib/client/lazy.ts`): a lookalike trigger, the real component on first interaction.
+- A dialog opened without a trigger returns focus to whatever was focused when it opened (`openerRef` in `dialog.tsx`).
+- **pdf.js 6:** `PDFDocumentProxy` has no `destroy()`; `openPdf()` in `lib/client/pdf.ts` returns a document whose `destroy` calls the loading task's.
+- **next/image and local Supabase:** the optimizer refuses 127.0.0.1 unless `dangerouslyAllowLocalIP`; it is on only when Supabase itself is local.
 - **Toasts:** import `toast` from `@/lib/client/toast` (never `sonner`). `<Toaster>` mounts only in layouts with actions
   and fetches Sonner at idle so offline errors can still show.
 - **pdf.js and the viewer:** `PdfViewer` is a shell (figure, toolbar, thumbnail); `pdf-viewer-impl.tsx` loads near the viewport.

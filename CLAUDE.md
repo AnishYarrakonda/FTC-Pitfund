@@ -1,9 +1,10 @@
 # FTC Pitfund (v2)
 
-**v2 is complete and on `main`.** It goes live by following **`docs/LAUNCH.md`** (human steps plus
-`npm run provision`). Day-to-day operation is **`docs/RUNBOOK.md`**; proof of the acceptance criteria
-is **`docs/QA-REPORT.md`**. The design source of truth is **`prompts/rebuild/00-REBUILD-PLAN.md`** (kept with
-`prompts/rebuild/01–04` as history). Read `prompts/_NEXT-SESSION.md` first. The v1 app (Clerk, RLS policies,
+**v2 is live** at https://pitfund.org (launched 2026-09-20) and finished; work from here is post-launch changes.
+**Every push to `main` auto-deploys to production** (Vercel team project `ftc-pitfund`), so branch, run `npm run check`,
+then merge. Day-to-day operation is **`docs/RUNBOOK.md`**; `docs/LAUNCH.md` is the re-provisioning reference
+(`npm run provision`). `prompts/rebuild/00-REBUILD-PLAN.md` is the original design document: where it disagrees with this
+file or `.claude/rules/*` (it still describes Google sign-in), this file wins. The v1 app (Clerk, RLS policies,
 capacity caps, ledger) is gone; it is preserved at git tag `legacy-v1`.
 
 ## Product
@@ -59,7 +60,7 @@ components/ui/     the design system          components/app/  shell, top bar, b
 components/members/  members + invites section (server) with client controls
 drizzle/           generated migrations       scripts/  setup, db-*, seed/, admin-grant, provision/, prod, perf,
                                                          security-scan, email-preview, marketing-screenshots, serve-prod
-tests/unit  Vitest   tests/e2e  Playwright   tests/qa  UX gate + dead-click audit   docs/  LAUNCH, RUNBOOK, QA-REPORT
+tests/unit  Vitest   tests/e2e  Playwright   tests/qa  UX gate + dead-click audit   docs/  LAUNCH, RUNBOOK
 proxy.ts           session refresh only (plus x-pathname); no authorization
 ```
 
@@ -109,6 +110,9 @@ Client side: `useAction(action)` or `<ActionButton action pendingLabel>`; never 
 
 - **Never ask Anish to click-test, paste SQL, or create test accounts.** Use the scripts, `/dev`, Playwright and Mailpit.
 - **Never hand-write SQL against a real database.** Change `lib/server/schema.ts`, `npm run db:generate`, `npm run db:migrate`.
+- **`.env.local` holds local-stack values and production values** (`SUPABASE_PRODUCTION_*`, `PRODUCTION_CRON_SECRET`,
+  `RESEND_FULL_ACCESS_KEY`, `VERCEL_TOKEN`). Before any database-touching test, seed or reset, confirm the database host is
+  `127.0.0.1`/`localhost`. Never print secret values (names are fine). Production ops go through `npm run prod -- …`.
 - **Never deploy to, modify or delete the v1 production resources** (personal Vercel project `ftc-sponsorship-portal`,
   Clerk, Supabase `qqizqbtwigyedgskoezm`). Provisioning refuses them by id.
 - Before calling UI work done: `npm run check`, `npm run e2e`, `npm run qa`, `npm run perf`, then **open the screenshots**

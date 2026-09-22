@@ -10,7 +10,7 @@ FTC Team 31579 Exodius.
 
 ## Run it locally
 
-The only prerequisite is [Docker Desktop](https://www.docker.com/products/docker-desktop), running, and Node 22+.
+The only prerequisites are [Docker Desktop](https://www.docker.com/products/docker-desktop), running, and Node 24.
 
 ```bash
 npm install
@@ -32,11 +32,12 @@ npm run perf           # bundle, Lighthouse, query and latency budgets
 npm run security:scan  # secrets, database exposure, dev tools in production
 ```
 
-## Launch and operate
+## Operate
 
-- [`docs/LAUNCH.md`](docs/LAUNCH.md): the human steps to go live; everything else is `npm run provision`.
+Live at https://pitfund.org. Every push to `main` deploys to production.
+
 - [`docs/RUNBOOK.md`](docs/RUNBOOK.md): daily review, System warnings, backups, admins, secrets, incidents.
-- [`docs/QA-REPORT.md`](docs/QA-REPORT.md): what was checked and the proof for every acceptance criterion.
+- [`docs/LAUNCH.md`](docs/LAUNCH.md): how production was provisioned; re-run `npm run provision` after any human step.
 
 ## Stack
 

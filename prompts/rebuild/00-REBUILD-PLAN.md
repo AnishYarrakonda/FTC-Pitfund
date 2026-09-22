@@ -1,5 +1,9 @@
 # FTC Pitfund: Rebuild Plan
 
+> **Historical design document.** v2 shipped on 2026-09-20. Where this plan disagrees with `CLAUDE.md` or
+> `.claude/rules/*`, those win. Known drift: sign-in is the 6-digit email code only (Google OAuth was dropped), and
+> the four execution prompts named below were deleted after launch (see git history).
+
 **Written 2026-09-13. This is the source of truth for the rebuild.** It was produced from a
 full inspection of the v1 app (code, production database, live site) and a high-intensity
 product interrogation with Anish. Every product decision below was confirmed by him. Anything

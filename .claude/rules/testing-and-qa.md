@@ -66,6 +66,18 @@ Anish does not click through the app. Agents verify everything with these comman
   directory the page was in, so it stops being sent after the next navigation.
 - Running a second checkout's `npm run setup` restarts the shared local Supabase stack with that checkout's hook secret, so
   auth emails fail here ("signInWithOtp failed 500"). Re-run `npm run setup` in this checkout to take it back.
+- In **production**, primary nav links are fully prefetched (navigation is instant, no skeleton); `next dev` has no prefetch.
+  Test loading skeletons against the production server (`:3100`).
+- Login emails work only with the dev server on port 3000 (the Send Email hook calls `host.docker.internal:3000`). Local mail:
+  SMTP `127.0.0.1:54325`, Mailpit UI `:54324`. The Supabase CLI is a devDependency; its config section is `[local_smtp]`.
+- QA signs personas in without the UI by minting a magic-link token with the local secret key (`tests/support/session.ts`);
+  E2E uses `/api/dev/sign-in`. Cookies are per host, not per port, so both servers share sessions. A browser fake clock does not
+  move Supabase's clock: E2E waits real seconds where that matters.
+- Tag expiry has one-second resolution: an entry cached in the same second as `revalidateTag(tag, { expire: 0 })` can survive
+  it, so tests wait 1 s after warming a page before expiring.
+- Don't `npm run build` while `npm run dev` is up during an E2E run: it rewrites `.next` and can blank the dev server mid-test.
+- Lighthouse's default simulated throttling is unreliable on a local server (LCP swings ±500 ms), so `npm run perf` applies real
+  Slow 4G. Keep the LCP element in the static shell with `fetchPriority="high"`, and don't preload the web font.
 - `npm run screenshots:marketing` regenerates `public/marketing/*.webp` from the seeded production build.
 
 ## CI — `.github/workflows/ci.yml`

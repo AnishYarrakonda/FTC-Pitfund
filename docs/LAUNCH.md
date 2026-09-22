@@ -1,5 +1,7 @@
 # Launching FTC Pitfund
 
+**Status: production has been live at https://pitfund.org since 2026-09-20.** Keep this as the reference for re-provisioning (a new environment, a rotated token, disaster recovery); every step is idempotent.
+
 This is the only launch document. Every step here needs a person: creating accounts, paying for the domain and DNS. Everything else is `npm run provision`. It creates the production and staging Supabase projects, applies migrations, creates storage buckets, configures sign-in and the Send Email hook, seeds staging and grants admins. It creates the Vercel project connected to GitHub with every environment variable, adds the domain, and sets up the Resend sending domain, webhook and a sending-only key. Every step is idempotent: re-run it after each human step and it picks up where it stopped. It never touches the v1 app (the personal Vercel project `ftc-sponsorship-portal`, Clerk or Supabase `qqizqbtwigyedgskoezm`).
 
 All infrastructure belongs to the owner Google account (`OWNER_EMAIL` in `.env.local`). Do every step while signed in as that account.
@@ -85,7 +87,7 @@ Nothing to set up. Sign-in is a 6-digit code sent by email through Resend (no Go
 
 ## 6. DNS records
 
-At your registrar's DNS settings, add exactly the records the scripts printed. They look like this:
+At your registrar's DNS settings, add exactly the records the scripts printed, including any that aren't in the table below (Resend can print extra `CNAME` records for its sending subdomain). They look like this:
 
 | For | Type | Name | Value |
 | --- | --- | --- | --- |
