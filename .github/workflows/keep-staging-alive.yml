@@ -1,18 +1,20 @@
 name: Keep staging Supabase project alive
 
-# Supabase free-tier projects auto-pause after 7 days with no API activity. This repo's staging
-# project (ftc-pitfund-staging, provisioned by `npm run provision`) only gets traffic when someone
-# runs `npm run provision:verify` or E2E against it locally, which can go quiet for a while.
-# Production doesn't need this: the Vercel cron (`/api/cron/daily`) hits its database every day.
+# Supabase free-tier projects auto-pause after 7 days without a real database query — not just any
+# API hit. This repo's staging project (ftc-pitfund-staging, provisioned by `npm run provision`)
+# only gets traffic when someone runs `npm run provision:verify` or E2E against it locally, which
+# can go quiet for a while. Production doesn't need this: the Vercel cron (`/api/cron/daily`) hits
+# its database every day.
 #
-# This just pings Auth's health endpoint every 3 days, well inside the 7-day pause window, with
-# the staging publishable key. That key is safe to commit: RLS is locked to zero grants on every
-# table (`.claude/rules/data-and-auth.md`), so it carries no access, same as shipping it in a
-# browser bundle.
+# An earlier version of this workflow pinged Auth's health endpoint, which returns 200 without ever
+# touching Postgres — the project still got paused (2026-09-27) because that isn't a database query.
+# This one runs an actual SELECT against a real table through PostgREST, which is genuine database
+# activity. It uses SUPABASE_STAGING_SECRET_KEY (a GitHub secret, not committed: unlike the
+# publishable key, this one bypasses RLS) and runs daily rather than every few days, for margin.
 
 on:
   schedule:
-    - cron: '0 12 */3 * *'
+    - cron: '0 12 * * *'
   workflow_dispatch:
 
 jobs:
@@ -20,11 +22,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Ping staging Auth health endpoint
+      - name: Query staging database through PostgREST
+        env:
+          SUPABASE_STAGING_SECRET_KEY: ${{ secrets.SUPABASE_STAGING_SECRET_KEY }}
         run: |
           code=$(curl -s -o /tmp/body -w '%{http_code}' \
-            -H "apikey: sb_publishable_iLEhyrK8VlZqGJUWDH7eDQ__ifM8_d8" \
-            "https://rrnmwupvdzgwcsgshvnj.supabase.co/auth/v1/health")
+            -H "apikey: $SUPABASE_STAGING_SECRET_KEY" \
+            -H "Authorization: Bearer $SUPABASE_STAGING_SECRET_KEY" \
+            "https://rrnmwupvdzgwcsgshvnj.supabase.co/rest/v1/cron_runs?select=id&limit=1")
           cat /tmp/body
           echo
           if [ "$code" != "200" ]; then
