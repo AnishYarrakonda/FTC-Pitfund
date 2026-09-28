@@ -1,0 +1,33 @@
+name: Keep staging Supabase project alive
+
+# Supabase free-tier projects auto-pause after 7 days with no API activity. This repo's staging
+# project (ftc-pitfund-staging, provisioned by `npm run provision`) only gets traffic when someone
+# runs `npm run provision:verify` or E2E against it locally, which can go quiet for a while.
+# Production doesn't need this: the Vercel cron (`/api/cron/daily`) hits its database every day.
+#
+# This just pings Auth's health endpoint every 3 days, well inside the 7-day pause window, with
+# the staging publishable key. That key is safe to commit: RLS is locked to zero grants on every
+# table (`.claude/rules/data-and-auth.md`), so it carries no access, same as shipping it in a
+# browser bundle.
+
+on:
+  schedule:
+    - cron: '0 12 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping staging Auth health endpoint
+        run: |
+          code=$(curl -s -o /tmp/body -w '%{http_code}' \
+            -H "apikey: sb_publishable_iLEhyrK8VlZqGJUWDH7eDQ__ifM8_d8" \
+            "https://rrnmwupvdzgwcsgshvnj.supabase.co/auth/v1/health")
+          cat /tmp/body
+          echo
+          if [ "$code" != "200" ]; then
+            echo "Unexpected status $code"
+            exit 1
+          fi
