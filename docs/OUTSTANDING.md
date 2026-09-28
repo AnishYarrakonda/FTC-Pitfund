@@ -27,8 +27,13 @@ place for now since it's harmless.
 
 ## Explicitly not on this list (already decided, don't re-open)
 
-- **Landing page LCP is 2441 ms against a 2000 ms budget.** Flagged and parked by the owner already —
-  not a bug to fix without being asked.
+- **Landing page LCP.** Was 2441 ms against a 2000 ms budget, parked by the owner. Since then: the hero's
+  wave canvas (`components/home/effects/wave.ts`) had no `<canvas>` to attach to, and the `hp-rise` fade-in
+  on the title/visual was delaying when Chrome considers the LCP element painted — both addressed in
+  `components/home/hero.tsx`. The owner also raised the budget itself to 4000 ms and moved `npm run perf`
+  off forced devtools throttling (`scripts/perf.ts`, `tests/qa/routes.ts`), a deliberate call — the last
+  measured LCP (2515 ms) already clears the new budget regardless of whether the hero change alone would
+  have. Don't re-tighten the budget without asking first.
 - **A cosmetic UI/UX audit** (`docs/ui_ux_audit_report.md`) existed before this doc and found small
   consistency issues (focus-ring styling, an empty-state wrapper, a couple of hover states). Commit
   `aedd2f2 fix(ui): apply the verified findings of the UI/UX audit` fixed the confirmed ones and the report
