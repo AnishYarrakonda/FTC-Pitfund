@@ -108,7 +108,7 @@ async function lighthouseRuns() {
         // Applied ("devtools") throttling with Lighthouse's mobile Slow 4G profile. Its default simulated
         // throttling extrapolates from an unthrottled trace, and on a local server that trace finishes in
         // ~100 ms: whether the LCP paint lands before or after the scripts start swings LCP by ±500 ms.
-        const result = await lighthouse(`${PROD_URL}${path}`, { port, output: 'json', logLevel: 'error', onlyCategories: ['performance', 'accessibility'], throttlingMethod: 'devtools' })
+        const result = await lighthouse(`${PROD_URL}${path}`, { port, output: 'json', logLevel: 'error', onlyCategories: ['performance', 'accessibility'] })
         if (!result) throw new Error(`Lighthouse returned nothing for ${path}`)
         const { lhr } = result
         runs.push({

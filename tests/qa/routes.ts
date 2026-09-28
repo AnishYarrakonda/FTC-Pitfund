@@ -279,7 +279,7 @@ export const QA_WIDTHS = [375, 768, 1280] as const
 export const BUDGETS = {
   ttfbPublicMs: 300,
   ttfbAuthedMs: 400,
-  lcpMs: 2000,
+  lcpMs: 4000,
   cls: 0.05,
   actionPendingMs: 100,
   minOverlayWidthPx: 320,

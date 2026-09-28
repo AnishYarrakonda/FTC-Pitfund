@@ -44,7 +44,7 @@ export function Hero() {
       <div className="hp-hero__bg" aria-hidden="true">
         <span className="hp-bleed-line hp-hero__line-top" />
         <span className="hp-bleed-line hp-hero__line-bottom" />
-
+        <canvas data-hp-wave className="hp-hero__wave" />
       </div>
 
       <div className="hp-hero__layout">
@@ -56,7 +56,7 @@ export function Hero() {
                 &nbsp;
               </span>
             </p>
-            <div className="hp-hero__titles hp-rise hp-rise-2">
+            <div className="hp-hero__titles">
               <Title as="h1" className="hp-hero__title hp-hero__title--left" />
               <span id="hp-hero-title" hidden>
                 {LINE_1} {LINE_2}
@@ -80,7 +80,7 @@ export function Hero() {
             </ul>
           </div>
 
-          <div className="hp-hero__visual hp-rise hp-rise-6" aria-label="Preview of a team's pitch in FTC Pitfund" role="img">
+          <div className="hp-hero__visual" aria-label="Preview of a team's pitch in FTC Pitfund" role="img">
             {/* Reviewer note */}
             <div className="hp-ui-card hp-float hp-float-review">
               <div className="hp-rev-head">

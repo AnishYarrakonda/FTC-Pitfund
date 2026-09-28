@@ -8,7 +8,7 @@ import './globals.css'
 
 // Not preloaded: text paints at once in the size-matched fallback, and the 48 KB font doesn't compete with
 // the page's main image and scripts on slow connections (plan §6 LCP budget).
-const inter = Inter({ subsets: ['latin'], display: 'swap', preload: false, variable: '--font-inter' })
+const inter = Inter({ subsets: ['latin'], display: 'optional', preload: false, variable: '--font-inter' })
 
 export const metadata: Metadata = {
   title: { default: PRODUCT_NAME, template: `%s · ${PRODUCT_NAME}` },
