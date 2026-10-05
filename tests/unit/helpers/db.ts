@@ -47,14 +47,16 @@ export async function createSponsor(overrides: Partial<typeof sponsors.$inferIns
  * Mirrors what really happens: the first person on an org owns it, everyone after is an editor.
  * Pass a role explicitly when a test is about the difference between the two.
  */
+// Members are stamped with clock_timestamp(), not the column default now(): a dbTest runs in one transaction, where
+// now() is the same for every row, so "the longest-standing member" would be a tie decided by chance.
 export async function addTeamMember(teamId: string, userId: string, role?: OrgRole) {
   const resolved = role ?? ((await countOwners(teamMembers.teamId, teamMembers.role, teamId)) === 0 ? 'owner' : 'editor')
-  await getDb().insert(teamMembers).values({ teamId, userId, role: resolved })
+  await getDb().insert(teamMembers).values({ teamId, userId, role: resolved, createdAt: sql`clock_timestamp()` })
 }
 
 export async function addSponsorMember(sponsorId: string, userId: string, role?: OrgRole) {
   const resolved = role ?? ((await countOwners(sponsorMembers.sponsorId, sponsorMembers.role, sponsorId)) === 0 ? 'owner' : 'editor')
-  await getDb().insert(sponsorMembers).values({ sponsorId, userId, role: resolved })
+  await getDb().insert(sponsorMembers).values({ sponsorId, userId, role: resolved, createdAt: sql`clock_timestamp()` })
 }
 
 async function countOwners(orgColumn: AnyPgColumn, roleColumn: AnyPgColumn, orgId: string) {

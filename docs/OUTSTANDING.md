@@ -1,8 +1,18 @@
 # What's left — FTC Pitfund v2
 
-Written 2026-09-21, updated 2026-09-24 after a full re-verification pass. **The app is live at
-https://pitfund.org, works, and has no known open issues.** Every core flow (sign-in, team/company setup,
-admin approval, pitching, matching) has been used successfully in production.
+Written 2026-09-21, updated 2026-09-24 after a full re-verification pass, corrected 2026-10-04 after a
+production reliability audit. **The app is live at https://pitfund.org and has no known open defects.**
+
+What has actually run in production (from the production database, 2026-10-04): admin sign-in with an
+emailed code, the daily cron (every job green every day since launch), the admin digest email, and the
+FIRST team-list sync (14,469 teams). **No team, company, join request or pitch has ever been created in
+production** (the audit log holds two admin grants and nothing else), so setup → admin approval → pitch
+→ match has only been exercised by the E2E suite on the local stack. The first real team or company is
+the first production run of those flows: watch the admin System page and Vercel logs when it happens.
+
+The staging Supabase project (`ftc-pitfund-staging`) backs Vercel *preview* deployments only. Production
+reads no staging value and doesn't depend on it; `.github/workflows/keep-staging-alive.yml` explains how
+it is kept from pausing.
 
 No new features are planned right now.
 

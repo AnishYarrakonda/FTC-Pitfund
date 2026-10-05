@@ -1,16 +1,20 @@
 name: Keep staging Supabase project alive
 
-# Supabase free-tier projects auto-pause after 7 days without a real database query — not just any
-# API hit. This repo's staging project (ftc-pitfund-staging, provisioned by `npm run provision`)
-# only gets traffic when someone runs `npm run provision:verify` or E2E against it locally, which
-# can go quiet for a while. Production doesn't need this: the Vercel cron (`/api/cron/daily`) hits
-# its database every day.
+# Supabase free-tier projects auto-pause after about 7 days without enough activity. This repo's staging
+# project (ftc-pitfund-staging, provisioned by `npm run provision`) backs Vercel *preview* deployments
+# only; production never touches it. It gets no organic traffic, so this workflow supplies some.
 #
-# An earlier version of this workflow pinged Auth's health endpoint, which returns 200 without ever
-# touching Postgres — the project still got paused (2026-09-27) because that isn't a database query.
-# This one runs an actual SELECT against a real table through PostgREST, which is genuine database
-# activity. It uses SUPABASE_STAGING_SECRET_KEY (a GitHub secret, not committed: unlike the
-# publishable key, this one bypasses RLS) and runs daily rather than every few days, for margin.
+# History of what did NOT count as activity:
+# - Auth's health endpoint (200 without touching Postgres): paused 2026-09-27.
+# - A daily read-only SELECT through PostgREST: ran green every day from 2026-09-28, and Supabase
+#   still sent a "going to be paused" warning on 2026-10-04.
+# Production has never been warned; its daily cron (/api/cron/daily) *writes* cron_runs rows. So this
+# workflow now writes too: one `keepalive` row in cron_runs per day (the staging System page shows it
+# like the production job's row). ~365 tiny rows a year; nothing reads them but that page.
+#
+# Uses SUPABASE_STAGING_SECRET_KEY (a GitHub secret: it bypasses RLS, so it is never committed).
+# GitHub disables scheduled workflows after 60 days without a push to the repo; if staging gets a
+# pause email after a quiet stretch, re-enable this workflow under Actions.
 
 on:
   schedule:
@@ -22,17 +26,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Query staging database through PostgREST
+      - name: Write a keepalive row to the staging database through PostgREST
         env:
           SUPABASE_STAGING_SECRET_KEY: ${{ secrets.SUPABASE_STAGING_SECRET_KEY }}
         run: |
-          code=$(curl -s -o /tmp/body -w '%{http_code}' \
+          now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          code=$(curl -s -o /tmp/body -w '%{http_code}' -X POST \
             -H "apikey: $SUPABASE_STAGING_SECRET_KEY" \
             -H "Authorization: Bearer $SUPABASE_STAGING_SECRET_KEY" \
-            "https://rrnmwupvdzgwcsgshvnj.supabase.co/rest/v1/cron_runs?select=id&limit=1")
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            -d "{\"job\":\"keepalive\",\"started_at\":\"$now\",\"finished_at\":\"$now\",\"ok\":true,\"detail\":{\"result\":{\"source\":\"github-actions\"}}}" \
+            "https://rrnmwupvdzgwcsgshvnj.supabase.co/rest/v1/cron_runs")
           cat /tmp/body
           echo
-          if [ "$code" != "200" ]; then
+          if [ "$code" != "201" ]; then
             echo "Unexpected status $code"
             exit 1
           fi

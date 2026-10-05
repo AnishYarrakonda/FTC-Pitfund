@@ -29,7 +29,7 @@ For whoever operates FTC Pitfund day to day. You don't need to write code. A few
 
 | You see | What it means | What to do |
 | --- | --- | --- |
-| **"The daily job hasn't run in over 36 hours"** | Vercel's cron didn't call the app: queued email, the digest, upload cleanup and the database keepalive stopped. | Vercel → project `ftc-pitfund` → Settings → Cron Jobs: make sure `/api/cron/daily` is listed and enabled. Open Logs, filter `/api/cron/daily`, look for errors. To run it by hand: `curl -H "Authorization: Bearer <CRON_SECRET from .env.local>" https://<your domain>/api/cron/daily`. |
+| **"The daily job hasn't run in over 36 hours"** | Vercel's cron didn't call the app: queued email, the digest, upload cleanup and the database keepalive stopped. | Vercel → project `ftc-pitfund` → Settings → Cron Jobs: make sure `/api/cron/daily` is listed and enabled. Open Logs, filter `/api/cron/daily`, look for errors. To run it by hand: `curl -H "Authorization: Bearer <PRODUCTION_CRON_SECRET from .env.local>" https://<your domain>/api/cron/daily` (not `CRON_SECRET`: that line is the local stack's secret and gets a 401). |
 | **"Some daily jobs need attention"** + a red job | One step (email, digest, cleanup, FIRST re-check, keepalive) failed last time. The detail says why. | Usually temporary (FIRST's API or Resend was down). If it's red two days in a row, send the error text to whoever maintains the code. |
 | **"Refresh FIRST team list"** is red | The weekly copy of FIRST's team list failed (FIRST's API was down, or the `FIRST_API_USERNAME`/`FIRST_API_TOKEN` in Vercel are wrong). The team search on the setup page keeps the old copy, and a team's number still looks up directly, so coaches aren't blocked. | It retries every day on its own. If it stays red, check the two variables, then `npm run ftc:sync -- --remote` from your laptop. |
 | **Emails in the last 24 h** is orange (≥80) or red (≥90) | Resend's free plan sends 100 emails a day. Sign-in codes always go first; everything else stops at 90. | One busy day is fine: email is delayed, never lost. If it's **80 or more most days**, upgrade to Resend Pro ($20/month) in Resend → Billing. No code change is needed. |
@@ -68,7 +68,7 @@ Rotate a secret when someone with access leaves, or if it may have leaked.
 | Secret | How |
 | --- | --- |
 | **Supabase access, Vercel or Resend tokens** (used only by `npm run provision`) | Revoke the old token in that service's dashboard, create a new one, paste it into `.env.local`, then `npm run provision:check`. |
-| **CRON_SECRET** | Delete the `CRON_SECRET=` line from `.env.local`, then `npm run provision:vercel` (makes a new one, updates Vercel, redeploys). |
+| **CRON_SECRET** | Delete the `PRODUCTION_CRON_SECRET=` line from `.env.local` (`CRON_SECRET=` is the local stack's), then `npm run provision:vercel` (makes a new one, sets it as `CRON_SECRET` on Vercel, redeploys). |
 | **Send Email hook secret** | Delete `SUPABASE_PRODUCTION_SEND_EMAIL_HOOK_SECRET=` (and the staging one) from `.env.local`, then `npm run provision:supabase -- --auth-only` and `npm run provision:vercel`. Sign-in codes may fail for a minute while the two sides update. |
 | **Resend sending key** | Resend → API Keys: revoke `ftc-pitfund-app`. Delete `RESEND_SENDING_KEY=` from `.env.local`, then `npm run provision:resend`. |
 | **Supabase secret key** | Supabase → Project Settings → API Keys: create a new secret key, delete the old one. Delete `SUPABASE_PRODUCTION_SECRET_KEY=` from `.env.local`, then `npm run provision:supabase` and `npm run provision:vercel`. |

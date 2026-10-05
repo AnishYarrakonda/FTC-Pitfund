@@ -11,6 +11,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'], display: 'optional', preload: false, variable: '--font-inter' })
 
 export const metadata: Metadata = {
+  // Makes `alternates.canonical` absolute, so the *.vercel.app aliases point search engines at the real domain.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://127.0.0.1:3000'),
   title: { default: PRODUCT_NAME, template: `%s · ${PRODUCT_NAME}` },
   description: 'Sponsorship pitches companies actually read. FTC teams pitch companies that already sponsor robotics, and a real person checks every pitch.',
   applicationName: PRODUCT_NAME,
