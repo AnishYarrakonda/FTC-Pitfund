@@ -4,13 +4,9 @@ name: Keep staging Supabase project alive
 # project (ftc-pitfund-staging, provisioned by `npm run provision`) backs Vercel *preview* deployments
 # only; production never touches it. It gets no organic traffic, so this workflow supplies some.
 #
-# History of what did NOT count as activity:
-# - Auth's health endpoint (200 without touching Postgres): paused 2026-09-27.
-# - A daily read-only SELECT through PostgREST: ran green every day from 2026-09-28, and Supabase
-#   still sent a "going to be paused" warning on 2026-10-04.
-# Production has never been warned; its daily cron (/api/cron/daily) *writes* cron_runs rows. So this
-# workflow now writes too: one `keepalive` row in cron_runs per day (the staging System page shows it
-# like the production job's row). ~365 tiny rows a year; nothing reads them but that page.
+# Each run does a read, then a write, then a delete, through PostgREST against cron_runs. Nobody has
+# shown which kind of activity Supabase counts, so the run covers all three and leaves the table as it
+# was. The write is a `keepalive` row; the delete removes that same row by its id.
 #
 # Uses SUPABASE_STAGING_SECRET_KEY (a GitHub secret: it bypasses RLS, so it is never committed).
 # GitHub disables scheduled workflows after 60 days without a push to the repo; if staging gets a
@@ -25,22 +21,49 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      SUPABASE_STAGING_SECRET_KEY: ${{ secrets.SUPABASE_STAGING_SECRET_KEY }}
+      REST_URL: https://rrnmwupvdzgwcsgshvnj.supabase.co/rest/v1/cron_runs
     steps:
-      - name: Write a keepalive row to the staging database through PostgREST
-        env:
-          SUPABASE_STAGING_SECRET_KEY: ${{ secrets.SUPABASE_STAGING_SECRET_KEY }}
+      - name: Read the latest keepalive row
+        run: |
+          code=$(curl -s -o body.json -w '%{http_code}' \
+            -H "apikey: $SUPABASE_STAGING_SECRET_KEY" \
+            -H "Authorization: Bearer $SUPABASE_STAGING_SECRET_KEY" \
+            "$REST_URL?select=id,started_at&job=eq.keepalive&order=started_at.desc&limit=1")
+          cat body.json; echo
+          if [ "$code" != "200" ]; then
+            echo "Read failed with status $code"
+            exit 1
+          fi
+
+      - name: Write a keepalive row
         run: |
           now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          code=$(curl -s -o /tmp/body -w '%{http_code}' -X POST \
+          code=$(curl -s -o body.json -w '%{http_code}' -X POST \
             -H "apikey: $SUPABASE_STAGING_SECRET_KEY" \
             -H "Authorization: Bearer $SUPABASE_STAGING_SECRET_KEY" \
             -H "Content-Type: application/json" \
-            -H "Prefer: return=minimal" \
+            -H "Prefer: return=representation" \
             -d "{\"job\":\"keepalive\",\"started_at\":\"$now\",\"finished_at\":\"$now\",\"ok\":true,\"detail\":{\"result\":{\"source\":\"github-actions\"}}}" \
-            "https://rrnmwupvdzgwcsgshvnj.supabase.co/rest/v1/cron_runs")
-          cat /tmp/body
-          echo
+            "$REST_URL")
+          cat body.json; echo
           if [ "$code" != "201" ]; then
-            echo "Unexpected status $code"
+            echo "Write failed with status $code"
+            exit 1
+          fi
+          jq -r '.[0].id' body.json > row_id.txt
+
+      - name: Delete the row it just wrote
+        run: |
+          id=$(cat row_id.txt)
+          code=$(curl -s -o body.json -w '%{http_code}' -X DELETE \
+            -H "apikey: $SUPABASE_STAGING_SECRET_KEY" \
+            -H "Authorization: Bearer $SUPABASE_STAGING_SECRET_KEY" \
+            -H "Prefer: return=representation" \
+            "$REST_URL?id=eq.$id")
+          cat body.json; echo
+          if [ "$code" != "200" ]; then
+            echo "Delete failed with status $code"
             exit 1
           fi
