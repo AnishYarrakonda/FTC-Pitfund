@@ -8,6 +8,10 @@ name: Keep staging Supabase project alive
 # shown which kind of activity Supabase counts, so the run covers all three and leaves the table as it
 # was. The write is a `keepalive` row; the delete removes that same row by its id.
 #
+# A second, independent keepalive runs inside the staging database: pg_cron job `keep-staging-alive`
+# (06:00 UTC daily) inserts a `keepalive` row into cron_runs. It was set up through the Management API
+# and does not depend on GitHub. Check it with `select * from cron.job_run_details` on staging.
+#
 # Uses SUPABASE_STAGING_SECRET_KEY (a GitHub secret: it bypasses RLS, so it is never committed).
 # GitHub disables scheduled workflows after 60 days without a push to the repo; if staging gets a
 # pause email after a quiet stretch, re-enable this workflow under Actions.
