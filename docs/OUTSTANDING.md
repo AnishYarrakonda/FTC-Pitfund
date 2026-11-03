@@ -38,7 +38,8 @@ place for now since it's harmless.
 ## Explicitly not on this list (already decided, don't re-open)
 
 - **Landing page LCP.** Was 2441 ms against a 2000 ms budget, parked by the owner. Since then: the hero's
-  wave canvas (`components/home/effects/wave.ts`) had no `<canvas>` to attach to, and the `hp-rise` fade-in
+  wave canvas (`components/home/effects/wave.ts`, since removed: on real GPUs it drew at the canvas's 300×150
+  default in the hero's corner, and full size it clashed with the brand) had no `<canvas>` to attach to, and the `hp-rise` fade-in
   on the title/visual was delaying when Chrome considers the LCP element painted — both addressed in
   `components/home/hero.tsx`. The owner also raised the budget itself to 4000 ms and moved `npm run perf`
   off forced devtools throttling (`scripts/perf.ts`, `tests/qa/routes.ts`), a deliberate call — the last

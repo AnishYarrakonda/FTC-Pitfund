@@ -5,10 +5,9 @@ import { COMPANY_HREF, TEAM_HREF } from './content'
 import { Arrow } from './icons'
 
 /*
- * The reference's hero: a silk ribbon (WebGL, effects/wave.ts; a CSS painting until it loads) sweeps behind the
- * right side of the page and the top bar; the headline is drawn twice, a plain layer and a hard-light
- * layer above it, so where the ribbon passes behind the words they pick up its color. Above it a live
- * figure rolls its digits (here: time left in the pitch season), and below it a logo marquee.
+ * The hero: a soft brand-tinted wash behind the headline and the product illustration. Above the
+ * headline a live figure rolls its digits (here: time left in the pitch season), and below it a logo
+ * marquee.
  */
 
 const LINE_1 = 'Sponsorship pitches companies actually read.'
@@ -44,7 +43,6 @@ export function Hero() {
       <div className="hp-hero__bg" aria-hidden="true">
         <span className="hp-bleed-line hp-hero__line-top" />
         <span className="hp-bleed-line hp-hero__line-bottom" />
-        <canvas data-hp-wave className="hp-hero__wave" />
       </div>
 
       <div className="hp-hero__layout">
