@@ -16,3 +16,6 @@
 /docs/
 /supabase/.branches
 /supabase/.temp
+
+# README images
+/.github/assets/
