@@ -150,6 +150,7 @@ function TokensSection() {
     ['text', 'bg-text'],
     ['text-secondary', 'bg-text-secondary'],
     ['text-tertiary', 'bg-text-tertiary'],
+    ['ink', 'bg-ink'],
     ['accent', 'bg-accent'],
     ['accent-hover', 'bg-accent-hover'],
     ['accent-subtle', 'bg-accent-subtle'],
@@ -169,7 +170,7 @@ function TokensSection() {
     ['caption 12/16', 'text-caption'],
   ]
   return (
-    <GallerySection id="tokens" title="Tokens" description="Plan §7. Light theme only; Inter; a 4 px spacing grid.">
+    <GallerySection id="tokens" title="Tokens" description="Dark theme only, no toggle; Inter; a 4 px spacing grid.">
       <Grid>
         <Specimen label="Color">
           <ul className="grid grid-cols-3 gap-3 sm:grid-cols-5">

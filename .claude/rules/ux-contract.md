@@ -1,6 +1,7 @@
 # UX contract (plan §3.1 and §7)
 
-This is a full product UI replacement: light, white, calm, precise. Hierarchy by type and spacing, not boxes.
+One dark theme for the whole site (homepage, product, admin): near-black `#101010` canvas, off-white type, one pale-yellow
+highlight, calm and precise. Hierarchy by type and spacing, not boxes. There is no light theme and no toggle.
 "It works" is not visual acceptance. Build from `components/ui`; show every new state on `/dev/ui`.
 
 ## Feedback (enforced by components)
@@ -22,8 +23,10 @@ This is a full product UI replacement: light, white, calm, precise. Hierarchy by
     `user-text-block` (pre-wrap) for long answers, line clamps with "Show more" in lists.
 
 ## Tokens (`app/globals.css`; defaults are cleared, so only tokens compile)
-Colors `canvas surface muted border border-strong text text-secondary text-tertiary accent accent-hover
-accent-subtle success warning danger info` (+ `-subtle`). Type `text-caption small body lead h3 h2 h1 display
+Colors `canvas surface muted border border-strong text text-secondary text-tertiary ink ink-hover on-ink accent
+accent-hover accent-subtle on-accent success warning danger info` (+ `-subtle`). Primary buttons are the off-white `ink`
+pill with `on-ink` text; the yellow `accent` marks links, focus, the selected item and matched/live states, and anything
+filled with it (or with `danger`/`success`) takes `on-accent` text, never `white`. Type `text-caption small body lead h3 h2 h1 display
 display-lg`. Radius `rounded-control` (6) · `rounded-menu` (8) · `rounded-dialog` (12); pills only for avatars
 and dots. Shadows `shadow-sm` (menus) · `shadow-lg` (dialogs/sheets). Widths `max-w-auth form reading app review`.
 Motion 120 ms hover, 180 ms overlays; reduced motion removes transforms.

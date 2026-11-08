@@ -16,7 +16,7 @@ export default function GlobalError({ error, retry }: { error: Error & { digest?
           <h1 className="text-h2 font-semibold tracking-tighter">FTC Pitfund didn’t load</h1>
           <p className="text-lead text-text-secondary">Something went wrong on our side. Try again in a moment.</p>
           <div>
-            <button type="button" onClick={() => retry()} className="h-9 rounded-control bg-accent px-4 text-body font-medium text-white hover:bg-accent-hover">
+            <button type="button" onClick={() => retry()} className="h-9 rounded-control bg-ink px-4 text-body font-medium text-on-ink hover:bg-ink-hover">
               Try again
             </button>
           </div>

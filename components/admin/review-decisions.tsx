@@ -152,7 +152,7 @@ export function ReviewDecisions({ pitchId, teamNumber, companyName, blocker, pre
             className="col-span-2 lg:col-span-1 lg:justify-between"
           >
             <span>Approve &amp; send</span>
-            <KeyboardHint keys={['A']} className="hidden lg:inline-flex [&_kbd]:border-white/40 [&_kbd]:bg-white/10 [&_kbd]:text-white [&_kbd]:shadow-none" />
+            <KeyboardHint keys={['A']} className="hidden lg:inline-flex [&_kbd]:border-on-ink/25 [&_kbd]:bg-on-ink/10 [&_kbd]:text-on-ink [&_kbd]:shadow-none" />
           </Button>
           <NoteDialog
             open={dialog === 'send-back'}

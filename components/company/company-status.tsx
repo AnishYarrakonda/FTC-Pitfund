@@ -68,7 +68,7 @@ export function CompanyChecklist({
           <li key={item.key} className="flex items-center gap-3">
             <span
               aria-hidden="true"
-              className={cn('grid size-5 shrink-0 place-items-center rounded-full border', item.done ? 'border-success bg-success text-white' : 'border-border-strong bg-surface')}
+              className={cn('grid size-5 shrink-0 place-items-center rounded-full border', item.done ? 'border-success bg-success text-on-accent' : 'border-border-strong bg-surface')}
             >
               {item.done ? <Check className="size-3" strokeWidth={3} /> : null}
             </span>

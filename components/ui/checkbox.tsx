@@ -44,7 +44,7 @@ export function Checkbox({ label, description, error, className, id, onCheckedCh
               'disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-danger',
             )}
           />
-          <svg aria-hidden="true" viewBox="0 0 12 12" className="pointer-events-none absolute size-3 text-white opacity-0 peer-checked:opacity-100" fill="none">
+          <svg aria-hidden="true" viewBox="0 0 12 12" className="pointer-events-none absolute size-3 text-on-accent opacity-0 peer-checked:opacity-100" fill="none">
             <path d="M2.5 6.2 5 8.5l4.5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </span>

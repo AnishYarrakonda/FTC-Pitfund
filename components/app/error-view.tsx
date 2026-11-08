@@ -8,7 +8,7 @@ import { SUPPORT_EMAIL } from '@/lib/shared/brand'
 // tailwind-merge) and the icon library: same look as buttonVariants md primary / secondary.
 const BUTTON =
   'inline-flex h-9 shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded-control px-4 text-body font-medium transition-[background-color,border-color,color] duration-120 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
-const PRIMARY = `${BUTTON} bg-accent text-white hover:bg-accent-hover aria-busy:bg-accent/45`
+const PRIMARY = `${BUTTON} bg-ink text-on-ink hover:bg-ink-hover aria-busy:bg-ink/45`
 const SECONDARY = `${BUTTON} border border-border-strong bg-surface text-text hover:bg-muted`
 
 /**

@@ -3,50 +3,27 @@ import Link from 'next/link'
 import { FIRST_DISCLAIMER, SUPPORT_EMAIL } from '@/lib/shared/brand'
 
 import { COMPANY_HREF, TEAM_HREF } from './content'
-import { Arrow, I, Mark } from './icons'
+import { Arrow, Mark } from './icons'
 
 export function FooterCta() {
   return (
     <section className="hp-section" aria-labelledby="hp-cta-title">
-      <div className="hp-container hp-cta">
-        <div className="hp-cta__main">
-          <h2 id="hp-cta-title" className="hp-h-lg">
-            Ready to pitch?
+      <div className="hp-container">
+        <div className="hp-cta">
+          <div className="hp-cta__dots" aria-hidden="true" />
+          <h2 id="hp-cta-title" className="hp-h1">
+            Ready to <span className="hp-hl">pitch?</span>
           </h2>
-          <p className="hp-text-lg">Create an account in a minute, or set up your company to start receiving reviewed pitches.</p>
-          <div className="hp-btns">
-            <Link href={TEAM_HREF} prefetch={false} className="hp-btn hp-btn--primary">
+          <p>Sign in with an email code, no password to create. Free for teams and companies, with no payments handled here.</p>
+          <div className="hp-btns hp-btns--center">
+            <Link href={TEAM_HREF} prefetch={false} className="hp-btn hp-btn--primary hp-btn--lg">
               I coach a team
               <Arrow />
             </Link>
-            <Link href={COMPANY_HREF} prefetch={false} className="hp-btn hp-btn--secondary">
+            <Link href={COMPANY_HREF} prefetch={false} className="hp-btn hp-btn--outline hp-btn--lg">
               I represent a company
             </Link>
           </div>
-        </div>
-        <div className="hp-cta__card">
-          <span className="hp-charm">
-            <I.gauge />
-          </span>
-          <p className="hp-text-md">
-            <b>See what it costs.</b> Nothing. Free for teams and companies, with no payments handled here.
-          </p>
-          <a href="#faq" className="hp-link">
-            Read the FAQ
-            <Arrow />
-          </a>
-        </div>
-        <div className="hp-cta__card">
-          <span className="hp-charm">
-            <I.bolt />
-          </span>
-          <p className="hp-text-md">
-            <b>Start in minutes.</b> Sign in with an email code. No password to create.
-          </p>
-          <Link href="/login" prefetch={false} className="hp-link">
-            Sign in
-            <Arrow />
-          </Link>
         </div>
       </div>
     </section>
@@ -57,28 +34,27 @@ const FOOTER: Array<[string, Array<[string, string]>]> = [
   [
     'Product',
     [
-      ['How it works', '#stages'],
-      ['Pitches', '#bento-pitch'],
-      ['Company questions', '#bento-questions'],
-      ['Review', '#bento-review'],
-      ['Matching', '#bento-match'],
-      ['Team pages', '#bento-public'],
+      ['How it works', '#how'],
+      ['Features', '#features'],
+      ['Review', '#feature-review'],
+      ['Matching', '#feature-match'],
+      ['Team pages', '#feature-public'],
     ],
   ],
   [
     'For teams',
     [
       ['Get started', TEAM_HREF],
-      ['Verify your team', '#bento-verified'],
-      ['Find your path', '#find'],
+      ['Verify your team', '#feature-verified'],
+      ['Find where to start', '#find'],
     ],
   ],
   [
     'For companies',
     [
       ['Set up your company', COMPANY_HREF],
-      ['Write your questions', '#bento-questions'],
-      ['Invite colleagues', '#companies'],
+      ['Write your questions', '#feature-questions'],
+      ['What companies get', '#companies'],
     ],
   ],
   [
@@ -88,6 +64,7 @@ const FOOTER: Array<[string, Array<[string, string]>]> = [
       ['Email support', `mailto:${SUPPORT_EMAIL}`],
       ['Terms', '/legal/terms'],
       ['Privacy', '/legal/privacy'],
+      ['Sign in', '/login'],
     ],
   ],
 ]
@@ -95,37 +72,34 @@ const FOOTER: Array<[string, Array<[string, string]>]> = [
 export function Footer() {
   return (
     <footer className="hp-footer">
-      <div className="hp-footer__inner">
-        <div className="hp-footer__cols">
-          {FOOTER.map(([h, links]) => (
-            <nav key={h} aria-label={h} className="hp-footer__col">
-              <p className="hp-footer__heading">{h}</p>
-              <ul>
-                {links.map(([label, href]) => (
-                  <li key={label}>
-                    <Link href={href} prefetch={false}>
-                      {label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              {h === 'FTC Pitfund' ? (
-                <Link href="/login" prefetch={false} className="hp-link hp-footer__signin">
-                  Sign in
-                  <Arrow />
-                </Link>
-              ) : null}
-            </nav>
-          ))}
+      <div className="hp-container">
+        <div className="hp-footer__top">
+          <div className="hp-footer__brand">
+            <Mark />
+            <p>Sponsorship pitches companies actually read.</p>
+          </div>
+          <div className="hp-footer__cols">
+            {FOOTER.map(([h, links]) => (
+              <nav key={h} aria-label={h} className="hp-footer__col">
+                <p className="hp-footer__heading">{h}</p>
+                <ul>
+                  {links.map(([label, href]) => (
+                    <li key={label}>
+                      <Link href={href} prefetch={false}>
+                        {label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ))}
+          </div>
         </div>
         <div className="hp-footer__bottom">
-          <div>
-            <p>Built by Anish Yarrakonda · Idea by Rishi Jhaveri (outreach lead) and Shreyas Vempati (team captain) · FTC Team 31579 Exodius</p>
-            <p>
-              © 2026 FTC Pitfund · {FIRST_DISCLAIMER}
-            </p>
-          </div>
-          <Mark className="hp-footer__mark" />
+          <p>Built by Anish Yarrakonda · Idea by Rishi Jhaveri (outreach lead) and Shreyas Vempati (team captain) · FTC Team 31579 Exodius</p>
+          <p>
+            © 2026 FTC Pitfund · {FIRST_DISCLAIMER}
+          </p>
         </div>
       </div>
     </footer>

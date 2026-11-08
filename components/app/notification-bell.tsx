@@ -64,7 +64,7 @@ export function BellButton({ unread, ...props }: { unread: number } & Omit<Compo
           {unread > 0 ? (
             <span
               aria-hidden="true"
-              className="absolute -top-1.5 -right-2 inline-grid h-4 min-w-4 place-items-center rounded-full bg-accent px-1 text-[10px] leading-none font-semibold text-white ring-2 ring-surface tabular"
+              className="absolute -top-1.5 -right-2 inline-grid h-4 min-w-4 place-items-center rounded-full bg-accent px-1 text-[10px] leading-none font-semibold text-on-accent ring-2 ring-surface tabular"
             >
               {unread > 99 ? '99+' : unread}
             </span>

@@ -18,12 +18,12 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          'bg-accent text-white hover:bg-accent-hover active:bg-accent-hover disabled:bg-accent/45 disabled:hover:bg-accent/45 aria-disabled:hover:bg-accent',
+          'bg-ink text-on-ink hover:bg-ink-hover active:bg-ink-hover disabled:bg-ink/45 disabled:hover:bg-ink/45 aria-disabled:hover:bg-ink',
         secondary:
           'border border-border-strong bg-surface text-text hover:bg-muted active:bg-muted disabled:text-text-tertiary disabled:hover:bg-surface',
         ghost: 'text-text-secondary hover:bg-muted hover:text-text active:bg-muted disabled:text-text-tertiary disabled:hover:bg-transparent',
         danger:
-          'bg-danger text-white hover:bg-danger-hover active:bg-danger-hover disabled:bg-danger/45 disabled:hover:bg-danger/45 aria-disabled:hover:bg-danger',
+          'bg-danger text-on-accent hover:bg-danger-hover active:bg-danger-hover disabled:bg-danger/45 disabled:hover:bg-danger/45 aria-disabled:hover:bg-danger',
         link: 'h-auto px-0 text-accent underline-offset-4 hover:text-accent-hover hover:underline',
       },
       size: {
