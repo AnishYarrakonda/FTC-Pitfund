@@ -33,7 +33,6 @@
     "provision:vercel": "node --import tsx scripts/provision/vercel.ts",
     "provision:resend": "node --import tsx scripts/provision/resend.ts",
     "provision:verify": "node --import tsx scripts/provision/verify.ts",
-    "screenshots:marketing": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/marketing-screenshots.ts",
     "email:preview": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/email-preview.ts",
     "perf": "node --import tsx --import ./scripts/lib/server-only-stub.mjs scripts/perf.ts",
     "prod": "node --import tsx scripts/prod.ts",

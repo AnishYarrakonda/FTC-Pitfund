@@ -122,8 +122,6 @@ export const STAGES = [
     mark: 'D',
     color: '#8a8a8a',
     title: 'Set up your team page once and reuse it all season.',
-    image: '/marketing/team-page.webp',
-    alt: 'A public team page on FTC Pitfund with the team’s logo, summary and sponsorship deck',
     data: [
       ['5 pages', 'maximum deck length, as one PDF'],
       ['10 MB', 'maximum deck size'],
@@ -135,8 +133,6 @@ export const STAGES = [
     mark: 'R',
     color: '#8ab4ff',
     title: 'A reviewer reads every pitch before a company does.',
-    image: '/marketing/composer.webp',
-    alt: 'The pitch composer: a company’s questions on the left, a preview of what the company will see on the right',
     data: [
       ['100%', 'of pitches reviewed by a person'],
       ['1 note', 'on what to fix, when one is needed'],
@@ -148,8 +144,6 @@ export const STAGES = [
     mark: 'Q',
     color: '#ffff8b',
     title: 'Answer the questions each sponsor actually asked.',
-    image: '/marketing/composer.webp',
-    alt: 'A pitch being written against a company’s own questions',
     data: [
       ['≤10', 'questions per company'],
       ['3', 'good defaults when a company skips it'],
@@ -161,8 +155,6 @@ export const STAGES = [
     mark: 'M',
     color: '#5fd68f',
     title: 'Interested? Contacts are exchanged between you two.',
-    image: '/marketing/inbox-pitch.webp',
-    alt: 'A company’s inbox showing a reviewed pitch with Interested and Not a fit buttons',
     data: [
       ['2', 'answers: Interested or Not a fit'],
       ['Private', 'contacts until Interested'],

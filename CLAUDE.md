@@ -59,7 +59,7 @@ lib/client/        use-action, toast (lazy Sonner), lazy (useLazyComponent), pdf
 components/ui/     the design system          components/app/  shell, top bar, bell, menus, landing island
 components/members/  members + invites section (server) with client controls
 drizzle/           generated migrations       scripts/  setup, db-*, seed/, admin-grant, provision/, prod, perf,
-                                                         security-scan, email-preview, marketing-screenshots, serve-prod
+                                                         security-scan, email-preview, serve-prod
 tests/unit  Vitest   tests/e2e  Playwright   tests/qa  UX gate + dead-click audit   docs/  LAUNCH, RUNBOOK
 proxy.ts           session refresh only (plus x-pathname); no authorization
 ```
@@ -104,7 +104,6 @@ Client side: `useAction(action)` or `<ActionButton action pendingLabel>`; never 
 | `npm run admin:grant -- email` · `email:drain` · `cron:run` · `ftc:sync` · `db:backup` | local ops (`cron:run` calls `/api/cron/daily` on :3000; `ftc:sync` copies FIRST's team list into `ftc_team_cache`) |
 | `npm run provision` · `provision:check\|supabase\|vercel\|resend\|verify` | build production from `.env.local` (docs/LAUNCH.md) |
 | `npm run prod -- backup\|admin email [--revoke]` | ops against the hosted database using `.env.local` |
-| `npm run screenshots:marketing` | recapture the landing page screenshots from the seeded production build |
 
 ## Rules for agents
 
