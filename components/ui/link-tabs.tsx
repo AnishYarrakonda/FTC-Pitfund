@@ -33,7 +33,7 @@ export function LinkTabs({ tabs, active, label, className }: { tabs: LinkTab[]; 
                   <span
                     className={cn(
                       'inline-grid h-5 min-w-5 place-items-center rounded-control px-1.5 text-caption font-medium tabular',
-                      tab.count > 0 && current ? 'bg-text text-white' : 'bg-muted text-text-secondary',
+                      tab.count > 0 && current ? 'bg-text text-canvas' : 'bg-muted text-text-secondary',
                     )}
                   >
                     {tab.count}

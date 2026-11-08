@@ -27,7 +27,7 @@ export default function MobileNavSheet({ items, secondary, name, email, defaultO
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay
           data-motion="overlay"
-          className="fixed inset-0 z-50 bg-text/30 data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out sm:hidden"
+          className="fixed inset-0 z-50 bg-black/70 data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out sm:hidden"
         />
         <DialogPrimitive.Content
           data-overlay="sheet"

@@ -1,73 +1,7 @@
-import { initBurst } from './canvases'
 import { matchIntent } from './find-match'
 import { type Cleanup, on } from './util'
 
-/* Stats menu + sky, the sticky accordion, the three carousels, and the "find where to start" box. */
-
-const TIMES = ['pre-dawn', 'sunrise', 'daytime', 'dusk', 'sunset', 'night']
-function localTime() {
-  const h = new Date().getHours()
-  if (h < 5) return 'night'
-  if (h < 7) return 'pre-dawn'
-  if (h < 9) return 'sunrise'
-  if (h < 16) return 'daytime'
-  if (h < 18) return 'dusk'
-  if (h < 20) return 'sunset'
-  return 'night'
-}
-
-export function initStats(root: HTMLElement): Cleanup {
-  const sec = root.querySelector<HTMLElement>('[data-hp-stats]')
-  if (!sec) return () => {}
-  const offs: Cleanup[] = []
-  sec.dataset.time = localTime()
-  let active = 0
-  const stats = [...sec.querySelectorAll<HTMLButtonElement>('[data-hp-stat]')]
-  const select = (i: number) => {
-    active = i
-    sec.style.setProperty('--active', String(i))
-    stats.forEach((b, j) => b.setAttribute('aria-selected', String(i === j)))
-  }
-  stats.forEach((b, i) => {
-    offs.push(on(b, 'click', () => select(i)))
-    offs.push(
-      on(b, 'keydown', (e: KeyboardEvent) => {
-        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
-        const n = (i + (e.key === 'ArrowRight' ? 1 : stats.length - 1)) % stats.length
-        select(n)
-        stats[n].focus()
-      }),
-    )
-  })
-  select(0)
-  /*
-   * The sky layers and the time picker they belong to were taken out of the markup; the stats sit on
-   * the plain canvas now. This used to assert both were there, so every homepage load threw here and
-   * logged "[home] effect failed" — swallowed as a warning, which is why no gate caught it, and
-   * everything after this point (the burst canvas) silently never wired.
-   */
-  const btn = sec.querySelector<HTMLButtonElement>('[data-hp-time-btn]')
-  const menu = sec.querySelector<HTMLElement>('[data-hp-time-menu]')
-  if (btn && menu) {
-    offs.push(
-      on(btn, 'click', () => {
-        menu.hidden = !menu.hidden
-        btn.setAttribute('aria-expanded', String(!menu.hidden))
-      }),
-    )
-    menu.querySelectorAll<HTMLButtonElement>('[data-hp-time]').forEach((b) =>
-      offs.push(
-        on(b, 'click', () => {
-          sec.dataset.time = b.dataset.hpTime!
-          menu.hidden = true
-          btn.setAttribute('aria-expanded', 'false')
-        }),
-      ),
-    )
-  }
-  offs.push(initBurst(sec, () => (TIMES.includes(sec.dataset.time!) ? sec.dataset.time! : 'daytime'), () => active))
-  return () => offs.forEach((f) => f())
-}
+/* The stage accordion and the "find where to start" box. */
 
 export function initAccordion(root: HTMLElement): Cleanup {
   const offs: Cleanup[] = []
@@ -83,71 +17,6 @@ export function initAccordion(root: HTMLElement): Cleanup {
     // Opening one closes the others; clicking the open one folds it away.
     items.forEach((it) => offs.push(on(it.querySelector('[data-hp-story]')!, 'click', () => setOpen(it.dataset.open === 'true' ? null : it))))
   })
-  return () => offs.forEach((f) => f())
-}
-
-export function initCarousels(root: HTMLElement): Cleanup {
-  const offs: Cleanup[] = []
-
-  // Company cards: arrows page the track; hovering a card widens it and nudges its neighbors (CSS).
-  root.querySelectorAll<HTMLElement>('[data-hp-carousel]').forEach((car) => {
-    const track = car.querySelector<HTMLElement>('[data-hp-track]')!
-    const step = () => (track.firstElementChild as HTMLElement).getBoundingClientRect().width + 16
-    const update = () => {
-      car.querySelector<HTMLButtonElement>('[data-hp-prev]')!.disabled = track.scrollLeft < 4
-      car.querySelector<HTMLButtonElement>('[data-hp-next]')!.disabled = track.scrollLeft + track.clientWidth > track.scrollWidth - 4
-    }
-    offs.push(on(car.querySelector('[data-hp-prev]')!, 'click', () => track.scrollBy({ left: -step() * 2, behavior: 'smooth' })))
-    offs.push(on(car.querySelector('[data-hp-next]')!, 'click', () => track.scrollBy({ left: step() * 2, behavior: 'smooth' })))
-    offs.push(on(track, 'scroll', update, { passive: true }))
-    update()
-  })
-
-  // FAQ quotes: tabs below, a bar slides to the selected tab, the quote cross-fades.
-  root.querySelectorAll<HTMLElement>('[data-hp-quotes]').forEach((q) => {
-    const tabs = [...q.querySelectorAll<HTMLButtonElement>('[data-hp-quote]')]
-    const cards = [...q.querySelectorAll<HTMLElement>('.hp-quote')]
-    const select = (i: number) => {
-      tabs.forEach((t, j) => {
-        t.setAttribute('aria-selected', String(i === j))
-        t.tabIndex = i === j ? 0 : -1
-      })
-      cards.forEach((c, j) => (c.dataset.active = String(i === j)))
-      const t = tabs[i]
-      q.style.setProperty('--bar-x', `${t.offsetLeft}px`)
-      q.style.setProperty('--bar-w', `${t.offsetWidth}px`)
-    }
-    tabs.forEach((t, i) => {
-      offs.push(on(t, 'click', () => select(i)))
-      offs.push(
-        on(t, 'keydown', (e: KeyboardEvent) => {
-          if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
-          const n = (i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length
-          select(n)
-          tabs[n].focus()
-        }),
-      )
-    })
-    select(0)
-    offs.push(on(window, 'resize', () => select(tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true'))))
-  })
-
-  // What's new: the active item is wide, the rest squeeze; arrows and clicks move it.
-  root.querySelectorAll<HTMLElement>('[data-hp-news]').forEach((n) => {
-    const items = [...n.querySelectorAll<HTMLElement>('[data-hp-news-item]')]
-    const details = [...n.querySelectorAll<HTMLElement>('[data-hp-news-detail]')]
-    let cur = 0
-    const select = (i: number) => {
-      cur = (i + items.length) % items.length
-      items.forEach((it, j) => (it.dataset.active = String(j === cur)))
-      details.forEach((d, j) => (d.dataset.active = String(j === cur)))
-    }
-    items.forEach((it, i) => offs.push(on(it, 'click', () => select(i))))
-    const sec = n.closest('section')!
-    offs.push(on(sec.querySelector('[data-hp-news-prev]')!, 'click', () => select(cur - 1)))
-    offs.push(on(sec.querySelector('[data-hp-news-next]')!, 'click', () => select(cur + 1)))
-  })
-
   return () => offs.forEach((f) => f())
 }
 

@@ -33,15 +33,13 @@
 }
 
 /*
- * FTC Pitfund design tokens (v5). These are the homepage's tokens (app/(public)/home.css, the `.hp`
- * block) restated for the product, so signing up doesn't hand you a different-looking product: the
- * same #061b31 ink, the same #1e40af action color, the same cool #e5edf5 hairline and #f8fafd canvas.
- * What the product does NOT take from the homepage is its marketing chrome — no skewed gradient
- * canvases, no dot grids, no 300-weight display type. A dense inbox or admin table needs contrast
- * and quiet, so the product keeps its own type scale, its 4-8px radii and its restrained shadows,
- * and spends the signature gradient only on the mark and the occasional empty state.
- * One typeface (Inter) at every size. Tailwind's default palette, type scale, radii and shadows are
- * cleared so only these values exist: if a class isn't built from a token below, it doesn't compile.
+ * FTC Pitfund design tokens (v6, dark). One dark theme for the whole site, homepage and product alike:
+ * a near-black #101010 canvas, cards that lift by a step of grey and a hairline rather than a shadow,
+ * off-white #f7f7f7 type, and one pale-yellow highlight. There is no light theme and no toggle.
+ * Primary actions are the off-white "ink" pill with dark text; the yellow accent marks links, focus,
+ * the selected thing and the "matched/live" states. Tailwind's default palette, type scale, radii
+ * and shadows are cleared so only these values exist: if a class isn't built from a token below,
+ * it doesn't compile.
  */
 
 @theme {
@@ -49,60 +47,60 @@
   --color-transparent: transparent;
   --color-current: currentColor;
   --color-white: #ffffff;
+  --color-black: #000000;
 
-  --color-canvas: #f8fafd;
-  --color-surface: #ffffff;
-  --color-muted: #eef3f9;
-  --color-border: #e5edf5;
-  --color-border-strong: #d4dee9;
+  --color-canvas: #101010;
+  --color-surface: #171717;
+  --color-muted: #222222;
+  --color-border: #2a2a2a;
+  --color-border-strong: #3d3d3d;
 
-  --color-text: #061b31;
-  --color-text-secondary: #50617a;
-  /* Dark enough to clear AA on the tinted panels too, not just white: at the homepage's own
-     #64748d this sits at 3.96 on accent-subtle and 4.25 on success-subtle, which axe fails on
-     the matched-pitch contact list. #5a6980 is the same slate ramp, 4.65 at its worst. */
-  --color-text-tertiary: #5a6980;
+  --color-text: #f7f7f7;
+  --color-text-secondary: #b4b4b4;
+  /* Clears AA (4.5) on every panel it sits on, the tinted -subtle fills included. */
+  --color-text-tertiary: #969696;
 
-  /* The one accent: used for the primary action, links, and "matched/live" states — nowhere else. */
-  --color-accent: #1e40af;
-  --color-accent-hover: #4032c8;
-  --color-accent-subtle: #e8e9ff;
+  /* The primary button: off-white ink with near-black text, like the reference's pill. */
+  --color-ink: #f7f7f7;
+  --color-ink-hover: #ffffff;
+  --color-on-ink: #101010;
 
-  --color-success: #047857;
-  --color-success-subtle: #e7f6ef;
-  --color-warning: #a4620d;
-  --color-warning-subtle: #fbf2e3;
-  --color-danger: #c22a1f;
-  --color-danger-hover: #a4231a;
-  --color-danger-subtle: #fbeceb;
-  --color-info: #1e40af;
-  --color-info-subtle: #e8e9ff;
+  /* The one highlight: links, focus rings, the selected tab, and "matched/live" states. */
+  --color-accent: #ffff8b;
+  --color-accent-hover: #ffffc2;
+  --color-accent-subtle: #26261a;
+  --color-on-accent: #101010;
 
-  /* The signature gradient, blue → green → lime → yellow. It is the homepage's identity and the
-     one place the product is allowed to be decorative: the mark, and occasionally an empty state or
-     a progress rail. Never behind text, never as a button fill — chrome stays on --color-accent. */
-  --color-brand-blue: #3b82f6;
-  --color-brand-green: #10b981;
-  --color-brand-lime: #84cc16;
-  --color-brand-yellow: #facc15;
+  --color-success: #5fd68f;
+  --color-success-subtle: #12261a;
+  --color-warning: #f2c14e;
+  --color-warning-subtle: #2a2212;
+  --color-danger: #ff7b72;
+  --color-danger-hover: #ff9a93;
+  --color-danger-subtle: #2c1615;
+  --color-info: #8ab4ff;
+  --color-info-subtle: #161f30;
 
-  /* The four pipeline stages (draft, review, sent/questions, matched), sampled along that same
-     gradient so a status dot in the product and a stage marker on the homepage are the same color. */
-  --color-stage-draft: #1e40af;
-  --color-stage-review: #3b82f6;
-  --color-stage-sent: #84cc16;
-  --color-stage-matched: #00b261;
+  /* Decorative ramp for the mark's tile, empty states and progress rails: grey → yellow. */
+  --color-brand-blue: #8ab4ff;
+  --color-brand-green: #5fd68f;
+  --color-brand-lime: #d4f27a;
+  --color-brand-yellow: #ffff8b;
 
-  /* Kept because components still reference them; both now sit on the gradient's blue end rather
-     than the old violet/coral pair, which belonged to no part of the homepage. */
-  --color-violet: #4032c8;
-  --color-violet-subtle: #e8e9ff;
-  --color-coral: #0ea5e9;
-  --color-coral-subtle: #e0f4fd;
+  /* The four pipeline stages (draft, review, sent/questions, matched). */
+  --color-stage-draft: #8a8a8a;
+  --color-stage-review: #8ab4ff;
+  --color-stage-sent: #ffff8b;
+  --color-stage-matched: #5fd68f;
+
+  --color-violet: #b9a8ff;
+  --color-violet-subtle: #1f1a33;
+  --color-coral: #7dd3fc;
+  --color-coral-subtle: #13242e;
 
   --font-sans: var(--font-inter), 'Inter Fallback Liberation', 'Inter Fallback Roboto', 'Inter Fallback DejaVu', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
-  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+  --font-mono: ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 
   --text-*: initial;
   --text-caption: 12px;
@@ -133,15 +131,14 @@
   --tracking-tighter: -0.022em;
 
   --radius-*: initial;
-  --radius-control: 4px;
-  --radius-menu: 6px;
-  --radius-dialog: 8px;
+  --radius-control: 6px;
+  --radius-menu: 8px;
+  --radius-dialog: 12px;
 
-  /* Cast from the homepage's cool #003770 rather than a neutral black, so a card lifting off the
-     canvas looks the same shade of lifted on both sides of the sign-up. */
+  /* On a dark canvas a shadow reads as depth only with a hairline of light on top of it. */
   --shadow-*: initial;
-  --shadow-sm: 0 1px 2px rgb(0 55 112 / 0.05), 0 2px 8px rgb(0 59 137 / 0.05);
-  --shadow-lg: 0 8px 24px rgb(0 55 112 / 0.08), 0 24px 64px rgb(0 59 137 / 0.1);
+  --shadow-sm: 0 0 0 1px rgb(255 255 255 / 0.04), 0 4px 16px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 0 0 1px rgb(255 255 255 / 0.06), 0 24px 64px rgb(0 0 0 / 0.7);
 
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
@@ -266,7 +263,7 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    color-scheme: light;
+    color-scheme: dark;
   }
 
   body {
@@ -300,8 +297,8 @@
   }
 
   ::selection {
-    background: var(--color-accent-subtle);
-    color: var(--color-text);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
   }
 
   [data-numeric],

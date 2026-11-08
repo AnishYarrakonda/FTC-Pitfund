@@ -41,101 +41,73 @@ export const FAQS = [
   { id: 'first', q: 'Is this run by FIRST?', a: 'No. FTC Pitfund is an independent project built by FTC Team 31579 Exodius. It is not affiliated with or endorsed by FIRST®.' },
 ] as const
 
-export type BentoKey = 'pitch' | 'questions' | 'review' | 'verified' | 'public' | 'match'
+export type FeatureIcon = 'send' | 'question' | 'eye' | 'shield' | 'file' | 'check'
 
-export const SHORT: Record<BentoKey, string> = {
-  pitch: 'Pitch approved companies, online and on the record',
-  questions: 'Ask the questions you care about',
-  review: 'Every pitch is read by a person first',
-  verified: 'Teams verified against FIRST records',
-  public: 'A public team page you can send anywhere',
-  match: 'Interested? Contacts are exchanged, only then',
-}
-
-export const BENTO: Record<
-  BentoKey,
+/* The six things FTC Pitfund does, as the homepage's feature grid shows them. */
+export const FEATURES: Array<{ id: string; tag: string; icon: FeatureIcon; title: string; body: string }> = [
   {
-    title: string
-    lede: string
-    accent: string
-    checks: string[]
-    features: Array<{ icon: 'gauge' | 'loop' | 'grid' | 'shield' | 'mail' | 'user'; text: string }>
-    primary: { label: string; href: string }
-  }
-> = {
-  pitch: {
-    title: 'Pitch approved companies, online and on the record',
-    lede: 'Build one team profile, then pitch any approved company that sponsors robotics. Every pitch is saved as you write it, tracked through review, and answered with a clear yes or no.',
-    accent: '#10b981',
-    checks: ['Pitch any approved company', 'One pitch per company per season', 'Autosaved drafts', 'Withdraw before a reply to free the slot'],
-    features: [
-      { icon: 'grid', text: 'Reuse one deck and one summary for every pitch you send this season.' },
-      { icon: 'loop', text: 'See each pitch move from draft to review to sent to answered, in one list.' },
-      { icon: 'mail', text: 'Every change lands in your notifications, with an email copy when it matters.' },
-    ],
-    primary: { label: 'I coach a team', href: TEAM_HREF },
+    id: 'pitch',
+    tag: 'Pitches',
+    icon: 'send',
+    title: 'Pitch approved companies, on the record',
+    body: 'Build one team profile, then pitch any approved company that sponsors robotics. Drafts save as you write, and every pitch ends in a clear yes or no.',
   },
-  questions: {
-    title: 'Ask the questions you actually care about',
-    lede: 'Each company writes its own questions, up to ten, or keeps three good defaults. Teams answer exactly those, so no two companies get the same generic form.',
-    accent: '#84cc16',
-    checks: ['Up to ten questions', 'Three defaults if you skip it', 'Answers reviewed before you see them', 'Change questions any time'],
-    features: [
-      { icon: 'gauge', text: 'Decide what you need to know: budget, outreach, team history, anything.' },
-      { icon: 'loop', text: 'New questions apply to new pitches. Pitches already sent keep theirs.' },
-      { icon: 'grid', text: 'Read every answer beside the team’s deck and public page.' },
-    ],
-    primary: { label: 'Set up your company', href: COMPANY_HREF },
+  {
+    id: 'questions',
+    tag: 'Questions',
+    icon: 'question',
+    title: 'Each company asks its own questions',
+    body: 'Companies write up to ten questions, or keep three good defaults. Teams answer exactly those, so no two companies get the same generic form.',
   },
-  review: {
-    title: 'Every pitch is read by a person first',
-    lede: 'A reviewer reads each pitch before any company sees it. Something missing goes back to the team with a note on what to fix, never a silent rejection.',
-    accent: '#1e40af',
-    checks: ['Human review, not an algorithm', 'Notes that say what to fix', 'Resubmits go to the front', 'Companies see only reviewed pitches'],
-    features: [
-      { icon: 'shield', text: 'Teams and companies are approved before they reach the app at all.' },
-      { icon: 'user', text: 'Reviewers are run by FTC Team 31579 Exodius.' },
-      { icon: 'mail', text: 'Both sides are notified the moment a decision is made.' },
-    ],
-    primary: { label: 'I coach a team', href: TEAM_HREF },
+  {
+    id: 'review',
+    tag: 'Review',
+    icon: 'eye',
+    title: 'A person reads every pitch first',
+    body: 'A reviewer reads each pitch before any company sees it. Anything missing goes back to the team with a note on what to fix, never a silent rejection.',
   },
-  verified: {
-    title: 'Teams verified against FIRST records',
-    lede: 'A team proves itself with its team number and a FIRST Dashboard screenshot. Until a reviewer approves it, nothing about the team is reachable, including its public page.',
-    accent: '#3b82f6',
-    checks: ['Team number matched to FIRST', 'Screenshot kept private', 'Adults only, no student accounts', 'One owner per team account'],
-    features: [
-      { icon: 'shield', text: 'Proof lives in a private bucket and is deleted on approval.' },
-      { icon: 'user', text: 'Owners invite editors, remove them, and hand ownership on.' },
-      { icon: 'grid', text: 'Companies are approved the same way before teams can pitch them.' },
-    ],
-    primary: { label: 'Verify your team', href: TEAM_HREF },
+  {
+    id: 'verified',
+    tag: 'Verification',
+    icon: 'shield',
+    title: 'Teams checked against FIRST records',
+    body: 'A team proves itself with its number and a FIRST Dashboard screenshot. Until a reviewer approves it, nothing about the team is reachable.',
   },
-  public: {
+  {
+    id: 'public',
+    tag: 'Team pages',
+    icon: 'file',
     title: 'A public team page you can send anywhere',
-    lede: 'Every approved team gets a page with its name, number, logo, one-line summary and deck. Send the link to anyone, on or off FTC Pitfund.',
-    accent: '#00d4ff',
-    checks: ['Deck up to five pages', 'PDF up to 10 MB', 'One-line summary', 'Anyone can report a page'],
-    features: [
-      { icon: 'grid', text: 'The deck opens in the browser, page by page, and downloads as a PDF.' },
-      { icon: 'loop', text: 'Replace the deck any time; the page updates at once.' },
-      { icon: 'shield', text: 'Only approved teams have a page. Nothing else is public.' },
-    ],
-    primary: { label: 'Build your team page', href: TEAM_HREF },
+    body: 'Every approved team gets a page with its logo, one-line summary and a deck of up to five pages. Send the link to anyone, on or off FTC Pitfund.',
   },
-  match: {
-    title: 'Interested? Contacts are exchanged, only then',
-    lede: 'A company answers Interested or Not a fit. Interested exchanges contact details between that team and that company: nothing before, and nothing with anyone else.',
-    accent: '#eab308',
-    checks: ['Two clear answers', 'Contacts only on a match', 'Only the two orgs involved', 'No money moves through us'],
-    features: [
-      { icon: 'user', text: 'Names, emails and phone numbers stay private until Interested.' },
-      { icon: 'mail', text: 'Both sides get the other’s contacts in the app and by email.' },
-      { icon: 'gauge', text: 'Arrange the sponsorship directly, however suits you both.' },
-    ],
-    primary: { label: 'Set up your company', href: COMPANY_HREF },
+  {
+    id: 'match',
+    tag: 'Matching',
+    icon: 'check',
+    title: 'Contacts are exchanged only on Interested',
+    body: 'A company answers Interested or Not a fit. Interested shares contact details between that team and that company: nothing before, nobody else.',
   },
-}
+]
+
+/* The two sides of a sponsorship, each with what it gets and its door in. */
+export const SIDES = [
+  {
+    id: 'teams',
+    label: 'For teams',
+    title: 'Pitch every approved sponsor from one team account',
+    body: 'Verify your team once, upload one deck, and every approved company is a pitch away.',
+    checks: ['Team number matched to FIRST', 'One deck and summary, reused all season', 'Autosaved drafts', 'One pitch per company per season', 'Withdraw before a reply to free the slot'],
+    cta: { label: 'I coach a team', href: TEAM_HREF },
+  },
+  {
+    id: 'companies',
+    label: 'For companies',
+    title: 'An inbox of screened, specific pitches',
+    body: 'Write the questions you care about and let approved teams answer them. You answer each pitch with a click.',
+    checks: ['Up to ten questions of your own', 'Only reviewed pitches reach you', 'Interested or Not a fit, nothing in between', 'Invite colleagues as editors', 'Free, and no money moves through us'],
+    cta: { label: 'I represent a company', href: COMPANY_HREF },
+  },
+] as const
 
 export const STATS = [
   { value: '1', label: 'pitch per team, per company, per season' },
@@ -148,7 +120,7 @@ export const STAGES = [
   {
     key: 'draft',
     mark: 'D',
-    color: '#1e40af',
+    color: '#8a8a8a',
     title: 'Set up your team page once and reuse it all season.',
     image: '/marketing/team-page.webp',
     alt: 'A public team page on FTC Pitfund with the team’s logo, summary and sponsorship deck',
@@ -161,7 +133,7 @@ export const STAGES = [
   {
     key: 'review',
     mark: 'R',
-    color: '#3b82f6',
+    color: '#8ab4ff',
     title: 'A reviewer reads every pitch before a company does.',
     image: '/marketing/composer.webp',
     alt: 'The pitch composer: a company’s questions on the left, a preview of what the company will see on the right',
@@ -174,7 +146,7 @@ export const STAGES = [
   {
     key: 'sent',
     mark: 'Q',
-    color: '#84cc16',
+    color: '#ffff8b',
     title: 'Answer the questions each sponsor actually asked.',
     image: '/marketing/composer.webp',
     alt: 'A pitch being written against a company’s own questions',
@@ -187,7 +159,7 @@ export const STAGES = [
   {
     key: 'matched',
     mark: 'M',
-    color: '#00b261',
+    color: '#5fd68f',
     title: 'Interested? Contacts are exchanged between you two.',
     image: '/marketing/inbox-pitch.webp',
     alt: 'A company’s inbox showing a reviewed pitch with Interested and Not a fit buttons',

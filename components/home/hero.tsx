@@ -1,169 +1,133 @@
 import Link from 'next/link'
-import type { ReactNode } from 'react'
 
-import { COMPANY_HREF, TEAM_HREF } from './content'
-import { Arrow } from './icons'
+import { COMPANY_HREF, STATS, TEAM_HREF } from './content'
+import { Arrow, I } from './icons'
 
 /*
- * The hero: a soft brand-tinted wash behind the headline and the product illustration. Above the
- * headline a live figure rolls its digits (here: time left in the pitch season), and below it a logo
- * marquee.
+ * The hero: a dot-grid field, the headline on the left with one phrase lit in the highlight color, and
+ * a still of the product on the right (markup, not an image, so it is crisp and costs no request).
+ * Under it, the season's rules as a quiet strip of figures.
  */
 
-const LINE_1 = 'Sponsorship pitches companies actually read.'
-const LINE_2 = 'Upload your team’s deck once, answer each sponsor’s own questions, and have every pitch checked by a real person before it lands.'
-
-function Title({ as: As, className, ...rest }: { as: 'h1' | 'div'; className: string; 'aria-hidden'?: boolean }) {
-  return (
-    <As className={className} {...rest}>
-      <em className="hp-hero__title-main">{LINE_1}</em> <span>{LINE_2}</span>
-    </As>
-  )
-}
-
-/* Words associated with FTC Pitfund for the scrolling marquee. */
-const APP_WORDS: Array<{ name: string; glyph: ReactNode; style?: string }> = [
-  { name: 'Pitches', glyph: <path d="M3 13.5 21 6l-4.5 12-3.5-4.5L3 13.5Z" /> },
-  { name: 'Sponsors', glyph: <path d="M7 7h10v10H7zM10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4" />, style: 'mono' },
-  { name: 'Teams', glyph: <path d="M8 9h8v8H8zM12 5v4M6 13H4M20 13h-2M10 12.5h.01M14 12.5h.01" /> },
-  { name: 'Matches', glyph: <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 5.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />, style: 'wide' },
-  { name: 'Funding', glyph: <path d="M3 20V10l6 3.5V10l6 3.5V6h6v14H3Z" />, style: 'heavy' },
-  { name: 'Connections', glyph: <path d="M13 2 5 13.5h6L10 22l8-11h-6l1-9Z" /> },
-  { name: 'Robotics', glyph: <path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14" />, style: 'mono' },
-  { name: 'Grants', glyph: <path d="M4 15.5 6 10h12l2 5.5M4 15.5h16v3H4zM7.5 18.5v1.5M16.5 18.5v1.5" />, style: 'heavy' },
-  { name: 'STEM', glyph: <path d="M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6V4Z" /> },
-  { name: 'Outreach', glyph: <path d="M3 9.5 12 4l9 5.5M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18" />, style: 'wide' },
-  { name: 'Companies', glyph: <path d="M12 12v9M7.5 7.5a6.4 6.4 0 0 0 0 9M16.5 7.5a6.4 6.4 0 0 1 0 9M4.5 4.5a10.6 10.6 0 0 0 0 15M19.5 4.5a10.6 10.6 0 0 1 0 15" /> },
-  { name: 'Feedback', glyph: <path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11Z" />, style: 'heavy' },
+const PITCHES: Array<[string, string, 'draft' | 'review' | 'sent' | 'matched']> = [
+  ['Ribosome Robotics', 'Interested', 'matched'],
+  ['Northwind Aero', 'In review', 'review'],
+  ['Lumen Circuits', 'Sent', 'sent'],
+  ['Harborline Labs', 'Draft', 'draft'],
 ]
 
 export function Hero() {
   return (
     <section className="hp-hero" aria-labelledby="hp-hero-title">
-      <div className="hp-hero__bg" aria-hidden="true">
-        <span className="hp-bleed-line hp-hero__line-top" />
-        <span className="hp-bleed-line hp-hero__line-bottom" />
-      </div>
-
-      <div className="hp-hero__layout">
-        <div className="hp-hero__grid">
-          <div className="hp-hero__text">
-            <p className="hp-hero__eyebrow hp-rise hp-rise-1" >
-              <span className="hp-hero__eyebrow-label">Time left in the 2026–27 pitch season:</span>{' '}
-              <span className="hp-hero__eyebrow-value hp-tabular" data-hp-countdown aria-live="off">
-                &nbsp;
-              </span>
-            </p>
-            <div className="hp-hero__titles">
-              <Title as="h1" className="hp-hero__title hp-hero__title--left" />
-              <span id="hp-hero-title" hidden>
-                {LINE_1} {LINE_2}
-              </span>
-            </div>
-
-            <div className="hp-btns hp-hero__actions hp-hero__actions--left hp-rise hp-rise-4">
-              <Link href={TEAM_HREF} prefetch={false} className="hp-btn hp-btn--primary">
-                Start your team&apos;s pitch
-                <Arrow />
-              </Link>
-              <Link href={COMPANY_HREF} prefetch={false} className="hp-btn hp-btn--white">
-                I represent a company
-              </Link>
-            </div>
-
-            <ul className="hp-hero-proof hp-rise hp-rise-5">
-              <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Free for teams</li>
-              <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Every pitch human-reviewed</li>
-              <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Contacts private until a match</li>
-            </ul>
+      <div className="hp-hero__dots" aria-hidden="true" />
+      <div className="hp-container hp-hero__grid">
+        <div className="hp-hero__text">
+          <h1 id="hp-hero-title" className="hp-hero__title">
+            Sponsorship pitches <span className="hp-hl">companies actually read.</span>
+          </h1>
+          <p className="hp-hero__lede">
+            Upload your team’s deck once, answer each sponsor’s own questions, and have every pitch checked by a real person before it lands.
+          </p>
+          <div className="hp-btns">
+            <Link href={TEAM_HREF} prefetch={false} className="hp-btn hp-btn--primary hp-btn--lg">
+              I coach a team
+              <Arrow />
+            </Link>
+            <Link href={COMPANY_HREF} prefetch={false} className="hp-btn hp-btn--ghost hp-btn--lg">
+              I represent a company
+            </Link>
           </div>
-
-          <div className="hp-hero__visual" aria-label="Preview of a team's pitch in FTC Pitfund" role="img">
-            {/* Reviewer note */}
-            <div className="hp-ui-card hp-float hp-float-review">
-              <div className="hp-rev-head">
-                <div className="hp-rev-avatar">PF</div>
-                <div>
-                  <div className="hp-rev-title">Approved by reviewer</div>
-                  <div className="hp-rev-sub">Pitfund admin · 2h ago</div>
-                </div>
-              </div>
-              <p className="hp-rev-note">Clear budget and a strong outreach answer. Sent to Ribosome Robotics.</p>
-            </div>
-
-            {/* Main pitch window */}
-            <div className="hp-ui-card hp-app-window">
-              <div className="hp-app-bar">
-                <div className="hp-app-dots"><i /><i /><i /></div>
-                <div className="hp-app-crumb">Pitches / <b>Ribosome Robotics</b></div>
-              </div>
-              <div className="hp-app-body">
-                <div className="hp-team-row">
-                  <div className="hp-team-mark">EX</div>
-                  <div>
-                    <div className="hp-team-name">Exodius</div>
-                    <div className="hp-team-meta">Team 31579 · 2026–27 season</div>
-                  </div>
-                  <span className="hp-badge hp-badge-verified">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    FIRST verified
-                  </span>
-                </div>
-
-                <div>
-                  <div className="hp-label">Sponsorship deck · 5 pages</div>
-                  <div className="hp-deck">
-                    <div className="hp-deck-page hp-cover"></div>
-                    <div className="hp-deck-page"></div>
-                    <div className="hp-deck-page"></div>
-                    <div className="hp-deck-page"></div>
-                    <div className="hp-deck-page"></div>
-                  </div>
-                </div>
-
-                <div className="hp-qa">
-                  <div className="hp-qa-q">How would your team use our support this season?</div>
-                  <p className="hp-qa-a">Machined drivetrain parts for our worlds robot, plus two summer workshops for local FLL teams.</p>
-                </div>
-
-                <div className="hp-steps">
-                  <div className="hp-step"><span className="hp-step-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Submitted</div>
-                  <div className="hp-step"><span className="hp-step-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Reviewed</div>
-                  <div className="hp-step hp-is-live"><span className="hp-step-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Interested</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Match notification */}
-            <div className="hp-ui-card hp-float hp-float-match">
-              <div className="hp-pop-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <div>
-                <div className="hp-pop-title">Ribosome Robotics is interested</div>
-                <div className="hp-pop-sub">Contact details are now shared with both of you.</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="hp-logos">
-        <h2 className="hp-sr">Key concepts in FTC Pitfund</h2>
-        <div className="hp-logos__viewport" data-hp-marquee>
-          <ul className="hp-logos__track">
-            {[0, 1].map((copy) =>
-              APP_WORDS.map((k) => (
-                <li key={`${copy}-${k.name}`} className={`hp-logos__item hp-logos__item--${k.style ?? 'plain'}`} aria-hidden={copy === 1 ? true : undefined}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    {k.glyph}
-                  </svg>
-                  <span>{k.name}</span>
-                </li>
-              )),
-            )}
+          <ul className="hp-hero__proof">
+            <li>
+              <I.tick />
+              Free for teams and companies
+            </li>
+            <li>
+              <I.tick />
+              Every pitch human-reviewed
+            </li>
+            <li>
+              <I.tick />
+              Contacts private until a match
+            </li>
           </ul>
         </div>
+
+        <div className="hp-window hp-hero__app" role="img" aria-label="Preview of FTC Pitfund: a team’s pitch list beside a pitch a company marked Interested">
+          <div className="hp-window__bar">
+            <span className="hp-window__dots">
+              <i />
+              <i />
+              <i />
+            </span>
+          </div>
+          <div className="hp-app">
+            <div className="hp-app__side">
+              <span className="hp-app__new">
+                <I.plus />
+                New pitch
+              </span>
+              <span className="hp-app__nav hp-app__nav--on">Pitches</span>
+              <span className="hp-app__nav">Sponsors</span>
+              <span className="hp-app__nav">Team</span>
+              <span className="hp-app__group">This season</span>
+              {PITCHES.map(([name, , tone]) => (
+                <span key={name} className="hp-app__item">
+                  <i className={`hp-dot hp-dot--${tone}`} />
+                  {name}
+                </span>
+              ))}
+            </div>
+            <div className="hp-app__main">
+              <div className="hp-app__head">
+                <span className="hp-app__logo">EX</span>
+                <span>
+                  <b>Exodius → Ribosome Robotics</b>
+                  <small>Team 31579 · 2026–27 season</small>
+                </span>
+                <span className="hp-chip hp-chip--matched">Interested</span>
+              </div>
+              <div className="hp-app__card">
+                <small>How would your team use our support this season?</small>
+                <p>Machined drivetrain parts for our worlds robot, plus two summer workshops for local FLL teams.</p>
+              </div>
+              <div className="hp-app__deck" aria-hidden="true">
+                <i className="hp-app__cover" />
+                <i />
+                <i />
+                <i />
+                <i />
+              </div>
+              <ol className="hp-app__steps">
+                <li className="hp-is-done">Submitted</li>
+                <li className="hp-is-done">Reviewed</li>
+                <li className="hp-is-done">Sent</li>
+                <li className="hp-is-live">Interested</li>
+              </ol>
+              <div className="hp-app__toast">
+                <span className="hp-app__toast-icon">
+                  <I.tick />
+                </span>
+                <span>
+                  <b>Contacts shared</b>
+                  <small>Both of you can see each other’s details now.</small>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="hp-container hp-facts">
+        <p className="hp-eyebrow">Built around the season</p>
+        <dl className="hp-facts__list">
+          {STATS.map((s) => (
+            <div key={s.value} className="hp-facts__item">
+              <dt className="hp-tabular">{s.value}</dt>
+              <dd>{s.label}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
   )

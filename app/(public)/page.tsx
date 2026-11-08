@@ -1,21 +1,20 @@
 import type { Metadata } from 'next'
 
-import { Audiences } from '@/components/home/audiences'
-import { Bento } from '@/components/home/bento'
 import { HomeEffects } from '@/components/home/home-effects'
 import { Hero } from '@/components/home/hero'
 import { Footer, FooterCta } from '@/components/home/lower'
-import { FindPath, Stats } from '@/components/home/middle'
-import { HomeNav } from '@/components/home/nav'
+import { HomeNav, SeasonBanner } from '@/components/home/nav'
+import { Faq, Features, FindPath, HowItWorks, Sides, Teamwork } from '@/components/home/sections'
 
 import './home.css'
 
 /*
- * Landing page. Fully static: no cookies, no database. Its structure, type, spacing and interactions are
- * a close reconstruction of a reference fintech homepage, adapted to FTC Pitfund's real rules and flows (no
- * invented customers, figures or quotes). Markup is server-rendered; one small island
- * (<HomeEffects>) loads the behavior (effects/*) after first paint, so the page's first-load JS stays
- * within budget. The only other island reads the session cookie for the top bar.
+ * Landing page. Fully static: no cookies, no database. Dark, quiet and type-led: a dot-grid hero with
+ * a still of the product, a feature grid, a light panel for how a pitch moves, the two sides, and the
+ * FAQ. Everything on it is a real product rule or flow (no invented customers, figures or quotes).
+ * Markup is server-rendered; one small island (<HomeEffects>) loads the behavior (effects/*) after
+ * first paint, so the page's first-load JS stays within budget. The only other island reads the
+ * session cookie for the top bar.
  */
 
 export const metadata: Metadata = {
@@ -28,13 +27,16 @@ export const metadata: Metadata = {
 export default function LandingPage() {
   return (
     <div className="hp" data-hp-root>
+      <SeasonBanner />
       <HomeNav />
       <main id="main">
         <Hero />
-        <Bento />
+        <Features />
+        <HowItWorks />
+        <Sides />
+        <Teamwork />
         <FindPath />
-        <Stats />
-        <Audiences />
+        <Faq />
         <FooterCta />
       </main>
       <Footer />

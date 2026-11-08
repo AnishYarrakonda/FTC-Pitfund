@@ -3,7 +3,7 @@ import { cacheLife } from 'next/cache'
 import { ImageResponse } from 'next/og'
 import type { ReactNode } from 'react'
 
-import { ACCENT, PRODUCT_NAME } from '@/lib/shared/brand'
+import { ACCENT, INK, PRODUCT_NAME } from '@/lib/shared/brand'
 import { placeLabel } from '@/lib/shared/team'
 
 import type { PublicTeam } from './data/public-team'
@@ -16,17 +16,17 @@ import type { PublicTeam } from './data/public-team'
 
 export const OG_SIZE = { width: 1200, height: 630 }
 
-const TEXT = '#061b31'
-const TEXT_SECONDARY = '#50617a'
-const TEXT_TERTIARY = '#64748d'
-const BORDER = '#e5edf5'
+const TEXT = '#f7f7f7'
+const TEXT_SECONDARY = '#b4b4b4'
+const TEXT_TERTIARY = '#969696'
+const BORDER = '#2a2a2a'
 
 /** The exact P mark as an SVG data URI. */
 export function markSrc({ tile = false }: { tile?: boolean } = {}) {
-  const fg = tile ? '#fff' : ACCENT
+  const fg = ACCENT
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">` +
-    (tile ? `<rect width="32" height="32" fill="${ACCENT}"/>` : '') +
+    (tile ? `<rect width="32" height="32" fill="${INK}"/>` : '') +
     `<g transform="translate(0, 1)">` +
     `<rect x="9.5" y="7.5" width="4" height="17" rx="1.6" fill="${fg}" />` +
     `<path d="M11.5 7.5H18a5.3 5.3 0 0 1 0 10.6h-6.5" stroke="${fg}" stroke-width="4" stroke-linecap="round" fill="none" />` +
@@ -47,7 +47,7 @@ function Brand() {
 
 function Frame({ children }: { children: ReactNode }) {
   return (
-    <div style={{ display: 'flex', width: '100%', height: '100%', background: '#ffffff', position: 'relative' }}>
+    <div style={{ display: 'flex', width: '100%', height: '100%', background: INK, position: 'relative' }}>
       <div style={{ display: 'flex', position: 'absolute', left: 0, top: 0, bottom: 0, width: 12, background: ACCENT }} />
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '100%', height: '100%', padding: '72px 88px 72px 100px' }}>
         {children}

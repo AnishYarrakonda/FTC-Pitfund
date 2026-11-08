@@ -61,7 +61,7 @@ function Overlay() {
   return (
     <DialogPrimitive.Overlay
       data-motion="overlay"
-      className="fixed inset-0 z-50 bg-text/30 data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out"
+      className="fixed inset-0 z-50 bg-black/70 data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out"
     />
   )
 }

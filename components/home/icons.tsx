@@ -17,14 +17,6 @@ export function Arrow() {
   )
 }
 
-export function Chevron(p: P) {
-  return (
-    <svg viewBox="0 0 10 10" fill="none" aria-hidden="true" {...p}>
-      <path d="M2 3.5 5 6.5l3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
 export const I = {
   file: (p: P) => (
     <svg {...base} {...p}>

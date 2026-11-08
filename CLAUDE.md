@@ -34,7 +34,7 @@ No money handling, no caps, no messaging. $0 budget except the domain.
   The in-app notification is always written; email is a copy.
 - Contact details are returned only for matched pitches, only to the two orgs involved.
 - Non-goals (plan §1) must not be built: messaging, caps/ledger, role *tiers* beyond owner/editor, SSO,
-  e-sign, payments, student accounts, dark mode.
+  e-sign, payments, student accounts, a light/dark theme toggle (the site is dark-only).
   `npm run security:scan` greps for leftovers.
 
 ## Stack

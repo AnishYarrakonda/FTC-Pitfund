@@ -18,7 +18,7 @@ export function Tooltip({ content, children, side = 'top' }: { content: ReactNod
             sideOffset={6}
             collisionPadding={16}
             data-motion="overlay"
-            className="z-50 max-w-64 rounded-control bg-text px-2 py-1 text-caption text-white shadow-sm data-[state=delayed-open]:animate-overlay-in data-[state=closed]:animate-overlay-out"
+            className="z-50 max-w-64 rounded-control bg-text px-2 py-1 text-caption text-canvas shadow-sm data-[state=delayed-open]:animate-overlay-in data-[state=closed]:animate-overlay-out"
           >
             {content}
           </TooltipPrimitive.Content>
