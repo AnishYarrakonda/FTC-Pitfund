@@ -239,7 +239,6 @@ and push to `main`, against a throwaway local Supabase stack and with no secrets
 | `npm run db:generate` · `db:migrate` · `db:reset` | Drizzle migrations (refuses remote hosts without explicit confirmation) |
 | `npm run email:preview` | Every email template into Mailpit, checked and screenshotted |
 | `npm run cron:run` · `email:drain` · `ftc:sync` | Run the daily jobs locally |
-| `npm run screenshots:marketing` | Recapture the landing page screenshots |
 | `npm run provision` | Build production from `.env.local` (see [`docs/LAUNCH.md`](docs/LAUNCH.md)) |
 
 </details>

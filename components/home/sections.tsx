@@ -1,10 +1,10 @@
-import Image from 'next/image'
 import Link from 'next/link'
 
 import { SUPPORT_EMAIL } from '@/lib/shared/brand'
 
 import { FAQS, FEATURES, SIDES, STAGES } from './content'
 import { Arrow, I } from './icons'
+import { STAGE_VISUALS } from './stage-visuals'
 
 /*
  * The homepage below the hero, top to bottom: the feature grid, how a pitch moves (a light panel with
@@ -69,12 +69,7 @@ function StageLoop() {
         <g key={label}>
           {i === 3 ? <circle cx={x} cy={y} r={15} className="hp-loop__halo" /> : null}
           <circle cx={x} cy={y} r={i === 3 ? 8 : 6} className="hp-loop__node" />
-          <text
-            x={anchor === 'start' ? x + 18 : anchor === 'end' ? x - 18 : x}
-            y={i === 0 ? y - 18 : i === 2 ? y + 30 : y + 5}
-            textAnchor={anchor}
-            className="hp-loop__label"
-          >
+          <text x={anchor === 'start' ? x + 18 : anchor === 'end' ? x - 18 : x} y={i === 0 ? y - 18 : i === 2 ? y + 30 : y + 5} textAnchor={anchor} className="hp-loop__label">
             {label}
           </text>
         </g>
@@ -93,9 +88,7 @@ export function HowItWorks() {
             <h2 id="hp-how-title" className="hp-h2">
               From draft to matched, in four stages.
             </h2>
-            <p>
-              Write the pitch against the company’s own questions, a reviewer reads it, the company sees it, and the company answers. You always know which stage it is in.
-            </p>
+            <p>Write the pitch against the company’s own questions, a reviewer reads it, the company sees it, and the company answers. You always know which stage it is in.</p>
             <Link href="/login?intent=team" prefetch={false} className="hp-btn hp-btn--inverse">
               Start your team’s pitch
               <Arrow />
@@ -105,35 +98,36 @@ export function HowItWorks() {
         </div>
 
         <div className="hp-stories" data-hp-accordion>
-          {STAGES.map((s, i) => (
-            <div key={s.key} className="hp-story" data-open={i === 0 ? 'true' : 'false'}>
-              <button type="button" className="hp-story__summary" aria-expanded={i === 0} aria-controls={`hp-story-${s.key}`} data-hp-story>
-                <span className="hp-story__num hp-tabular">0{i + 1}</span>
-                <span className="hp-story__mark" style={{ color: s.color }} aria-hidden="true">
-                  ●
-                </span>
-                <span className="hp-story__title">{s.title}</span>
-                <span className="hp-story__toggle" aria-hidden="true">
-                  <I.plus />
-                </span>
-              </button>
-              <div className="hp-story__content" id={`hp-story-${s.key}`} role="region" aria-label={s.title}>
-                <div className="hp-story__inner">
-                  <div className="hp-story__image">
-                    <Image src={s.image} alt={s.alt} width={1232} height={520} sizes="(min-width: 1180px) 760px, 100vw" loading="lazy" />
+          {STAGES.map((s, i) => {
+            const Visual = STAGE_VISUALS[s.key]
+            return (
+              <div key={s.key} className="hp-story" data-open={i === 0 ? 'true' : 'false'}>
+                <button type="button" className="hp-story__summary" aria-expanded={i === 0} aria-controls={`hp-story-${s.key}`} data-hp-story>
+                  <span className="hp-story__num hp-tabular">0{i + 1}</span>
+                  <span className="hp-story__mark" style={{ color: s.color }} aria-hidden="true">
+                    ●
+                  </span>
+                  <span className="hp-story__title">{s.title}</span>
+                  <span className="hp-story__toggle" aria-hidden="true">
+                    <I.plus />
+                  </span>
+                </button>
+                <div className="hp-story__content" id={`hp-story-${s.key}`} role="region" aria-label={s.title}>
+                  <div className="hp-story__inner">
+                    <Visual />
+                    <dl className="hp-story__data">
+                      {s.data.map(([k, v]) => (
+                        <div key={k}>
+                          <dt>{k}</dt>
+                          <dd>{v}</dd>
+                        </div>
+                      ))}
+                    </dl>
                   </div>
-                  <dl className="hp-story__data">
-                    {s.data.map(([k, v]) => (
-                      <div key={k}>
-                        <dt>{k}</dt>
-                        <dd>{v}</dd>
-                      </div>
-                    ))}
-                  </dl>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </section>
@@ -187,12 +181,36 @@ export function Sides() {
 }
 
 const TEAMWORK = [
-  { icon: I.users, title: 'One shared account', body: 'A team or company is one account. Everyone on it works from the same pitches and the same inbox.' },
-  { icon: I.user, title: 'An owner and editors', body: 'One owner invites, removes and hands ownership on. Editors can do everything else.' },
-  { icon: I.mail, title: 'Nothing fails silently', body: 'Every action writes an in-app notification. Email is a copy, queued and rate-limited, never the only record.' },
-  { icon: I.eye, title: 'Review notes', body: 'When a pitch needs work, a reviewer sends it back with a note on exactly what to fix.' },
-  { icon: I.flag, title: 'Report a page', body: 'Anyone can report a team page, and a reviewer takes down anything that shouldn’t be there.' },
-  { icon: I.question, title: 'Real support', body: `Write to ${SUPPORT_EMAIL} and a person on the team answers, usually the same day.` },
+  {
+    icon: I.users,
+    title: 'One shared account',
+    body: 'A team or company is one account. Everyone on it works from the same pitches and the same inbox.',
+  },
+  {
+    icon: I.user,
+    title: 'An owner and editors',
+    body: 'One owner invites, removes and hands ownership on. Editors can do everything else.',
+  },
+  {
+    icon: I.mail,
+    title: 'Nothing fails silently',
+    body: 'Every action writes an in-app notification. Email is a copy, queued and rate-limited, never the only record.',
+  },
+  {
+    icon: I.eye,
+    title: 'Review notes',
+    body: 'When a pitch needs work, a reviewer sends it back with a note on exactly what to fix.',
+  },
+  {
+    icon: I.flag,
+    title: 'Report a page',
+    body: 'Anyone can report a team page, and a reviewer takes down anything that shouldn’t be there.',
+  },
+  {
+    icon: I.question,
+    title: 'Real support',
+    body: `Write to ${SUPPORT_EMAIL} and a person on the team answers, usually the same day.`,
+  },
 ]
 
 export function Teamwork() {

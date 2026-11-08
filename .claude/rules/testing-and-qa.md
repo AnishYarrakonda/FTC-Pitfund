@@ -78,7 +78,6 @@ Anish does not click through the app. Agents verify everything with these comman
 - Don't `npm run build` while `npm run dev` is up during an E2E run: it rewrites `.next` and can blank the dev server mid-test.
 - Lighthouse's default simulated throttling is unreliable on a local server (LCP swings ±500 ms), so `npm run perf` applies real
   Slow 4G. Keep the LCP element in the static shell with `fetchPriority="high"`, and don't preload the web font.
-- `npm run screenshots:marketing` regenerates `public/marketing/*.webp` from the seeded production build.
 
 ## CI — `.github/workflows/ci.yml`
 One job, Node 24, on every PR and push to `main`/`rebuild`: typecheck · lint → `npm run setup` (local Supabase,
