@@ -997,7 +997,18 @@ button.hp-nav__link {
   border-bottom: 0;
 }
 .hp-chapter__stmt {
-  padding: 112px calc(100% / 18) 80px;
+  padding: 96px calc(100% / 18) 72px;
+}
+.hp-chapter__stmt .hp-stmt {
+  max-width: 780px;
+  font-size: 30px;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+@media (max-width: 767px) {
+  .hp-chapter__stmt .hp-stmt {
+    font-size: 24px;
+  }
 }
 @media (max-width: 1279px) {
   .hp-chapter__stmt {
@@ -1279,6 +1290,9 @@ button.hp-nav__link {
   .hp-rules {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .hp-rules__item:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
   .hp-rules__item {
     min-height: 200px;
     border-bottom: 1px solid var(--d-line);
@@ -1394,72 +1408,79 @@ button.hp-nav__link {
   border-left: 1px solid var(--d-line);
   color: #ffffff;
 }
-.hp-rings {
-  width: min(100%, 520px);
-  height: auto;
-  overflow: visible;
+.hp-vis {
+  width: 100%;
+  max-width: 560px;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 20px;
+  table-layout: fixed;
 }
-.hp-rings__spoke {
-  stroke: var(--d-line);
-  stroke-width: 1;
-  stroke-dasharray: 2 6;
-}
-.hp-rings__ring circle {
-  fill: none;
-  stroke: #383e47;
-  stroke-width: 1;
-  transition:
-    stroke 0.5s var(--ease),
-    stroke-width 0.5s var(--ease);
-}
-.hp-rings__ring text {
+.hp-vis thead th {
+  padding: 0 8px 16px;
   font-size: 13px;
   font-weight: 500;
-  letter-spacing: -0.01em;
-  text-anchor: middle;
-  fill: var(--d-dim);
-  transition: fill 0.5s var(--ease);
+  text-align: left;
+  vertical-align: bottom;
+  color: var(--d-dim);
 }
-[data-ring='public'] [data-ring='public'] circle,
-[data-ring='pitch'] [data-ring='pitch'] circle,
-[data-ring='contacts'] [data-ring='contacts'] circle {
-  stroke: #94b9ff;
-  stroke-width: 1.5;
+.hp-vis tbody th {
+  width: 30%;
+  padding: 18px 8px 18px 16px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--d-dim);
+  transition: color 0.4s var(--ease);
 }
-[data-ring='public'] [data-ring='public'] text,
-[data-ring='pitch'] [data-ring='pitch'] text,
-[data-ring='contacts'] [data-ring='contacts'] text {
-  fill: #ffffff;
+.hp-vis tbody td {
+  padding: 18px 8px;
 }
-.hp-rings__core {
-  fill: #94b9ff;
+.hp-vis tbody tr {
+  border-top: 1px solid var(--d-line);
+  transition: background-color 0.4s var(--ease);
 }
-.hp-rings__orbit {
-  fill: #ffffff;
-  transform-box: view-box;
-  /* Where each dot rests when animations are off (reduced motion, screenshots). */
-  transform: translate(260px, 260px) rotate(-60deg) translateX(var(--r));
-  animation: hp-orbit var(--d) linear infinite;
+.hp-vis tbody tr:last-child {
+  border-bottom: 1px solid var(--d-line);
 }
-.hp-rings__orbit--a {
-  --r: 236px;
-  --d: 48s;
+.hp-vis__yes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #d3d8df;
 }
-.hp-rings__orbit--b {
-  --r: 160px;
-  --d: 32s;
-  animation-direction: reverse;
+.hp-vis__yes svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: #94b9ff;
 }
-.hp-rings__orbit--c {
-  --r: 84px;
-  --d: 20s;
+.hp-vis__no svg {
+  width: 14px;
+  height: 14px;
+  color: #6f7988;
 }
-@keyframes hp-orbit {
-  from {
-    transform: translate(260px, 260px) rotate(0deg) translateX(var(--r));
+[data-ring='public'] [data-row='public'],
+[data-ring='pitch'] [data-row='pitch'],
+[data-ring='contacts'] [data-row='contacts'] {
+  background: rgb(255 255 255 / 0.04);
+}
+[data-ring='public'] [data-row='public'] th,
+[data-ring='pitch'] [data-row='pitch'] th,
+[data-ring='contacts'] [data-row='contacts'] th {
+  color: #ffffff;
+}
+@media (max-width: 599px) {
+  .hp-vis {
+    font-size: 13px;
   }
-  to {
-    transform: translate(260px, 260px) rotate(360deg) translateX(var(--r));
+  .hp-vis thead th {
+    font-size: 12px;
+  }
+  .hp-vis tbody th {
+    padding-left: 8px;
+  }
+  .hp-vis__yes svg {
+    display: none;
   }
 }
 @media (max-width: 991px) {
@@ -1496,17 +1517,8 @@ button.hp-nav__link {
   color: var(--d-dim);
 }
 .hp-forco__art {
-  width: 100%;
-  max-width: 440px;
-  justify-self: center;
-}
-.hp-forco__page {
-  fill: rgb(16 16 16 / 0.6);
-  stroke: #505967;
-  stroke-width: 1;
-}
-.hp-forco__node {
-  fill: var(--d-2);
+  display: flex;
+  justify-content: center;
 }
 @media (max-width: 991px) {
   .hp-forco {
@@ -1558,16 +1570,6 @@ button.hp-nav__link {
 .hp-quote .is-dim {
   color: #858e9c;
 }
-.hp-quote__by {
-  display: grid;
-  gap: 2px;
-  font-size: 14px;
-  line-height: 20px;
-  text-align: center;
-}
-.hp-quote__by span {
-  color: var(--c-small);
-}
 @media (max-width: 767px) {
   .hp-quote {
     font-size: 32px;
@@ -1581,115 +1583,129 @@ button.hp-nav__link {
   border-top: 1px solid var(--c-line);
 }
 .hp-season__frame {
-  position: relative;
-  min-height: 760px;
-  overflow: hidden;
+  padding: 96px var(--hp-in) 104px;
 }
 .hp-season__text {
-  position: relative;
-  z-index: 1;
   display: grid;
   justify-items: start;
-  gap: 24px;
-  max-width: 560px;
-  padding: 96px var(--hp-in) 0;
+  gap: 20px;
+}
+.hp-season__text .hp-h2 {
+  max-width: 900px;
 }
 .hp-season__body {
-  max-width: 26em;
+  max-width: 34em;
   color: var(--c-small);
 }
-.hp-season__curve {
-  position: absolute;
-  inset: 120px 0 0;
-  width: 100%;
-  height: calc(100% - 120px);
+.hp-season__ruler {
+  margin-top: 64px;
 }
-.hp-season__path {
-  fill: none;
-  stroke: var(--c-line-strong);
-  stroke-width: 1.25;
-  vector-effect: non-scaling-stroke;
-}
-/* The curve draws itself left to right (a clip, since a non-scaling stroke can't be dashed by length). */
-.hp-season__curve.is-in {
-  animation: hp-wipe 2s var(--ease-io) both;
-}
-@keyframes hp-wipe {
-  from {
-    clip-path: inset(0 100% 0 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
-}
-.hp-season__marks li {
-  position: absolute;
-  left: var(--x);
-  top: var(--y);
+.hp-season__months {
   display: grid;
-  gap: 2px;
-  padding: 0 0 14px 18px;
-  translate: -5px calc(-100% + 5px);
-  font-size: 14px;
-  line-height: 18px;
-  white-space: nowrap;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  font-size: 13px;
+  line-height: 16px;
   color: var(--c-small);
 }
-.hp-season__marks li.is-flip {
-  padding: 0 18px 14px 0;
-  translate: calc(-100% + 5px) calc(-100% + 5px);
-  text-align: right;
+.hp-season__months li {
+  padding: 0 0 10px 8px;
+  border-left: 1px solid var(--c-line);
 }
-.hp-season__marks li::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 10px;
+.hp-season__track {
+  position: relative;
   height: 10px;
-  border: 1.5px solid var(--c-blue);
-  border-radius: 50%;
-  background: #ffffff;
+  border-radius: 999px;
+  background: #e8f0ff;
 }
-.hp-season__marks li.is-flip::before {
-  left: auto;
-  right: 0;
+.hp-season__bar {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #266df0, #94b9ff);
+  transform-origin: left;
 }
-.hp-season__marks b {
+.hp-season__bar.is-in {
+  animation: hp-grow 1.6s var(--ease-io) both;
+}
+@keyframes hp-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+.hp-season__events {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 24px;
+  border-top: 1px solid var(--c-line);
+}
+.hp-season__events li {
+  padding: 24px 32px 0 0;
+}
+.hp-season__events li:nth-child(2) {
+  text-align: center;
+  padding: 24px 16px 0;
+}
+.hp-season__events li:last-child {
+  text-align: right;
+  padding: 24px 0 0 32px;
+}
+.hp-season__when {
+  font-size: 13px;
+  line-height: 16px;
   font-weight: 500;
-  color: var(--c-text);
+  color: var(--c-blue);
+}
+.hp-season__what {
+  margin-top: 6px;
+  font-size: 18px;
+  line-height: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.hp-season__note {
+  max-width: 22em;
+  margin: 4px 0 0;
+  color: var(--c-small);
+}
+.hp-season__events li:nth-child(2) .hp-season__note {
+  margin-inline: auto;
+}
+.hp-season__events li:last-child .hp-season__note {
+  margin-left: auto;
 }
 @media (max-width: 767px) {
   .hp-season__frame {
-    min-height: 0;
-    padding-bottom: 48px;
+    padding: 72px var(--hp-in) 72px;
   }
-  .hp-season__curve {
-    position: relative;
-    inset: auto;
-    height: 220px;
-    margin-top: 32px;
+  .hp-season__ruler {
+    margin-top: 40px;
   }
-  .hp-season__marks {
-    display: grid;
-    gap: 12px;
-    padding: 24px var(--hp-in) 0;
+  .hp-season__months li {
+    padding-left: 4px;
+    font-size: 12px;
+    white-space: nowrap;
   }
-  .hp-season__marks li,
-  .hp-season__marks li.is-flip {
-    position: relative;
-    left: auto;
-    top: auto;
-    padding: 0 0 0 22px;
-    translate: none;
+  .hp-season__months li:not(:nth-child(3n + 1)) {
+    color: transparent;
+  }
+  .hp-season__events {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .hp-season__events li,
+  .hp-season__events li:nth-child(2),
+  .hp-season__events li:last-child {
+    padding: 20px 0 0;
     text-align: left;
   }
-  .hp-season__marks li::before,
-  .hp-season__marks li.is-flip::before {
-    left: 0;
-    right: auto;
-    top: 4px;
-    bottom: auto;
+  .hp-season__events li + li {
+    padding-top: 20px;
+    border-top: 1px solid var(--c-line);
+  }
+  .hp-season__events li .hp-season__note,
+  .hp-season__events li:nth-child(2) .hp-season__note,
+  .hp-season__events li:last-child .hp-season__note {
+    margin: 4px 0 0;
   }
 }
 
@@ -3242,61 +3258,182 @@ button.hp-nav__link {
   height: 20px;
   color: #646d7b;
 }
-.pm-share {
+.pm-mail {
   display: grid;
-  gap: 14px;
+  gap: 10px;
   width: 100%;
-  max-width: 360px;
-}
-.pm-share__link {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 44px;
-  padding: 0 6px 0 12px;
-  border-radius: 12px;
-  background: #ffffff;
-  box-shadow:
-    0 0 0 1px rgb(11 13 24 / 0.08),
-    0 4px 12px rgb(11 13 24 / 0.05);
-}
-.pm-share__link svg {
-  width: 16px;
-  height: 16px;
-  color: #646d7b;
-}
-.pm-share__link .pm-btn {
-  margin-left: auto;
-}
-.pm-og {
-  overflow: hidden;
-  border-radius: 12px;
+  max-width: 400px;
+  padding: 14px;
+  border-radius: 14px;
   background: #ffffff;
   box-shadow:
     0 0 0 1px rgb(11 13 24 / 0.06),
-    0 8px 24px rgb(11 13 24 / 0.06);
+    0 1px 2px rgb(11 13 24 / 0.024),
+    0 8px 14px rgb(11 13 24 / 0.035),
+    0 16px 28px rgb(11 13 24 / 0.04);
 }
-.pm-og__img {
-  display: grid;
-  place-items: center;
-  height: 120px;
-  background: radial-gradient(90% 120% at 50% 100%, #bccbff 0%, #e6ecff 60%, #ffffff 100%);
+.pm-mail__body {
+  font-size: 13px;
+  line-height: 18px;
 }
-.pm-og__img .pm-logo {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  font-size: 15px;
-  box-shadow: 0 4px 12px rgb(11 13 24 / 0.1);
+.pm-mail__body u {
+  color: #2463e2;
+  text-underline-offset: 2px;
 }
-.pm-og p {
-  display: grid;
-  padding: 10px 12px 12px;
+/* The share card, as lib/server/og.tsx draws it (1200 × 630). */
+.pm-ogc {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  aspect-ratio: 1200 / 630;
+  padding: 14px 14px 14px 20px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #101010;
+  color: #f7f7f7;
 }
-.pm-og small {
+.pm-ogc::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: #ffff8b;
+}
+.pm-ogc__text {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+.pm-ogc__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+}
+.pm-ogc__brand svg {
+  width: 16px;
+  height: 16px;
+  color: #ffff8b;
+}
+.pm-ogc__sub {
+  margin-top: auto;
+  font-size: 9px;
+  color: #969696;
+}
+.pm-ogc b {
+  font-size: 19px;
+  line-height: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.pm-ogc small {
+  display: -webkit-box;
+  margin-top: 3px;
+  overflow: hidden;
+  font-size: 9px;
+  line-height: 12px;
+  color: #b4b4b4;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.pm-ogc__page {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 4px;
+  width: 31%;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #2a2a2a;
+  background: linear-gradient(160deg, #1c2a4a 0%, #101521 100%);
+}
+.pm-ogc__page i {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.85);
+}
+.pm-ogc__page i.pm-ogc__kick {
+  width: 45%;
+  height: 3px;
+  background: #94b9ff;
+}
+.pm-ogc__page i.pm-ogc__short {
+  width: 70%;
+}
+.pm-ogc__page svg {
+  margin-top: auto;
+  width: 100%;
+}
+.pm-card--wide {
+  max-width: 400px;
+}
+/* A reviewed pitch in a company's inbox, drawn for the dark section. */
+.pm-in {
+  width: 100%;
+  max-width: 440px;
+  padding: 14px;
+  border-radius: 16px;
+  background: #17181a;
+  box-shadow:
+    0 0 0 1px #2e3238,
+    0 24px 48px rgb(0 0 0 / 0.4);
+  color: #f7f7f7;
+}
+.pm-in__top {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2px 12px;
   font-size: 12px;
-  font-weight: 400;
-  color: #646d7b;
+  color: #a4adba;
+}
+.pm-in__count {
+  color: #94b9ff;
+}
+.pm-in__card {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #1f2124;
+  box-shadow: inset 0 0 0 1px #2e3238;
+}
+.pm-in__who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pm-in__who span:not(.pm-logo) {
+  display: grid;
+}
+.pm-in__who small {
+  font-size: 12px;
+  color: #a4adba;
+}
+.pm-in__q {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #a4adba;
+}
+.pm-in__a {
+  font-size: 14px;
+  line-height: 20px;
+}
+.pm-in__meta {
+  font-size: 12px;
+  color: #a4adba;
+}
+.pm-in__btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+.pm-in .pm-btn--line {
+  border-color: #3a3f46;
+  background: transparent;
+  color: #f7f7f7;
 }
 .pm-note__head {
   display: flex;

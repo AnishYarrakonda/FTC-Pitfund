@@ -7,8 +7,10 @@ import { CHAPTERS, COMPANY_HREF, FAQS, RULES, SHARED, SIDES } from './content'
 import { Arrow, I } from './icons'
 import {
   CellCompanies,
+  CellIncoming,
   CellMembers,
   CellNote,
+  CellPitches,
   CellQuestions,
   CellSeason,
   CellShare,
@@ -117,43 +119,48 @@ export function Chapters() {
   )
 }
 
-/** Concentric rings for "what's shared": the public, the company you pitched, the two of you. */
-function Rings() {
+/** Who can see each part of a team, one row per step of "what's shared"; the open step's row lights up. */
+const VISIBILITY: Array<{ id: (typeof SHARED)[number]['id']; label: string; cells: [string, string, string] }> = [
+  { id: 'public', label: 'Team page', cells: ['Yes', 'Yes', 'Yes'] },
+  { id: 'pitch', label: 'Your pitch', cells: ['', 'After review', ''] },
+  { id: 'contacts', label: 'Your contacts', cells: ['', 'On Interested', ''] },
+]
+
+function Visibility() {
   return (
-    <svg className="hp-rings" viewBox="0 0 520 520" aria-hidden="true" data-hp-rings>
-      <defs>
-        <radialGradient id="hp-rings-fade" cx="50%" cy="50%" r="50%">
-          <stop offset="0.55" stopColor="currentColor" stopOpacity="0" />
-          <stop offset="1" stopColor="currentColor" stopOpacity="0.06" />
-        </radialGradient>
-      </defs>
-      <circle cx="260" cy="260" r="250" fill="url(#hp-rings-fade)" />
-      {Array.from({ length: 12 }, (_, i) => (
-        <line key={i} x1="260" y1="260" x2={260 + 250 * Math.cos((i * Math.PI) / 6)} y2={260 + 250 * Math.sin((i * Math.PI) / 6)} className="hp-rings__spoke" />
-      ))}
-      <g className="hp-rings__ring" data-ring="public">
-        <circle cx="260" cy="260" r="236" />
-        <text x="260" y="50">
-          Anyone with the link
-        </text>
-      </g>
-      <g className="hp-rings__ring" data-ring="pitch">
-        <circle cx="260" cy="260" r="160" />
-        <text x="260" y="126">
-          The company you pitched
-        </text>
-      </g>
-      <g className="hp-rings__ring" data-ring="contacts">
-        <circle cx="260" cy="260" r="84" />
-        <text x="260" y="202">
-          You two
-        </text>
-      </g>
-      <circle cx="260" cy="260" r="5" className="hp-rings__core" />
-      <circle r="3.5" className="hp-rings__orbit hp-rings__orbit--a" />
-      <circle r="3" className="hp-rings__orbit hp-rings__orbit--b" />
-      <circle r="2.5" className="hp-rings__orbit hp-rings__orbit--c" />
-    </svg>
+    <table className="hp-vis">
+      <caption className="hp-sr">Who can see each part of your team</caption>
+      <thead>
+        <tr>
+          <td />
+          <th scope="col">Anyone with the link</th>
+          <th scope="col">The company you pitched</th>
+          <th scope="col">Every other company</th>
+        </tr>
+      </thead>
+      <tbody>
+        {VISIBILITY.map((r) => (
+          <tr key={r.id} data-row={r.id}>
+            <th scope="row">{r.label}</th>
+            {r.cells.map((c, i) => (
+              <td key={i}>
+                {c ? (
+                  <span className="hp-vis__yes">
+                    <I.check />
+                    {c}
+                  </span>
+                ) : (
+                  <span className="hp-vis__no">
+                    <I.lock />
+                    <span className="hp-sr">No</span>
+                  </span>
+                )}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
   )
 }
 
@@ -225,7 +232,7 @@ export function People() {
             </ul>
           </div>
           <div className="hp-shared__art" data-hp-shared-art data-ring="public">
-            <Rings />
+            <Visibility />
           </div>
         </div>
 
@@ -240,15 +247,9 @@ export function People() {
               <Arrow />
             </Link>
           </div>
-          <svg className="hp-forco__art" viewBox="0 0 400 300" aria-hidden="true">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <g key={i} transform={`translate(${60 + i * 34} ${40 + i * 26})`}>
-                <path d="M0 40 L120 0 L220 40 L100 80 Z" className="hp-forco__page" />
-                <circle cx="0" cy="40" r="2.5" className="hp-forco__node" />
-                <circle cx="220" cy="40" r="2.5" className="hp-forco__node" />
-              </g>
-            ))}
-          </svg>
+          <div className="hp-forco__art">
+            <CellIncoming />
+          </div>
         </div>
       </div>
     </section>
@@ -270,15 +271,18 @@ export function Principle() {
               <span key={i}>{w} </span>
             ))}
           </p>
-          <p className="hp-quote__by">
-            <b>The rule FTC Pitfund is built on</b>
-            <span>Run by FTC Team 31579 Exodius</span>
-          </p>
         </div>
       </div>
     </section>
   )
 }
+
+const MONTHS = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug']
+const SEASON_EVENTS: Array<[string, string, string]> = [
+  ['September 1', 'The season opens', 'Every slot is free. Pitch each approved company once.'],
+  ['Before a reply', 'Withdraw if you need to', 'Pull a pitch before the company answers and that slot is yours again.'],
+  ['August 31', 'The season closes', 'The next day, every company can be pitched again.'],
+]
 
 export function Season() {
   return (
@@ -289,31 +293,33 @@ export function Season() {
           <h2 id="hp-season-title" className="hp-h2">
             <TwoTone br lead="One pitch per company." rest="Every season, from September 1." />
           </h2>
-          <p className="hp-season__body">Withdraw a pitch before the company answers and the slot is yours again. A new season opens every year.</p>
+          <p className="hp-season__body">A team pitches each approved company once a season, so every pitch is the one that counts.</p>
         </div>
-        <svg className="hp-season__curve" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true" data-hp-reveal>
-          <path d="M0 540 C 420 540, 760 420, 1000 20" className="hp-season__path" />
-        </svg>
-        <ol className="hp-season__marks" aria-label="The season">
-          <li style={{ ['--x' as string]: '7.5%', ['--y' as string]: '96.8%' }}>
-            <b>Sept 1</b> Season opens
-          </li>
-          <li style={{ ['--x' as string]: '51.7%', ['--y' as string]: '83.8%' }}>
-            <b>Pitch</b> One per company
-          </li>
-          <li style={{ ['--x' as string]: '77.5%', ['--y' as string]: '59.9%' }}>
-            <b>Reviewed</b> Read by a person
-          </li>
-          <li className="is-flip" style={{ ['--x' as string]: '94.8%', ['--y' as string]: '30.8%' }}>
-            <b>Aug 31</b> Season closes
-          </li>
-        </ol>
+        <div className="hp-season__ruler">
+          <ol className="hp-season__months" aria-hidden="true">
+            {MONTHS.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ol>
+          <div className="hp-season__track" aria-hidden="true">
+            <span className="hp-season__bar" data-hp-reveal />
+          </div>
+          <ol className="hp-season__events" aria-label="The season">
+            {SEASON_EVENTS.map(([when, what, body]) => (
+              <li key={when}>
+                <p className="hp-season__when">{when}</p>
+                <p className="hp-season__what">{what}</p>
+                <p className="hp-season__note">{body}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
     </section>
   )
 }
 
-const SIDE_VISUALS = { teams: CellShare, companies: CellQuestions } as const
+const SIDE_VISUALS = { teams: CellPitches, companies: CellQuestions } as const
 
 export function Sides() {
   return (

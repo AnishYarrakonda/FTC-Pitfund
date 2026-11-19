@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 
+import { MarkGlyph } from '@/components/app/wordmark'
+
 import { Chevron, I } from './icons'
 
 /*
@@ -561,22 +563,101 @@ export function CellVerify() {
   )
 }
 
+/**
+ * The team page link pasted into an email to a sponsor, unfurled into the share card FTC Pitfund
+ * actually serves for it (lib/server/og.tsx renderTeamCard): dark, the accent edge, the mark, the
+ * number, the name, the summary and the deck's first page.
+ */
 export function CellShare() {
   return (
-    <div className="pm-cell" role="img" aria-label="The team page link, pitfund.org/t/31579, with its preview card">
-      <div className="pm-share" aria-hidden="true">
-        <p className="pm-share__link">
-          <I.file />
-          pitfund.org/t/31579
-          <span className="pm-btn pm-btn--line">Copy</span>
+    <div className="pm-cell" role="img" aria-label="The team page link in an email to a sponsor, unfurled into the team’s share card: number, name, summary and the deck’s first page">
+      <div className="pm-mail" aria-hidden="true">
+        <p className="pm-mail__body">
+          Hi Sam, here’s our team page with this season’s deck: <u>pitfund.org/t/31579</u>
         </p>
-        <div className="pm-og">
-          <div className="pm-og__img">
-            <Logo text="EX" hue={220} />
+        <OgCard />
+      </div>
+    </div>
+  )
+}
+
+function OgCard() {
+  return (
+    <div className="pm-ogc">
+      <div className="pm-ogc__text">
+        <span className="pm-ogc__brand">
+          <MarkGlyph />
+          FTC Pitfund
+        </span>
+        <span className="pm-ogc__sub">Team 31579</span>
+        <b>Exodius</b>
+        <small>A third-year community team building a reliable robot and running free workshops.</small>
+      </div>
+      <div className="pm-ogc__page">
+        <i className="pm-ogc__kick" />
+        <i />
+        <i className="pm-ogc__short" />
+        <svg viewBox="0 0 160 70">
+          <path d="M4 66 L40 40 H120 L156 66 Z" className="pm-slide__field" />
+          <rect x="62" y="24" width="36" height="22" rx="3" className="pm-slide__bot" />
+          <circle cx="68" cy="48" r="5" className="pm-slide__wheel" />
+          <circle cx="92" cy="48" r="5" className="pm-slide__wheel" />
+        </svg>
+      </div>
+    </div>
+  )
+}
+
+/** The team's Pitches page: this season's pitches and where each one stands. */
+export function CellPitches() {
+  const rows: Array<[string, string, Tone, number]> = [
+    ['NA', 'Northwind Aero', 'matched', 150],
+    ['HL', 'Harborline Labs', 'review', 200],
+    ['CT', 'Copperleaf Tools', 'sent', 90],
+    ['LC', 'Lumen Circuits', 'draft', 28],
+  ]
+  return (
+    <div className="pm-cell" role="img" aria-label="The team’s pitches this season: one matched, one in review, one sent, one draft">
+      <div className="pm-card pm-card--list pm-card--wide" aria-hidden="true">
+        <p className="pm-field__label">Exodius · pitches · 2026–27</p>
+        {rows.map(([a, n, t, h]) => (
+          <div key={n} className="pm-list__row">
+            <Logo text={a} hue={h} />
+            <b>{n}</b>
+            <Chip tone={t} />
           </div>
-          <p>
-            <b>Exodius · FTC Team 31579</b>
-            <small>Sponsorship deck and summary on FTC Pitfund</small>
+        ))}
+        <p className="pm-list__add">
+          <I.plus /> Pitch another approved company
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/** One pitch as a company sees it in its inbox: reviewed, and two buttons. Drawn for the dark section. */
+export function CellIncoming() {
+  return (
+    <div className="pm-cell" role="img" aria-label="A reviewed pitch in a company’s inbox, with Not a fit and Interested buttons">
+      <div className="pm-in" aria-hidden="true">
+        <p className="pm-in__top">
+          <span>Northwind Aero · Inbox</span>
+          <span className="pm-in__count">To answer · 1</span>
+        </p>
+        <div className="pm-in__card">
+          <p className="pm-in__who">
+            <Logo text="EX" hue={220} />
+            <span>
+              <b>Exodius</b>
+              <small>FTC Team 31579 · reviewed by FTC Pitfund</small>
+            </span>
+          </p>
+          <p className="pm-in__q">What would our support pay for this season?</p>
+          <p className="pm-in__a">Aluminium and machining for a new drivetrain, plus registration for two qualifiers.</p>
+          <p className="pm-in__meta">3 of 3 questions answered · 5-page deck</p>
+          <p className="pm-in__btns">
+            <span className="pm-btn pm-btn--line">Not a fit</span>
+            <span className="pm-btn pm-btn--blue">Interested</span>
           </p>
         </div>
       </div>
