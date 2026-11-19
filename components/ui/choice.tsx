@@ -92,7 +92,7 @@ export function SegmentedControl<V extends string>({ options, onValueChange, lab
             size === 'sm' ? 'h-7 text-small' : 'h-8 text-body',
             'transition-[background-color,color,box-shadow] duration-120 hover:text-text',
             'has-focus-visible:outline-2 has-focus-visible:outline-offset-1 has-focus-visible:outline-accent',
-            'has-checked:bg-border-strong has-checked:text-text has-checked:shadow-[0_1px_2px_rgb(0_0_0/0.4)]',
+            'has-checked:bg-canvas has-checked:text-text has-checked:shadow-sm',
             'has-disabled:cursor-not-allowed has-disabled:opacity-50',
           )}
         >

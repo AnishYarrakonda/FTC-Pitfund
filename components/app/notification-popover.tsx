@@ -124,7 +124,7 @@ export default function NotificationPopover({
                     </span>
                   </>
                 )
-                const className = 'flex w-full gap-3 px-4 py-3 text-left transition-colors duration-120 hover:bg-canvas'
+                const className = 'flex w-full gap-3 px-4 py-3 text-left transition-colors duration-120 hover:bg-muted/60'
                 return (
                   <li key={item.id}>
                     {item.href ? (

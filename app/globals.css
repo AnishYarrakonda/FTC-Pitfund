@@ -33,13 +33,11 @@
 }
 
 /*
- * FTC Pitfund design tokens (v6, dark). One dark theme for the whole site, homepage and product alike:
- * a near-black #101010 canvas, cards that lift by a step of grey and a hairline rather than a shadow,
- * off-white #f7f7f7 type, and one pale-yellow highlight. There is no light theme and no toggle.
- * Primary actions are the off-white "ink" pill with dark text; the yellow accent marks links, focus,
- * the selected thing and the "matched/live" states. Tailwind's default palette, type scale, radii
- * and shadows are cleared so only these values exist: if a class isn't built from a token below,
- * it doesn't compile.
+ * FTC Pitfund design tokens (v7, light), after attio.com: a white canvas, #fafafb/#f3f4f6 surfaces, cool hairlines,
+ * near-black #1c1d1f type and one blue. One theme for the whole site; there is no dark theme and no toggle.
+ * Primary actions are the near-black "ink" fill with white text; the blue accent marks links, focus, the selected
+ * thing and the "matched/live" states. Tailwind's default palette, type scale, radii and shadows are cleared so
+ * only these values exist: if a class isn't built from a token below, it doesn't compile.
  */
 
 @theme {
@@ -49,54 +47,56 @@
   --color-white: #ffffff;
   --color-black: #000000;
 
-  --color-canvas: #101010;
-  --color-surface: #171717;
-  --color-muted: #222222;
-  --color-border: #2a2a2a;
-  --color-border-strong: #3d3d3d;
+  /* Cards, menus, dialogs and controls are white on the white page, set apart by a hairline (and a lift for
+     anything that floats). `muted` is the sunken grey: hovers, wells, read-only fields. */
+  --color-canvas: #ffffff;
+  --color-surface: #ffffff;
+  --color-muted: #f3f4f6;
+  --color-border: #e4e7ec;
+  --color-border-strong: #d3d8df;
 
-  --color-text: #f7f7f7;
-  --color-text-secondary: #b4b4b4;
-  /* Clears AA (4.5) on every panel it sits on, the tinted -subtle fills included. */
-  --color-text-tertiary: #969696;
+  --color-text: #1c1d1f;
+  --color-text-secondary: #505967;
+  /* #646d7b clears AA on white (5.2), #fafafb and #f3f4f6 (4.75). */
+  --color-text-tertiary: #646d7b;
 
-  /* The primary button: off-white ink with near-black text, like the reference's pill. */
-  --color-ink: #f7f7f7;
-  --color-ink-hover: #ffffff;
-  --color-on-ink: #101010;
+  /* The primary button: near-black ink with white text. */
+  --color-ink: #1c1d1f;
+  --color-ink-hover: #2e3238;
+  --color-on-ink: #ffffff;
 
   /* The one highlight: links, focus rings, the selected tab, and "matched/live" states. */
-  --color-accent: #ffff8b;
-  --color-accent-hover: #ffffc2;
-  --color-accent-subtle: #26261a;
-  --color-on-accent: #101010;
+  --color-accent: #2463e2;
+  --color-accent-hover: #1f55c4;
+  --color-accent-subtle: #e8f0ff;
+  --color-on-accent: #ffffff;
 
-  --color-success: #5fd68f;
-  --color-success-subtle: #12261a;
-  --color-warning: #f2c14e;
-  --color-warning-subtle: #2a2212;
-  --color-danger: #ff7b72;
-  --color-danger-hover: #ff9a93;
-  --color-danger-subtle: #2c1615;
-  --color-info: #8ab4ff;
-  --color-info-subtle: #161f30;
+  --color-success: #0b7d50;
+  --color-success-subtle: #e7f6ee;
+  --color-warning: #845e00;
+  --color-warning-subtle: #fbf3dc;
+  --color-danger: #c9302c;
+  --color-danger-hover: #a8241f;
+  --color-danger-subtle: #fdecec;
+  --color-info: #245bc2;
+  --color-info-subtle: #e8f0ff;
 
-  /* Decorative ramp for the mark's tile, empty states and progress rails: grey → yellow. */
-  --color-brand-blue: #8ab4ff;
-  --color-brand-green: #5fd68f;
-  --color-brand-lime: #d4f27a;
-  --color-brand-yellow: #ffff8b;
+  /* Decorative ramp for the mark's tile, empty states and progress rails. */
+  --color-brand-blue: #266df0;
+  --color-brand-green: #0fc27b;
+  --color-brand-lime: #8fd14f;
+  --color-brand-yellow: #f5b900;
 
   /* The four pipeline stages (draft, review, sent/questions, matched). */
-  --color-stage-draft: #8a8a8a;
-  --color-stage-review: #8ab4ff;
-  --color-stage-sent: #ffff8b;
-  --color-stage-matched: #5fd68f;
+  --color-stage-draft: #8f99a8;
+  --color-stage-review: #266df0;
+  --color-stage-sent: #f5b900;
+  --color-stage-matched: #0fc27b;
 
-  --color-violet: #b9a8ff;
-  --color-violet-subtle: #1f1a33;
-  --color-coral: #7dd3fc;
-  --color-coral-subtle: #13242e;
+  --color-violet: #6e56cf;
+  --color-violet-subtle: #f0edfc;
+  --color-coral: #0c7fb0;
+  --color-coral-subtle: #e6f4fa;
 
   --font-sans: var(--font-inter), 'Inter Fallback Liberation', 'Inter Fallback Roboto', 'Inter Fallback DejaVu', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
@@ -135,10 +135,13 @@
   --radius-menu: 8px;
   --radius-dialog: 12px;
 
-  /* On a dark canvas a shadow reads as depth only with a hairline of light on top of it. */
+  /* Attio's lift: a hairline ring and soft drops. */
   --shadow-*: initial;
-  --shadow-sm: 0 0 0 1px rgb(255 255 255 / 0.04), 0 4px 16px rgb(0 0 0 / 0.45);
-  --shadow-lg: 0 0 0 1px rgb(255 255 255 / 0.06), 0 24px 64px rgb(0 0 0 / 0.7);
+  --shadow-xs: 0 1px 2px rgb(11 13 24 / 0.05);
+  --shadow-sm: 0 0 0 1px rgb(11 13 24 / 0.06), 0 1px 2px rgb(11 13 24 / 0.04), 0 4px 12px rgb(11 13 24 / 0.06);
+  --shadow-lg:
+    0 0 0 1px rgb(11 13 24 / 0.06), 0 1px 2px rgb(11 13 24 / 0.024), 0 3px 6px rgb(11 13 24 / 0.03), 0 8px 14px rgb(11 13 24 / 0.035),
+      0 16px 28px rgb(11 13 24 / 0.04);
 
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
@@ -263,7 +266,7 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   body {
@@ -317,72 +320,6 @@
   button:not(:disabled),
   [role='button']:not(:disabled) {
     cursor: pointer;
-  }
-}
-
-/*
- * The light system (v7), after attio.com: a white page, cool hairline greys, near-black type and one blue.
- * Phase 1 of the redesign scopes it to the public pages: `.theme-light` (app/(public)/layout.tsx) redefines
- * the same tokens, so every components/ui piece renders light inside it without a single class change.
- * Phase 2 moves these values into @theme above and deletes this scope.
- */
-@layer base {
-  .theme-light {
-    --color-canvas: #ffffff;
-    --color-surface: #fafafb;
-    --color-muted: #f3f4f6;
-    --color-border: #e4e7ec;
-    --color-border-strong: #d3d8df;
-
-    --color-text: #1c1d1f;
-    --color-text-secondary: #505967;
-    /* #646d7b clears AA on white (5.2), #fafafb and #f3f4f6 (4.75). Attio's own #6f7988 doesn't on grey. */
-    --color-text-tertiary: #646d7b;
-
-    --color-ink: #1c1d1f;
-    --color-ink-hover: #2e3238;
-    --color-on-ink: #ffffff;
-
-    --color-accent: #2463e2;
-    --color-accent-hover: #1f55c4;
-    --color-accent-subtle: #e8f0ff;
-    --color-on-accent: #ffffff;
-
-    --color-success: #0b7d50;
-    --color-success-subtle: #e7f6ee;
-    --color-warning: #845e00;
-    --color-warning-subtle: #fbf3dc;
-    --color-danger: #c9302c;
-    --color-danger-hover: #a8241f;
-    --color-danger-subtle: #fdecec;
-    --color-info: #245bc2;
-    --color-info-subtle: #e8f0ff;
-
-    --color-brand-blue: #266df0;
-    --color-brand-green: #0fc27b;
-    --color-brand-lime: #8fd14f;
-    --color-brand-yellow: #f5b900;
-
-    --color-stage-draft: #8f99a8;
-    --color-stage-review: #266df0;
-    --color-stage-sent: #f5b900;
-    --color-stage-matched: #0fc27b;
-
-    --color-violet: #6e56cf;
-    --color-violet-subtle: #f0edfc;
-    --color-coral: #0c7fb0;
-    --color-coral-subtle: #e6f4fa;
-
-    /* Attio's five-layer lift: a hairline ring and four soft drops. */
-    --shadow-sm: 0 0 0 1px rgb(11 13 24 / 0.06), 0 1px 2px rgb(11 13 24 / 0.04), 0 4px 12px rgb(11 13 24 / 0.06);
-    --shadow-lg:
-      0 0 0 1px rgb(11 13 24 / 0.06), 0 1px 2px rgb(11 13 24 / 0.024), 0 3px 6px rgb(11 13 24 / 0.03), 0 8px 14px rgb(11 13 24 / 0.035),
-      0 16px 28px rgb(11 13 24 / 0.04);
-
-    color-scheme: light;
-    min-height: 100dvh;
-    background: var(--color-canvas);
-    color: var(--color-text);
   }
 }
 

@@ -20,7 +20,7 @@ export const buttonVariants = cva(
         primary:
           'bg-ink text-on-ink hover:bg-ink-hover active:bg-ink-hover disabled:bg-ink/45 disabled:hover:bg-ink/45 aria-disabled:hover:bg-ink',
         secondary:
-          'border border-border-strong bg-surface text-text hover:bg-muted active:bg-muted disabled:text-text-tertiary disabled:hover:bg-surface',
+          'border border-border-strong bg-surface text-text shadow-xs hover:bg-muted active:bg-muted disabled:text-text-tertiary disabled:hover:bg-surface',
         ghost: 'text-text-secondary hover:bg-muted hover:text-text active:bg-muted disabled:text-text-tertiary disabled:hover:bg-transparent',
         danger:
           'bg-danger text-on-accent hover:bg-danger-hover active:bg-danger-hover disabled:bg-danger/45 disabled:hover:bg-danger/45 aria-disabled:hover:bg-danger',

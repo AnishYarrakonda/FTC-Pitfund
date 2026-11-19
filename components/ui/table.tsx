@@ -59,7 +59,7 @@ export function DataTable<Row>({
         </thead>
         <tbody className="divide-y divide-border">
           {rows.map((row) => (
-            <tr key={rowKey(row)} className="transition-colors duration-120 hover:bg-canvas">
+            <tr key={rowKey(row)} className="transition-colors duration-120 hover:bg-muted/60">
               {columns.map((column) => (
                 <td key={column.key} className={cn('min-w-0 px-4 py-3 align-middle text-body text-text', column.align === 'right' && 'text-right', column.className)}>
                   {column.cell(row)}

@@ -170,7 +170,7 @@ function TokensSection() {
     ['caption 12/16', 'text-caption'],
   ]
   return (
-    <GallerySection id="tokens" title="Tokens" description="Dark theme only, no toggle; Inter; a 4 px spacing grid.">
+    <GallerySection id="tokens" title="Tokens" description="One light theme, no toggle; Inter; a 4 px spacing grid.">
       <Grid>
         <Specimen label="Color">
           <ul className="grid grid-cols-3 gap-3 sm:grid-cols-5">

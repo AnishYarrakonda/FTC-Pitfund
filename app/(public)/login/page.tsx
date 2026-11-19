@@ -54,10 +54,6 @@ export default function LoginPage({ searchParams }: PageProps<'/login'>) {
           <p className="max-w-[22em] font-[family-name:var(--font-serif)] text-[26px] leading-[32px] tracking-[-0.01em] text-text text-balance">
             Every pitch is read by a person before a company sees it. Nothing about your team is shared until someone says yes.
           </p>
-          <p className="grid gap-0.5 text-small">
-            <span className="font-medium text-text-secondary">The rule FTC Pitfund is built on</span>
-            <span className="text-text-tertiary">Run by FTC Team 31579 Exodius</span>
-          </p>
         </aside>
       </main>
       <PublicFooter />

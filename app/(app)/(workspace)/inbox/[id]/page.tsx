@@ -104,7 +104,7 @@ export default async function InboxPitchPage({ params }: PageProps<'/inbox/[id]'
             {pitch.deck ? (
               <PdfViewer src={pitch.deck.url} downloadHref={pitch.deck.downloadUrl} title={`Team ${team.number} sponsorship deck`} pages={pitch.deck.pages} thumbnailSrc={pitch.deck.thumbUrl} />
             ) : (
-              <p className="rounded-menu bg-canvas px-5 py-10 text-center text-body text-text-secondary">This team hasn’t uploaded a deck.</p>
+              <p className="rounded-menu bg-muted px-5 py-10 text-center text-body text-text-secondary">This team hasn’t uploaded a deck.</p>
             )}
           </section>
 

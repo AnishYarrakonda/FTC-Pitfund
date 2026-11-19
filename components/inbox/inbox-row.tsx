@@ -24,7 +24,7 @@ export function InboxRow({ pitch, href, now }: { pitch: InboxRowData; href: stri
   const when = pitch.status === 'sent' || !pitch.respondedAt ? `Received ${formatRelative(pitch.receivedAt, now)}` : `Answered ${formatRelative(pitch.respondedAt, now)}`
   const mark = <TeamMark name={pitch.team.name} number={pitch.team.number} logoSrc={pitch.team.logoUrl} verified={pitch.team.verified} meta={place || null} />
   return (
-    <div className="group relative flex min-w-0 flex-col gap-3 px-4 py-4 transition-colors duration-120 hover:bg-canvas sm:flex-row sm:items-start sm:gap-6 sm:px-5">
+    <div className="group relative flex min-w-0 flex-col gap-3 px-4 py-4 transition-colors duration-120 hover:bg-muted/60 sm:flex-row sm:items-start sm:gap-6 sm:px-5">
       <div className="grid min-w-0 flex-1 gap-2">
         {href ? (
           <Link href={href} className="flex min-w-0 items-center gap-2 after:absolute after:inset-0 after:content-['']">

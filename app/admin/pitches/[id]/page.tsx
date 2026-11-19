@@ -114,7 +114,7 @@ export default async function AdminPitchPage({ params }: PageProps<'/admin/pitch
             {review.deck ? (
               <PdfViewer src={review.deck.url} downloadHref={review.deck.downloadUrl} title={`Team ${team.number} sponsorship deck`} pages={review.deck.pages} thumbnailSrc={review.deck.thumbUrl} />
             ) : (
-              <p className="rounded-menu bg-canvas px-5 py-10 text-center text-body text-text-secondary">No deck uploaded.</p>
+              <p className="rounded-menu bg-muted px-5 py-10 text-center text-body text-text-secondary">No deck uploaded.</p>
             )}
           </section>
         </div>

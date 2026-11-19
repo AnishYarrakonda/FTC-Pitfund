@@ -570,7 +570,7 @@ export function CellVerify() {
  */
 export function CellShare() {
   return (
-    <div className="pm-cell" role="img" aria-label="The team page link in an email to a sponsor, unfurled into the team’s share card: number, name, summary and the deck’s first page">
+    <div className="pm-cell" role="img" aria-label="The team page link sent to a sponsor, unfurled into the team’s share card: number, name, summary and the deck’s first page">
       <div className="pm-mail" aria-hidden="true">
         <p className="pm-mail__body">
           Hi Sam, here’s our team page with this season’s deck: <u>pitfund.org/t/31579</u>

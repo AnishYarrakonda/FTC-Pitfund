@@ -8,13 +8,13 @@ import { cn } from '@/lib/shared/cn'
 import { useFieldControl } from './field'
 
 export const controlClasses = cn(
-  'w-full min-w-0 rounded-control border border-border-strong bg-surface text-body text-text',
+  'w-full min-w-0 rounded-control border border-border-strong bg-surface text-body text-text shadow-xs',
   'placeholder:text-text-tertiary',
   'transition-[border-color,box-shadow] duration-120 ease-out',
   'hover:border-text-tertiary',
   'focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25',
-  'disabled:cursor-not-allowed disabled:bg-canvas disabled:text-text-tertiary disabled:hover:border-border-strong',
-  'read-only:bg-canvas read-only:text-text-secondary read-only:hover:border-border-strong read-only:focus-visible:ring-0',
+  'disabled:cursor-not-allowed disabled:bg-muted disabled:text-text-tertiary disabled:hover:border-border-strong',
+  'read-only:bg-muted read-only:text-text-secondary read-only:hover:border-border-strong read-only:focus-visible:ring-0',
   'aria-invalid:border-danger aria-invalid:focus-visible:ring-danger/20',
 )
 

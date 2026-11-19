@@ -40,9 +40,9 @@ export default async function SponsorPage({ params }: PageProps<'/sponsors/[id]'
         <SponsorProfile
           sponsor={sponsor}
           action={
-            <div className="grid shrink-0 justify-items-start gap-1.5 sm:max-w-60 sm:justify-items-end">
+            <div className="grid shrink-0 justify-items-start gap-1 sm:max-w-44 sm:justify-items-end">
               <PitchStateAction sponsorId={sponsor.id} sponsorName={sponsor.name} state={state} size="md" />
-              {state.kind === 'pitch' ? <p className="text-small text-text-tertiary sm:text-right">{nextStep(state.status, sponsor.name)}</p> : null}
+              {state.kind === 'pitch' ? <p className="text-caption text-text-tertiary sm:text-right">{nextStep(state.status, sponsor.name)}</p> : null}
             </div>
           }
           notice={

@@ -5,7 +5,7 @@ import { buttonVariants } from '@/components/ui/button'
 
 export default function NotFound() {
   return (
-    <div className="theme-light flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col">
       <header className="mx-auto flex h-14 w-full max-w-app items-center px-4 sm:px-6 lg:px-8">
         <Wordmark />
       </header>

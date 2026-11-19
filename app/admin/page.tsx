@@ -106,7 +106,7 @@ export default async function AdminReviewPage({ searchParams }: PageProps<'/admi
                 ? (list as Awaited<ReturnType<typeof listPitchQueue>>).items.map((p) => {
                     const late = now.getTime() - p.submittedAt.getTime() > WAITING_WARNING_MS
                     return (
-                      <li key={p.id} className="relative flex min-w-0 flex-col gap-2 px-4 py-4 transition-colors duration-120 hover:bg-canvas sm:flex-row sm:items-center sm:gap-6 sm:px-5">
+                      <li key={p.id} className="relative flex min-w-0 flex-col gap-2 px-4 py-4 transition-colors duration-120 hover:bg-muted/60 sm:flex-row sm:items-center sm:gap-6 sm:px-5">
                         <Link href={`/admin/pitches/${p.id}`} className="flex min-w-0 flex-1 items-center gap-2 after:absolute after:inset-0">
                           <TeamMark name={p.team.name} number={p.team.number} logoSrc={p.team.logoUrl} verified={p.team.verified} meta={`to ${p.company.name}`} />
                           <LinkPendingIndicator />
@@ -121,7 +121,7 @@ export default async function AdminReviewPage({ searchParams }: PageProps<'/admi
                   })
                 : tab === 'companies'
                   ? (list as Awaited<ReturnType<typeof listPendingCompanies>>).items.map((c) => (
-                      <li key={c.id} className="relative flex min-w-0 flex-col gap-2 px-4 py-4 transition-colors duration-120 hover:bg-canvas sm:flex-row sm:items-center sm:gap-6 sm:px-5">
+                      <li key={c.id} className="relative flex min-w-0 flex-col gap-2 px-4 py-4 transition-colors duration-120 hover:bg-muted/60 sm:flex-row sm:items-center sm:gap-6 sm:px-5">
                         <Link href={`/admin/companies/${c.id}`} className="flex min-w-0 flex-1 items-center gap-3 after:absolute after:inset-0">
                           <OrgLogo name={c.name} src={c.logoUrl} />
                           <span className="grid min-w-0">
@@ -140,7 +140,7 @@ export default async function AdminReviewPage({ searchParams }: PageProps<'/admi
                     ))
                   : tab === 'teams'
                     ? (list as Awaited<ReturnType<typeof listPendingTeams>>).items.map((t) => (
-                        <li key={t.id} className="relative flex min-w-0 flex-col gap-2 px-4 py-4 transition-colors duration-120 hover:bg-canvas sm:flex-row sm:items-center sm:gap-6 sm:px-5">
+                        <li key={t.id} className="relative flex min-w-0 flex-col gap-2 px-4 py-4 transition-colors duration-120 hover:bg-muted/60 sm:flex-row sm:items-center sm:gap-6 sm:px-5">
                           <Link href={`/admin/teams/${t.id}`} className="flex min-w-0 flex-1 items-center gap-2 after:absolute after:inset-0">
                             <TeamMark name={t.name} number={t.number} logoSrc={t.logoUrl} meta={placeLabel(t) || null} />
                             <LinkPendingIndicator />

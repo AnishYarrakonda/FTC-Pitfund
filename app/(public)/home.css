@@ -3,7 +3,7 @@
  * framed by two hairlines 24px in from the edges, near-black type set in Inter with its display cut
  * (the optical-size axis), two-tone headings, small blue tags, 36px buttons with 10px corners, product
  * windows on a soft five-layer shadow, and two near-black sections. Scoped to `.hp`; the colors that are
- * also product tokens come from `.theme-light` (app/globals.css). Motion lives in components/home/effects.
+ * also product tokens come from the design tokens (app/globals.css). Motion lives in components/home/effects.
  */
 
 .hp {

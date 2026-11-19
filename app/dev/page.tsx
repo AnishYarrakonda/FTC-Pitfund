@@ -69,7 +69,7 @@ export default function DevPage() {
             <ul className="divide-y divide-border rounded-menu border border-border bg-surface">
               {LINKS.map((link) => (
                 <li key={link.href}>
-                  <a href={link.href} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-canvas">
+                  <a href={link.href} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-muted/60">
                     <span className="grid">
                       <span className="text-body font-medium text-text">{link.label}</span>
                       <span className="text-small text-text-tertiary">{link.description}</span>

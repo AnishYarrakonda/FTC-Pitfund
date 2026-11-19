@@ -117,7 +117,7 @@ function PitchRow({ row }: { row: TeamPitchRow }) {
   const status = PITCH_STATUS[row.status]
   const verb = (row.lastAction && EVENT_VERBS[row.lastAction]) || 'Updated'
   return (
-    <Link href={`/pitches/${row.id}`} className="group flex min-w-0 items-start gap-4 px-4 py-4 transition-colors duration-120 hover:bg-canvas sm:items-center sm:px-5">
+    <Link href={`/pitches/${row.id}`} className="group flex min-w-0 items-start gap-4 px-4 py-4 transition-colors duration-120 hover:bg-muted/60 sm:items-center sm:px-5">
       <OrgLogo name={row.companyName} src={row.companyLogoUrl} size="md" />
       <div className="grid min-w-0 flex-1 gap-1 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-x-6">
         <div className="grid min-w-0 gap-0.5">
