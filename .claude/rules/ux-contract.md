@@ -1,8 +1,18 @@
 # UX contract (plan §3.1 and §7)
 
-One dark theme for the whole site (homepage, product, admin): near-black `#101010` canvas, off-white type, one pale-yellow
-highlight, calm and precise. Hierarchy by type and spacing, not boxes. There is no light theme and no toggle.
-"It works" is not visual acceptance. Build from `components/ui`; show every new state on `/dev/ui`.
+**Mid-redesign (Attio-faithful, phased).** Public pages (`app/(public)/*`, the root not-found) render in the light
+system: `.theme-light` (`app/(public)/layout.tsx`, defined in `app/globals.css`) redefines the same tokens, so
+`components/ui` needs no changes there. The signed-in app and admin keep the dark theme (near-black `#101010`, off-white
+type, pale-yellow accent) until phase 2 moves the light values into `@theme` and deletes the scope. Never a toggle.
+Light system, after attio.com: white page, `#fafafb`/`#f3f4f6` surfaces, hairlines `#e4e7ec`, near-black `#1c1d1f` type,
+quiet text `#646d7b` (AA on every light surface), blue `#2463e2` accent; two-tone headings (statement, then `#6f7988`).
+Hierarchy by type and spacing, not boxes. "It works" is not visual acceptance. Build from `components/ui`; show every new
+state on `/dev/ui`.
+
+The homepage (`components/home/*`, `app/(public)/home.css`) is measured against attio.com at 1440 × 900: 24px frame
+hairlines, 36px buttons with 10px corners, 64px display headline, 40/44 section headings, product windows drawn in markup
+(`components/home/product.tsx`, sample data, never claimed customers) and zoomed to fit. Keep its copy to real product
+rules: no invented customers, figures or quotes.
 
 ## Feedback (enforced by components)
 1. Async buttons are `ActionButton` / `SubmitButton` / `ConfirmDialog` (or `useAction` + `Button loading`):
@@ -24,9 +34,9 @@ highlight, calm and precise. Hierarchy by type and spacing, not boxes. There is 
 
 ## Tokens (`app/globals.css`; defaults are cleared, so only tokens compile)
 Colors `canvas surface muted border border-strong text text-secondary text-tertiary ink ink-hover on-ink accent
-accent-hover accent-subtle on-accent success warning danger info` (+ `-subtle`). Primary buttons are the off-white `ink`
-pill with `on-ink` text; the yellow `accent` marks links, focus, the selected item and matched/live states, and anything
-filled with it (or with `danger`/`success`) takes `on-accent` text, never `white`. Type `text-caption small body lead h3 h2 h1 display
+accent-hover accent-subtle on-accent success warning danger info` (+ `-subtle`). Primary buttons are the `ink` fill with
+`on-ink` text (off-white on dark, near-black on light); the `accent` (yellow on dark, blue on light) marks links, focus, the
+selected item and matched/live states, and anything filled with it (or with `danger`/`success`) takes `on-accent` text. Type `text-caption small body lead h3 h2 h1 display
 display-lg`. Radius `rounded-control` (6) · `rounded-menu` (8) · `rounded-dialog` (12); pills only for avatars
 and dots. Shadows `shadow-sm` (menus) · `shadow-lg` (dialogs/sheets). Widths `max-w-auth form reading app review`.
 Motion 120 ms hover, 180 ms overlays; reduced motion removes transforms.

@@ -7,12 +7,20 @@ import { MarkGlyph } from '@/components/app/wordmark'
 type P = SVGProps<SVGSVGElement>
 const base = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const
 
-/** The link arrow: a chevron whose stem draws in on hover (see .hp-arrow). */
+/** The link arrow: nudges a pixel right on hover (see .hp-arrow). */
 export function Arrow() {
   return (
-    <svg className="hp-arrow" viewBox="0 0 10 10" aria-hidden="true">
-      <path className="hp-arrow__stem" d="M0.5 5h6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path className="hp-arrow__head" d="M1.5 1.5 5 5l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <svg className="hp-arrow" viewBox="0 0 12 12" aria-hidden="true">
+      <path d="M2 6h7.5M6.5 2.75 9.75 6 6.5 9.25" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/** The menu chevron: turns over while its menu is open (see .hp-chevron). */
+export function Chevron() {
+  return (
+    <svg className="hp-chevron" viewBox="0 0 12 12" aria-hidden="true">
+      <path d="M3 4.75 6 7.75l3-3" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -134,6 +142,12 @@ export const I = {
       <path d="M6.5 13H3V9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  search: (p: P) => (
+    <svg {...base} {...p}>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 4 4" />
+    </svg>
+  ),
   plus: (p: P) => (
     <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" {...p}>
       <path d="M8 3.5v9M3.5 8h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -172,7 +186,7 @@ export const I = {
   ),
 }
 
-/** The FTC Pitfund mark, drawn in the homepage's ink color like the reference's wordmark. */
+/** The FTC Pitfund mark in the page's ink color: near-black on light, white over a dark section. */
 export function Mark({ className }: { className?: string }) {
   return (
     <span className={`hp-mark ${className ?? ''}`}>

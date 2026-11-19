@@ -8,7 +8,9 @@ import './globals.css'
 
 // Not preloaded: text paints at once in the size-matched fallback, and the 48 KB font doesn't compete with
 // the page's main image and scripts on slow connections (plan §6 LCP budget).
-const inter = Inter({ subsets: ['latin'], display: 'optional', preload: false, variable: '--font-inter' })
+// The optical-size axis is Inter Display: headings get the tighter display cut automatically
+// (`font-optical-sizing: auto`), as on the reference site, without a second family.
+const inter = Inter({ subsets: ['latin'], axes: ['opsz'], display: 'optional', preload: false, variable: '--font-inter' })
 
 export const metadata: Metadata = {
   // Makes `alternates.canonical` absolute, so the *.vercel.app aliases point search engines at the real domain.

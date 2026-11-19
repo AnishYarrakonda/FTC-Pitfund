@@ -85,8 +85,12 @@ React + Next alone is ~145 KB, so client code on any page gets ~25 KB. Keep it t
   A server component can't render `Button` without `asChild` (it attaches an onClick): use `buttonVariants()` on a plain element.
 - Turbopack bundles whole modules: one import from a big client module ships all of it. Split modules instead.
 - The landing page is static (`components/home/*`, styles scoped to `.hp` in `app/(public)/home.css`). Two islands: one
-  reads the session cookie; `<HomeEffects>` imports `components/home/effects/*` at idle (canvases, menus, dialogs built on
-  first open, carousels), one short task per effect. Below-the-fold sections use `content-visibility: auto`; QA's
+  reads the session cookie; `<HomeEffects>` imports `components/home/effects/*` at idle, one short task per effect. All
+  scroll-driven motion (hero cap and satellites, head tone, chapter rail, the principle's words) runs from one passive
+  listener and one rAF (`effects/util.ts` `onFrame`), writing only transforms, opacity and attributes. Entrances
+  (`[data-hp-reveal]` → `.is-in`) start from their first keyframe and hide nothing beforehand, so full-page screenshots
+  and no-JS readers see complete content; the hero satellites are the one exception (hidden until you scroll, like the
+  reference) and reduced motion shows them. Below-the-fold sections use `content-visibility: auto`; QA's
   `settle()` renders them before screenshots, overflow checks and axe. `/login` renders the form in the static shell
   and reads `?intent`, `?next`, `?error` in the browser (a Suspense fallback swap would wipe what the user typed).
   "Find where to start" routes what a visitor types with `effects/find-match.ts`: a scored, weighted word index

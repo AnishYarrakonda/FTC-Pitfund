@@ -112,7 +112,7 @@ export function LoginFlow() {
     return (
       <section className="grid gap-6" aria-labelledby="code-heading">
         <div className="grid gap-2">
-          <h1 id="code-heading" className="text-h2 font-semibold tracking-tighter text-text">
+          <h1 id="code-heading" className="text-h3 font-semibold tracking-tight text-text">
             Check your email
           </h1>
           <p className="text-body text-text-secondary">
@@ -220,7 +220,7 @@ export function LoginFlow() {
   return (
     <section className="grid gap-6" aria-labelledby="login-heading">
       <div className="grid gap-2">
-        <h1 id="login-heading" className="text-h2 font-semibold tracking-tighter text-text">
+        <h1 id="login-heading" className="text-h3 font-semibold tracking-tight text-text">
           Sign in
         </h1>
         <p className="text-body text-text-secondary">{SUBTITLE[intent ?? 'any']}</p>

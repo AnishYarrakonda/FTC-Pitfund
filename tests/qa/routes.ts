@@ -159,10 +159,42 @@ const openFaq: QaInteraction = {
   },
 }
 
+/* The homepage's Product menu (desktop) or burger sheet (below 992px), whichever the width shows. */
+const openMenu: QaInteraction = {
+  name: 'menu-open',
+  run: async (page) => {
+    // The menus are wired after first paint (components/home/effects), so retry until they answer.
+    const product = page.getByRole('button', { name: 'Product' })
+    if (await product.isVisible()) {
+      await expect(async () => {
+        if ((await product.getAttribute('aria-expanded')) !== 'true') await product.click()
+        await expect(product).toHaveAttribute('aria-expanded', 'true', { timeout: 500 })
+      }).toPass()
+      await expect(page.locator('#hp-menu-product').getByRole('link', { name: /Team page/ })).toBeVisible()
+    } else {
+      const burger = page.getByRole('button', { name: /menu/ })
+      await expect(async () => {
+        if ((await burger.getAttribute('aria-expanded')) !== 'true') await burger.click()
+        await expect(burger).toHaveAttribute('aria-expanded', 'true', { timeout: 500 })
+      }).toPass()
+      await expect(page.locator('#hp-mnav').getByRole('link', { name: 'Find where to start' })).toBeVisible()
+    }
+  },
+}
+
+/* The two-sides tabs: the company panel is reachable only by choosing its tab. */
+const companiesTab: QaInteraction = {
+  name: 'sides-companies',
+  run: async (page) => {
+    await page.getByRole('tab', { name: 'For companies' }).click()
+    await expect(page.getByText('Screened, specific pitches.')).toBeVisible()
+  },
+}
+
 export const QA_ROUTES: QaRoute[] = [
   // Public
   // coach: the landing top bar offers "Open FTC Pitfund" when a session cookie exists.
-  { name: 'landing', path: '/', personas: ['anonymous', 'coach'], budget: 'public', interactions: [openFaq] },
+  { name: 'landing', path: '/', personas: ['anonymous', 'coach'], budget: 'public', interactions: [openFaq, openMenu, companiesTab] },
   { name: 'login', path: '/login', personas: ['anonymous'], budget: 'public' },
   { name: 'login-team', path: '/login?intent=team', personas: ['anonymous'], budget: 'public' },
   { name: 'login-company', path: '/login?intent=company', personas: ['anonymous'], budget: 'public' },

@@ -1,19 +1,21 @@
 import type { Metadata } from 'next'
 
+import { Hero, Stats } from '@/components/home/hero'
 import { HomeEffects } from '@/components/home/home-effects'
-import { Hero } from '@/components/home/hero'
 import { Footer, FooterCta } from '@/components/home/lower'
-import { HomeNav, SeasonBanner } from '@/components/home/nav'
-import { Faq, Features, FindPath, HowItWorks, Sides, Teamwork } from '@/components/home/sections'
+import { SiteHead } from '@/components/home/nav'
+import { Chapters, Faq, FindPath, People, Principle, Season, Sides } from '@/components/home/sections'
+import { newsreader } from '@/components/home/serif'
 
 import './home.css'
 
 /*
- * Landing page. Fully static: no cookies, no database. Dark, quiet and type-led: a dot-grid hero with
- * a still of the product, a feature grid, a light panel for how a pitch moves, the two sides, and the
- * FAQ. Everything on it is a real product rule or flow (no invented customers, figures or quotes).
- * Markup is server-rendered; one small island (<HomeEffects>) loads the behavior (effects/*) after
- * first paint, so the page's first-load JS stays within budget. The only other island reads the
+ * Landing page, after attio.com: white and hairline-framed, a pinned hero the product window rises
+ * over, a pinned chapter rail beside statements and product panels, a dark section that slides away
+ * from a pinned principle, then the season, both sides, the FAQ and a dark close. Fully static: no
+ * cookies, no database. Every claim on it is a real product rule (no invented customers, figures or
+ * quotes). Markup is server-rendered; one small island (<HomeEffects>) loads the behavior (effects/*)
+ * after first paint, so the page's first-load JS stays within budget. The only other island reads the
  * session cookie for the top bar.
  */
 
@@ -26,17 +28,20 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   return (
-    <div className="hp" data-hp-root>
-      <SeasonBanner />
-      <HomeNav />
+    <div className={`hp ${newsreader.variable}`} data-hp-root>
+      <SiteHead />
       <main id="main">
         <Hero />
-        <Features />
-        <HowItWorks />
+        <Stats />
+        <Chapters />
+        <div className="hp-slide">
+          <People />
+          <Principle />
+        </div>
+        <Season />
         <Sides />
-        <Teamwork />
-        <FindPath />
         <Faq />
+        <FindPath />
         <FooterCta />
       </main>
       <Footer />

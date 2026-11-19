@@ -29,6 +29,7 @@ const RULES: Array<[RegExp, string]> = [
   [/^border(-\d|-\[|$)/, 'border-w'],
   [/^rounded(-(none|full|sm|md|lg|xl|2xl|3xl|control|menu|dialog|\[)|$)/, 'rounded'],
   [/^(shadow|transition)(-|$)/, '$1'],
+  [/^backdrop-blur(-|$)/, 'backdrop-blur'],
   [/^ring(-\d|-\[|$)/, 'ring-w'],
   [/^outline-(none|dashed|dotted|double)/, 'outline-style'],
   [/^outline(-\d|$)/, 'outline-w'],

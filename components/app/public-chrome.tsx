@@ -8,8 +8,8 @@ import { Wordmark } from './wordmark'
 
 export function PublicHeader({ action }: { action?: ReactNode }) {
   return (
-    <header className="border-b border-border bg-surface">
-      <div className="mx-auto flex h-14 w-full max-w-app items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 border-b border-border bg-canvas/95 backdrop-blur">
+      <div className="mx-auto flex h-[60px] w-full max-w-app items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Wordmark />
         {action}
       </div>

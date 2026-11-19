@@ -320,6 +320,72 @@
   }
 }
 
+/*
+ * The light system (v7), after attio.com: a white page, cool hairline greys, near-black type and one blue.
+ * Phase 1 of the redesign scopes it to the public pages: `.theme-light` (app/(public)/layout.tsx) redefines
+ * the same tokens, so every components/ui piece renders light inside it without a single class change.
+ * Phase 2 moves these values into @theme above and deletes this scope.
+ */
+@layer base {
+  .theme-light {
+    --color-canvas: #ffffff;
+    --color-surface: #fafafb;
+    --color-muted: #f3f4f6;
+    --color-border: #e4e7ec;
+    --color-border-strong: #d3d8df;
+
+    --color-text: #1c1d1f;
+    --color-text-secondary: #505967;
+    /* #646d7b clears AA on white (5.2), #fafafb and #f3f4f6 (4.75). Attio's own #6f7988 doesn't on grey. */
+    --color-text-tertiary: #646d7b;
+
+    --color-ink: #1c1d1f;
+    --color-ink-hover: #2e3238;
+    --color-on-ink: #ffffff;
+
+    --color-accent: #2463e2;
+    --color-accent-hover: #1f55c4;
+    --color-accent-subtle: #e8f0ff;
+    --color-on-accent: #ffffff;
+
+    --color-success: #0b7d50;
+    --color-success-subtle: #e7f6ee;
+    --color-warning: #845e00;
+    --color-warning-subtle: #fbf3dc;
+    --color-danger: #c9302c;
+    --color-danger-hover: #a8241f;
+    --color-danger-subtle: #fdecec;
+    --color-info: #245bc2;
+    --color-info-subtle: #e8f0ff;
+
+    --color-brand-blue: #266df0;
+    --color-brand-green: #0fc27b;
+    --color-brand-lime: #8fd14f;
+    --color-brand-yellow: #f5b900;
+
+    --color-stage-draft: #8f99a8;
+    --color-stage-review: #266df0;
+    --color-stage-sent: #f5b900;
+    --color-stage-matched: #0fc27b;
+
+    --color-violet: #6e56cf;
+    --color-violet-subtle: #f0edfc;
+    --color-coral: #0c7fb0;
+    --color-coral-subtle: #e6f4fa;
+
+    /* Attio's five-layer lift: a hairline ring and four soft drops. */
+    --shadow-sm: 0 0 0 1px rgb(11 13 24 / 0.06), 0 1px 2px rgb(11 13 24 / 0.04), 0 4px 12px rgb(11 13 24 / 0.06);
+    --shadow-lg:
+      0 0 0 1px rgb(11 13 24 / 0.06), 0 1px 2px rgb(11 13 24 / 0.024), 0 3px 6px rgb(11 13 24 / 0.03), 0 8px 14px rgb(11 13 24 / 0.035),
+      0 16px 28px rgb(11 13 24 / 0.04);
+
+    color-scheme: light;
+    min-height: 100dvh;
+    background: var(--color-canvas);
+    color: var(--color-text);
+  }
+}
+
 @utility user-text {
   overflow-wrap: anywhere;
   word-break: normal;
