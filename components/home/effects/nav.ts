@@ -44,6 +44,8 @@ export function initNav(root: HTMLElement): Cleanup {
   if (trigger && menu) {
     const item = trigger.parentElement as HTMLElement
     let closeTimer = 0
+    // A mouse opens the menu on hover; the click that usually follows must not close it again.
+    let hoverOpenedAt = 0
     const setMenu = (open: boolean) => {
       window.clearTimeout(closeTimer)
       if (menu.hidden === !open) return
@@ -53,9 +55,14 @@ export function initNav(root: HTMLElement): Cleanup {
     const hover = window.matchMedia('(hover: hover)')
     offs.push(
       () => window.clearTimeout(closeTimer),
-      on(trigger, 'click', () => setMenu(menu.hidden)),
+      on(trigger, 'click', () => {
+        if (!menu.hidden && performance.now() - hoverOpenedAt < 800) return
+        setMenu(menu.hidden)
+      }),
       on(item, 'pointerenter', (e: PointerEvent) => {
-        if (e.pointerType === 'mouse' && hover.matches) setMenu(true)
+        if (e.pointerType !== 'mouse' || !hover.matches || !menu.hidden) return
+        hoverOpenedAt = performance.now()
+        setMenu(true)
       }),
       on(item, 'pointerleave', (e: PointerEvent) => {
         if (e.pointerType !== 'mouse') return
