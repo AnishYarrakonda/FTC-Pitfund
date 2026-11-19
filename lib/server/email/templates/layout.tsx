@@ -5,18 +5,21 @@ import { FIRST_DISCLAIMER, PRODUCT_NAME, SUPPORT_EMAIL } from '@/lib/shared/bran
 
 /*
  * Base layout for every FTC Pitfund email: wordmark, one white panel, a plain footer.
- * Colors are the plan §7 tokens, inlined because email clients ignore stylesheets.
+ * Colors are the site's tokens (app/globals.css), inlined because email clients ignore stylesheets.
  */
 
 export const emailColors = {
-  canvas: '#F8FAFD',
+  canvas: '#F3F4F6',
   surface: '#FFFFFF',
-  border: '#E5EDF5',
-  text: '#061B31',
-  textSecondary: '#50617A',
-  textTertiary: '#64748D',
-  accent: '#1E40AF',
-  accentSubtle: '#E8E9FF',
+  well: '#FAFAFB',
+  border: '#E4E7EC',
+  borderStrong: '#D3D8DF',
+  text: '#1C1D1F',
+  textSecondary: '#505967',
+  textTertiary: '#646D7B',
+  ink: '#1C1D1F',
+  accent: '#2463E2',
+  accentSubtle: '#E8F0FF',
 }
 
 const fontStack =
@@ -36,13 +39,25 @@ const panel: CSSProperties = {
   backgroundColor: emailColors.surface,
   border: `1px solid ${emailColors.border}`,
   borderRadius: '12px',
-  padding: '36px 32px',
+  padding: '32px',
 }
 
 export const text = {
   h1: { fontSize: '20px', lineHeight: '28px', fontWeight: 600, margin: '0 0 12px', color: emailColors.text },
   body: { fontSize: '14px', lineHeight: '22px', margin: '0 0 16px', color: emailColors.textSecondary },
   small: { fontSize: '13px', lineHeight: '20px', margin: 0, color: emailColors.textTertiary },
+  /** Someone's own words (a reviewer's note, a reason): kept as written, marked by a rule on the left. */
+  quote: {
+    fontSize: '14px',
+    lineHeight: '22px',
+    margin: '0 0 16px',
+    color: emailColors.text,
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+    borderLeft: `3px solid ${emailColors.borderStrong}`,
+    paddingLeft: '12px',
+  },
+  userText: { fontSize: '14px', lineHeight: '22px', margin: '0 0 16px', color: emailColors.text, whiteSpace: 'pre-wrap', wordBreak: 'break-word' },
 } satisfies Record<string, CSSProperties>
 
 export function EmailLayout({ preview, children }: { preview: string; children: ReactNode }) {
@@ -106,14 +121,14 @@ export function EmailButton({ href, children }: { href: string; children: ReactN
       href={href}
       style={{
         display: 'inline-block',
-        backgroundColor: emailColors.accent,
+        backgroundColor: emailColors.ink,
         color: '#FFFFFF',
         fontSize: '14px',
         lineHeight: '20px',
         fontWeight: 500,
         textDecoration: 'none',
         padding: '10px 18px',
-        borderRadius: '6px',
+        borderRadius: '8px',
       }}
     >
       {children}

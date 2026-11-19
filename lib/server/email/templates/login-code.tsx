@@ -22,7 +22,7 @@ export default function LoginCodeEmail(props: LoginCodeProps) {
       <Text style={text.body}>Enter this code on the FTC Pitfund sign-in page.</Text>
       <Section
         style={{
-          backgroundColor: emailColors.canvas,
+          backgroundColor: emailColors.well,
           border: `1px solid ${emailColors.border}`,
           borderRadius: '8px',
           padding: '18px 0',

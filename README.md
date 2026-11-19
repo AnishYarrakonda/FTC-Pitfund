@@ -1,16 +1,13 @@
 <div align="center">
 
 <a href="https://pitfund.org">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/banner-dark.png" />
-    <img alt="FTC Pitfund: sponsorship pitches companies actually read" src=".github/assets/banner-light.png" width="100%" />
-  </picture>
+  <img alt="FTC Pitfund: sponsorship pitches companies actually read" src=".github/assets/banner.png" width="100%" />
 </a>
 
 <br />
 <br />
 
-[![Live at pitfund.org](https://img.shields.io/badge/live-pitfund.org-1e40af?style=for-the-badge&logo=vercel&logoColor=white)](https://pitfund.org)
+[![Live at pitfund.org](https://img.shields.io/badge/live-pitfund.org-2463e2?style=for-the-badge&logo=vercel&logoColor=white)](https://pitfund.org)
 [![CI](https://img.shields.io/github/actions/workflow/status/AnishYarrakonda/FTC-Pitfund/ci.yml?branch=main&style=for-the-badge&label=CI&logo=githubactions&logoColor=white)](https://github.com/AnishYarrakonda/FTC-Pitfund/actions/workflows/ci.yml)
 [![Free for teams](https://img.shields.io/badge/price-%240%20for%20teams%20%26%20companies-10b981?style=for-the-badge)](https://pitfund.org)
 
@@ -109,7 +106,7 @@ stateDiagram-v2
 <p align="center">
   <img src=".github/assets/composer.png" alt="The pitch composer: a company's own questions on the left, a live preview of what the company will see on the right" width="100%" />
   <br />
-  <sub><b>The composer.</b> Answer the company's own questions with a live preview of exactly what it will see. Drafts save as you type.</sub>
+  <sub><b>The composer.</b> Answer the company's own questions next to a live preview of exactly what it will see. Drafts save as you type.</sub>
 </p>
 
 <table>

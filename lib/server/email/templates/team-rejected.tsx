@@ -26,7 +26,7 @@ export default function TeamRejectedEmail(props: TeamRejectedProps) {
         Team {p.teamNumber} wasn’t approved
       </Text>
       <Text style={{ ...text.body, wordBreak: 'break-word' }}>An FTC Pitfund admin reviewed {p.teamName} and couldn’t approve it. Their note:</Text>
-      <Text style={{ ...text.body, color: '#061B31', whiteSpace: 'pre-wrap', wordBreak: 'break-word', borderLeft: '3px solid #E7E7EA', paddingLeft: '12px' }}>
+      <Text style={text.quote}>
         {p.note}
       </Text>
       <Text style={{ ...text.body, wordBreak: 'break-word' }}>
