@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og'
 
 import { markSrc } from '@/lib/server/og'
 
-/* The home-screen icon: the P mark on a full-bleed accent tile (iOS rounds the corners itself). Static. */
+/* The home-screen icon: the white P mark on a full-bleed blue tile (iOS rounds the corners itself). Static. */
 
 export const size = { width: 180, height: 180 }
 export const contentType = 'image/png'
