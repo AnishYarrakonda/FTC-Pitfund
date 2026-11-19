@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { COMPANY_HREF, STATS, TEAM_HREF } from './content'
+import { COMPANY_HREF, TEAM_HREF } from './content'
 import { Arrow, Chevron } from './icons'
 import { HeroApp, HeroInbox, HeroQueue, HeroTeamPage } from './product'
 
@@ -9,7 +9,6 @@ import { HeroApp, HeroInbox, HeroQueue, HeroTeamPage } from './product'
  * scrolls up over it and the headline blurs away (effects/scroll.ts). Behind both, a pinned lavender
  * field with a fine line texture; a white cap over its top shrinks as you scroll, opening the color.
  * Three satellite windows float around the main one and settle back a little as it rises.
- * Under the hero, the season's rules as a hairline strip of figures.
  */
 
 export function Hero() {
@@ -56,23 +55,6 @@ export function Hero() {
             </div>
           </div>
         </div>
-      </div>
-    </section>
-  )
-}
-
-export function Stats() {
-  return (
-    <section className="hp-stats" aria-label="The season’s rules">
-      <div className="hp-frame">
-        <dl className="hp-stats__grid">
-          {STATS.map((s) => (
-            <div key={s.value} className="hp-stats__cell">
-              <dt className="hp-tabular">{s.value}</dt>
-              <dd>{s.label}</dd>
-            </div>
-          ))}
-        </dl>
       </div>
     </section>
   )

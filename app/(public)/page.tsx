@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 
-import { Hero, Stats } from '@/components/home/hero'
+import { Hero } from '@/components/home/hero'
 import { HomeEffects } from '@/components/home/home-effects'
 import { Footer, FooterCta } from '@/components/home/lower'
 import { SiteHead } from '@/components/home/nav'
@@ -32,7 +32,6 @@ export default function LandingPage() {
       <SiteHead />
       <main id="main">
         <Hero />
-        <Stats />
         <Chapters />
         <div className="hp-slide">
           <People />

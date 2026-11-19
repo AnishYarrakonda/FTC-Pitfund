@@ -26,9 +26,9 @@ function Dots() {
 }
 
 /** A window: the frosted frame with traffic lights, and the app inside it. */
-function Win({ label, className, dark, children }: { label: string; className?: string; dark?: boolean; children: ReactNode }) {
+function Win({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
   return (
-    <div className={`pm-win ${dark ? 'pm-win--dark' : ''} ${className ?? ''}`} role="img" aria-label={label}>
+    <div className={`pm-win ${className ?? ''}`} role="img" aria-label={label}>
       <div className="pm-win__bar">
         <Dots />
       </div>
@@ -175,12 +175,12 @@ export function HeroInbox() {
   const rows: Array<[string, string, string, number]> = [
     ['NA', 'Northwind Aero said Interested', 'Their contacts are on the pitch', 150],
     ['R', 'A reviewer returned a pitch', 'Ridgeway Plastics · 1 note', 210],
-    ['HL', 'Harborline Labs is in review', 'Usually within two days', 190],
+    ['HL', 'Harborline Labs is in review', 'Waiting for a reviewer', 190],
   ]
   return (
     <Win label="The team’s inbox: a company said Interested, and a reviewer returned a pitch with a note" className="pm-sat pm-sat--inbox">
       <div className="pm-inbox">
-        <p className="pm-inbox__head"># inbox</p>
+        <p className="pm-inbox__head">Inbox</p>
         {rows.map(([a, t, s, h]) => (
           <div key={t} className="pm-inbox__row">
             <Avatar text={a} hue={h} />
@@ -195,32 +195,32 @@ export function HeroInbox() {
   )
 }
 
-/** Bottom left, on black, the reviewers' queue, where every pitch waits before a company sees it. */
+/** Bottom left: the reviewers' queue, where every pitch waits for a person before a company sees it. */
 export function HeroQueue() {
+  const rows: Array<[string, string, string, number, boolean]> = [
+    ['EX', 'Exodius → Harborline Labs', 'Team 31579 · 3 of 3 answered', 220, true],
+    ['TD', 'Tidal Drive → Copperleaf Tools', 'Team 22105 · 4 of 4 answered', 190, false],
+    ['GM', 'Gearmind → Northwind Aero', 'Team 16091 · 3 of 3 answered', 300, false],
+  ]
   return (
-    <Win dark label="The review queue: every pitch waits here for a person before any company sees it" className="pm-sat pm-sat--queue">
+    <Win label="The review queue: every pitch waits here for a person before any company sees it" className="pm-sat pm-sat--queue">
       <div className="pm-queue">
-        <p className="pm-queue__prompt">
-          <span>›</span> Review queue · 3 waiting
+        <p className="pm-queue__head">
+          <b>Review</b>
+          <span>3 pitches waiting</span>
         </p>
-        <ul>
-          <li>
-            <i className="pm-dot pm-dot--review" />
-            Harborline Labs <small>from Exodius</small>
-          </li>
-          <li>
-            <i className="pm-dot pm-dot--review" />
-            Copperleaf Tools <small>from Team 16091</small>
-          </li>
-          <li>
-            <i className="pm-dot pm-dot--review" />
-            Northwind Aero <small>from Team 22105</small>
-          </li>
-        </ul>
-        <div className="pm-queue__note">Read every answer. Send it on, or return it with a note.</div>
+        {rows.map(([a, t, s, h, on]) => (
+          <div key={t} className={`pm-queue__row ${on ? 'is-on' : ''}`}>
+            <Logo text={a} hue={h} />
+            <span>
+              <b>{t}</b>
+              <small>{s}</small>
+            </span>
+          </div>
+        ))}
         <p className="pm-queue__foot">
-          <span className="pm-btn pm-btn--glass">Return with note</span>
-          <span className="pm-btn pm-btn--light">Send to company</span>
+          <span className="pm-btn pm-btn--line">Return with a note</span>
+          <span className="pm-btn pm-btn--ink">Send to company</span>
         </p>
       </div>
     </Win>

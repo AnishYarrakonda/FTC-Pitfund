@@ -42,14 +42,6 @@ export const FAQS = [
   { id: 'first', q: 'Is this run by FIRST?', a: 'No. FTC Pitfund is an independent project built by FTC Team 31579 Exodius. It is not affiliated with or endorsed by FIRST®.' },
 ] as const
 
-/* The season's rules as figures, in the hairline strip under the hero. */
-export const STATS = [
-  { value: '1', label: 'pitch per team, per company, per season' },
-  { value: '100%', label: 'of pitches read by a person first' },
-  { value: '≤10', label: 'questions each company writes itself' },
-  { value: '$0', label: 'in fees, for teams and companies' },
-] as const
-
 /* The nav's Product menu: what each side gets, then the ways in. */
 export const MENU = {
   columns: [
