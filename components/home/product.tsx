@@ -15,23 +15,10 @@ import { Chevron, I } from './icons'
 type Tone = 'draft' | 'review' | 'sent' | 'matched' | 'returned'
 const TONE_LABEL: Record<Tone, string> = { draft: 'Draft', review: 'In review', sent: 'Sent', matched: 'Interested', returned: 'Needs changes' }
 
-function Dots() {
-  return (
-    <span className="pm-lights" aria-hidden="true">
-      <i />
-      <i />
-      <i />
-    </span>
-  )
-}
-
-/** A window: the frosted frame with traffic lights, and the app inside it. */
+/** A window: a thin frosted frame around the app screen, no fake browser chrome. */
 function Win({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
   return (
     <div className={`pm-win ${className ?? ''}`} role="img" aria-label={label}>
-      <div className="pm-win__bar">
-        <Dots />
-      </div>
       <div className="pm-win__body" aria-hidden="true">
         {children}
       </div>
@@ -255,28 +242,26 @@ export function HeroTeamPage() {
   )
 }
 
-/** Page one of a sponsorship deck, drawn: a title, a robot on a field and two figures. */
+/** Page one of a sponsorship deck, set as type: the title and what the next pages cover. */
 function Slide({ big }: { big?: boolean }) {
   return (
     <div className={`pm-slide ${big ? 'pm-slide--big' : ''}`}>
-      <p className="pm-slide__kicker">2026–27 sponsorship</p>
+      <p className="pm-slide__kicker">Exodius · FTC 31579 · 2026–27</p>
       <p className="pm-slide__title">Exodius builds robots and runs free workshops.</p>
-      <svg className="pm-slide__art" viewBox="0 0 160 70">
-        <path d="M4 66 L40 40 H120 L156 66 Z" className="pm-slide__field" />
-        <path d="M22 53 H138 M80 40 V66" className="pm-slide__grid" />
-        <rect x="62" y="24" width="36" height="22" rx="3" className="pm-slide__bot" />
-        <path d="M68 24 V12 H74 M92 24 V8 M86 8 H98" className="pm-slide__bot" />
-        <circle cx="68" cy="48" r="5" className="pm-slide__wheel" />
-        <circle cx="92" cy="48" r="5" className="pm-slide__wheel" />
-      </svg>
-      <p className="pm-slide__figs">
-        <span>
-          <b>3rd</b> season
-        </span>
-        <span>
-          <b>4</b> workshops
-        </span>
-      </p>
+      <dl className="pm-slide__rows">
+        <div>
+          <dt>What your support pays for</dt>
+          <dd>2</dd>
+        </div>
+        <div>
+          <dt>Workshops we run</dt>
+          <dd>3</dd>
+        </div>
+        <div>
+          <dt>How we recognize sponsors</dt>
+          <dd>4</dd>
+        </div>
+      </dl>
     </div>
   )
 }
@@ -597,12 +582,8 @@ function OgCard() {
         <i className="pm-ogc__kick" />
         <i />
         <i className="pm-ogc__short" />
-        <svg viewBox="0 0 160 70">
-          <path d="M4 66 L40 40 H120 L156 66 Z" className="pm-slide__field" />
-          <rect x="62" y="24" width="36" height="22" rx="3" className="pm-slide__bot" />
-          <circle cx="68" cy="48" r="5" className="pm-slide__wheel" />
-          <circle cx="92" cy="48" r="5" className="pm-slide__wheel" />
-        </svg>
+        <i />
+        <i className="pm-ogc__short" />
       </div>
     </div>
   )

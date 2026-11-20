@@ -133,11 +133,11 @@ export const CHAPTERS = [
 
 /* The dark section's five rules, one column each. */
 export const RULES = [
-  { icon: 'user', title: 'Adults only.', body: 'Coaches, mentors and parents. No student accounts.' },
-  { icon: 'shield', title: 'Verified teams.', body: 'Every number checked against FIRST’s own list.' },
-  { icon: 'check', title: 'Approved companies.', body: 'Teams only pitch companies a reviewer approved.' },
-  { icon: 'lock', title: 'Private contacts.', body: 'Shared on Interested, only between the two of you.' },
-  { icon: 'flag', title: 'No money moves.', body: 'Free for both sides. You arrange it directly.' },
+  { title: 'Adults only.', body: 'Coaches, mentors and parents. No student accounts.' },
+  { title: 'Verified teams.', body: 'Every number checked against FIRST’s own list.' },
+  { title: 'Approved companies.', body: 'Teams only pitch companies a reviewer approved.' },
+  { title: 'Private contacts.', body: 'Shared on Interested, only between the two of you.' },
+  { title: 'No money moves.', body: 'Free for both sides. You arrange it directly.' },
 ] as const
 
 /* "What's shared, and when": three tabs, each a ring in the diagram beside them (sections.tsx). */
@@ -153,8 +153,7 @@ export const SIDES = [
     id: 'teams',
     tab: 'For teams',
     overline: 'Coaches and mentors',
-    lead: 'Pitch every approved sponsor.',
-    rest: 'From one team account.',
+    lead: 'Pitch every approved sponsor from one team account.',
     checks: ['Team number matched to FIRST', 'One deck and summary, reused all season', 'Drafts that save as you type', 'Withdraw before a reply to free the slot'],
     cta: { label: 'I coach a team', href: TEAM_HREF },
   },
@@ -162,8 +161,7 @@ export const SIDES = [
     id: 'companies',
     tab: 'For companies',
     overline: 'Companies that sponsor robotics',
-    lead: 'Screened, specific pitches.',
-    rest: 'Answered with a click.',
+    lead: 'Screened, specific pitches you answer with a click.',
     checks: ['Up to ten questions of your own', 'Only reviewed pitches reach you', 'Interested or Not a fit, nothing in between', 'Invite colleagues as editors'],
     cta: { label: 'I represent a company', href: COMPANY_HREF },
   },

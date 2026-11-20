@@ -4,7 +4,7 @@
 White page; cards, menus, dialogs and controls are white too (`surface` = `canvas`), set apart by `#e4e7ec` hairlines and,
 when they float, a soft lift (`shadow-sm`/`shadow-lg`; `shadow-xs` under buttons and inputs). `muted` `#f3f4f6` is the
 sunken grey: hovers (`hover:bg-muted/60` on rows), wells, read-only and disabled fields. Near-black `#1c1d1f` type, quiet
-text `#646d7b` (AA on white and on `muted`), blue `#2463e2` accent; two-tone headings (statement, then `#6f7988`).
+text `#646d7b` (AA on white and on `muted`), blue `#2463e2` accent; headings are one plain statement with a quieter line under them when needed (no two-tone headings, no eyebrow chips, no fake browser chrome or clip-art on the drawn product windows).
 Hierarchy by type and spacing, not boxes. "It works" is not visual acceptance. Build from `components/ui`; show every new
 state on `/dev/ui`.
 

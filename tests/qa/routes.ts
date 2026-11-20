@@ -187,7 +187,7 @@ const companiesTab: QaInteraction = {
   name: 'sides-companies',
   run: async (page) => {
     await page.getByRole('tab', { name: 'For companies' }).click()
-    await expect(page.getByText('Screened, specific pitches.')).toBeVisible()
+    await expect(page.getByText('Screened, specific pitches you answer with a click.')).toBeVisible()
   },
 }
 

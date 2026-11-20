@@ -86,7 +86,7 @@ React + Next alone is ~145 KB, so client code on any page gets ~25 KB. Keep it t
 - Turbopack bundles whole modules: one import from a big client module ships all of it. Split modules instead.
 - The landing page is static (`components/home/*`, styles scoped to `.hp` in `app/(public)/home.css`). Two islands: one
   reads the session cookie; `<HomeEffects>` imports `components/home/effects/*` at idle, one short task per effect. All
-  scroll-driven motion (hero cap and satellites, head tone, chapter rail, the principle's words) runs from one passive
+  scroll-driven motion (hero cap and satellites, head tone, chapter rail) runs from one passive
   listener and one rAF (`effects/util.ts` `onFrame`), writing only transforms, opacity and attributes. Entrances
   (`[data-hp-reveal]` → `.is-in`) start from their first keyframe and hide nothing beforehand, so full-page screenshots
   and no-JS readers see complete content; the hero satellites are the one exception (hidden until you scroll, like the

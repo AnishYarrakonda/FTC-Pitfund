@@ -29,22 +29,6 @@ import {
  * the FAQ and "find where to start". Static markup; effects/* wires the rail, tabs, reveals and the find box.
  */
 
-function Tag({ children, dark }: { children: string; dark?: boolean }) {
-  return <p className={`hp-tag ${dark ? 'hp-tag--dark' : ''}`}>{children}</p>
-}
-
-/** A two-tone heading: the statement, then the explanation in a quieter grey. */
-function TwoTone({ lead, rest, br }: { lead: string; rest: string; br?: boolean }) {
-  return (
-    <>
-      <span>{lead}</span>
-      {' '}
-      {br ? <br className="hp-br" /> : null}
-      <span className="hp-dim">{rest}</span>
-    </>
-  )
-}
-
 const PANELS: Record<(typeof CHAPTERS)[number]['id'], { panel: ComponentType; cells?: [ComponentType, ComponentType] }> = {
   'team-page': { panel: PanelTeamPage, cells: [CellVerify, CellShare] },
   pitch: { panel: PanelComposer },
@@ -58,10 +42,10 @@ export function Chapters() {
     <section className="hp-ch" id="how" aria-labelledby="hp-how-title">
       <div className="hp-frame">
         <div className="hp-intro">
-          <Tag>How it works</Tag>
           <h2 id="hp-how-title" className="hp-h2">
-            <TwoTone br lead="One pitch, start to finish." rest="Set up once, pitch the companies that fit, and always know where each pitch stands." />
+            One pitch, start to finish.
           </h2>
+          <p className="hp-sub">Set up once, pitch the companies that fit, and always know where each pitch stands.</p>
         </div>
         <div className="hp-ch__grid">
           <nav className="hp-rail" aria-label="How it works" data-hp-rail>
@@ -83,8 +67,9 @@ export function Chapters() {
                 <article key={c.id} id={c.id} className="hp-chapter" data-hp-chapter={c.id} aria-labelledby={`hp-ch-${c.id}`}>
                   <div className="hp-chapter__stmt">
                     <h3 id={`hp-ch-${c.id}`} className="hp-stmt">
-                      <TwoTone lead={c.lead} rest={c.rest} />
+                      {c.lead}
                     </h3>
+                    <p className="hp-stmt__body">{c.rest}</p>
                   </div>
                   <div className="hp-chapter__panel">
                     <div className="hp-chapter__fit">
@@ -164,57 +149,30 @@ function Visibility() {
   )
 }
 
-const RULE_ICONS = { user: I.user, shield: I.shield, check: I.check, lock: I.lock, flag: I.flag } as const
-
 export function People() {
   return (
     <section className="hp-dark" aria-labelledby="hp-people-title" data-hp-tone="dark">
       <div className="hp-frame">
         <div className="hp-dark__hero" data-hp-reveal>
-          <Tag dark>Checked by people</Tag>
           <h2 id="hp-people-title" className="hp-dark__title">
             Read by a person.
           </h2>
           <p className="hp-dark__sub">Every team, every company and every pitch is checked by a reviewer before it reaches anyone else.</p>
-          <svg className="hp-horizon" viewBox="0 0 1400 420" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-              <linearGradient id="hp-horizon-edge" x1="0" x2="1" y1="0" y2="0">
-                <stop offset="0" stopColor="#f5b900" stopOpacity="0.2" />
-                <stop offset="0.25" stopColor="#f5b900" />
-                <stop offset="0.5" stopColor="#ffffff" />
-                <stop offset="0.75" stopColor="#709ff5" />
-                <stop offset="1" stopColor="#709ff5" stopOpacity="0.2" />
-              </linearGradient>
-              <linearGradient id="hp-horizon-fill" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0" stopColor="#ffffff" stopOpacity="0.06" />
-                <stop offset="0.6" stopColor="#ffffff" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path d="M0 420 C 160 120, 480 30, 700 30 C 920 30, 1240 120, 1400 420 Z" fill="url(#hp-horizon-fill)" />
-            <path className="hp-horizon__glow" d="M0 420 C 160 120, 480 30, 700 30 C 920 30, 1240 120, 1400 420" pathLength="1" />
-            <path className="hp-horizon__edge" d="M0 420 C 160 120, 480 30, 700 30 C 920 30, 1240 120, 1400 420" pathLength="1" />
-          </svg>
         </div>
 
         <ul className="hp-rules">
-          {RULES.map((r) => {
-            const Icon = RULE_ICONS[r.icon]
-            return (
-              <li key={r.title} className="hp-rules__item">
-                <Icon />
-                <h3>{r.title}</h3>
-                <p>{r.body}</p>
-              </li>
-            )
-          })}
+          {RULES.map((r) => (
+            <li key={r.title} className="hp-rules__item">
+              <h3>{r.title}</h3>
+              <p>{r.body}</p>
+            </li>
+          ))}
         </ul>
 
         <div className="hp-shared" id="shared">
           <div className="hp-shared__text">
-            <Tag dark>Privacy</Tag>
-            <h2 className="hp-h2">
-              <TwoTone lead="Nothing leaves early." rest="Here’s who sees what, and when." />
-            </h2>
+            <h2 className="hp-h2">Nothing leaves early.</h2>
+            <p className="hp-sub">Here’s who sees what, and when.</p>
             <ul className="hp-shared__items" data-hp-steps>
               {SHARED.map((s, i) => (
                 <li key={s.id} className="hp-shared__item" data-hp-step={s.id} data-open={i === 0 ? 'true' : 'false'}>
@@ -238,9 +196,8 @@ export function People() {
 
         <div className="hp-forco">
           <div className="hp-forco__box">
-            <h2 className="hp-h2">
-              <TwoTone br lead="Sponsor robotics." rest="Without the inbox." />
-            </h2>
+            <p className="hp-overline">For companies</p>
+            <h2 className="hp-h2">Sponsor robotics without the inbox.</h2>
             <p>Write your questions once. Only reviewed pitches reach you, and each one takes a click to answer.</p>
             <Link href={COMPANY_HREF} prefetch={false} className="hp-btn hp-btn--dark-outline">
               Set up your company
@@ -250,27 +207,6 @@ export function People() {
           <div className="hp-forco__art">
             <CellIncoming />
           </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-const PRINCIPLE = 'Every pitch is read by a person before a company sees it. Nothing about your team is shared until someone on the other side says yes.'
-
-export function Principle() {
-  return (
-    <section className="hp-principle" aria-labelledby="hp-principle-title">
-      <div className="hp-principle__pin">
-        <div className="hp-frame hp-principle__frame">
-          <h2 id="hp-principle-title" className="hp-sr">
-            How FTC Pitfund works
-          </h2>
-          <p className="hp-quote" data-hp-quote>
-            {PRINCIPLE.split(' ').map((w, i) => (
-              <span key={i}>{w} </span>
-            ))}
-          </p>
         </div>
       </div>
     </section>
@@ -289,9 +225,8 @@ export function Season() {
     <section className="hp-season" id="season" aria-labelledby="hp-season-title">
       <div className="hp-frame hp-season__frame">
         <div className="hp-season__text">
-          <Tag>The season</Tag>
           <h2 id="hp-season-title" className="hp-h2">
-            <TwoTone br lead="One pitch per company." rest="Every season, from September 1." />
+            One pitch per company, every season.
           </h2>
           <p className="hp-season__body">A team pitches each approved company once a season, so every pitch is the one that counts.</p>
         </div>
@@ -327,10 +262,10 @@ export function Sides() {
       <div className="hp-frame">
         <div className="hp-intro hp-intro--row">
           <div>
-            <Tag>Two sides</Tag>
             <h2 id="hp-sides-title" className="hp-h2">
-              <TwoTone br lead="Built for both sides of a sponsorship." rest="Coaches pitch. Companies answer." />
+              Built for both sides of a sponsorship.
             </h2>
+            <p className="hp-sub">Coaches pitch. Companies answer.</p>
           </div>
           <a href="#faq" className="hp-btn hp-btn--outline hp-btn--sm">
             Read the FAQ
@@ -360,9 +295,7 @@ export function Sides() {
             <div key={s.id} id={`hp-side-panel-${s.id}`} role="tabpanel" aria-labelledby={`hp-side-tab-${s.id}`} className="hp-sides__panel" hidden={i !== 0} data-hp-panel={s.id}>
               <div className="hp-sides__text">
                 <p className="hp-overline">{s.overline}</p>
-                <h3 className="hp-stmt">
-                  <TwoTone br lead={s.lead} rest={s.rest} />
-                </h3>
+                <h3 className="hp-stmt">{s.lead}</h3>
                 <ul className="hp-checks">
                   {s.checks.map((c) => (
                     <li key={c}>
@@ -392,10 +325,10 @@ export function Faq() {
     <section className="hp-faq" id="faq" aria-labelledby="hp-faq-title">
       <div className="hp-frame hp-faq__frame">
         <div className="hp-faq__head">
-          <Tag>FAQ</Tag>
           <h2 id="hp-faq-title" className="hp-h2">
-            <TwoTone br lead="Questions, answered." rest="Ask us anything else." />
+            Questions, answered.
           </h2>
+          <p className="hp-sub">Anything else, ask us directly.</p>
           <a href={`mailto:${SUPPORT_EMAIL}`} className="hp-btn hp-btn--outline hp-btn--sm">
             Email {SUPPORT_EMAIL}
           </a>
@@ -422,9 +355,12 @@ export function FindPath() {
   return (
     <section className="hp-find" id="find" aria-labelledby="hp-find-title">
       <div className="hp-frame hp-find__frame">
-        <h2 id="hp-find-title" className="hp-find__title">
-          <TwoTone br lead="Not sure where to start?" rest="Tell us who you are." />
-        </h2>
+        <div>
+          <h2 id="hp-find-title" className="hp-find__title">
+            Not sure where to start?
+          </h2>
+          <p className="hp-sub">Tell us who you are and we’ll point you to the right door.</p>
+        </div>
         <div className="hp-find__side">
           <form className="hp-find__form" data-hp-find action="/login" method="get">
             <label htmlFor="hp-find-input" className="hp-sr">

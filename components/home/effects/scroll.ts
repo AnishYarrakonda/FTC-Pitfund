@@ -7,8 +7,6 @@ import { type Cleanup, clamp, onFrame, reducedMotion } from './util'
  *    a blur, one after another, over the first ~110px.
  *  - Head: the bar takes the tone of the section under its bottom edge.
  *  - Chapter rail: the chapter crossing 40% of the viewport is the current one.
- *  - Principle: its words darken one by one as you scroll through the pin. Outside the pin they keep their
- *    full color, so a full-page screenshot or a reader arriving by anchor never sees a half-lit sentence.
  */
 
 /* Scroll offset at which each satellite starts to appear, in DOM order: top left, bottom left, right. */
@@ -64,7 +62,8 @@ export function initScroll(root: HTMLElement): Cleanup {
     let tone = 'light'
     offs.push(
       onFrame(() => {
-        const line = nav.getBoundingClientRect().bottom
+        // A little below the bar's edge, so a dark band that ends the page still turns it dark.
+        const line = nav.getBoundingClientRect().bottom + 12
         const next = darks.some((d) => {
           const r = d.getBoundingClientRect()
           return r.top <= line && r.bottom > line
@@ -100,28 +99,6 @@ export function initScroll(root: HTMLElement): Cleanup {
           const left = link.offsetLeft - (rail.clientWidth - link.offsetWidth) / 2
           rail.scrollTo({ left, behavior: still ? 'auto' : 'smooth' })
         }
-      }),
-    )
-  }
-
-  const quote = root.querySelector<HTMLElement>('[data-hp-quote]')
-  const pin = quote?.closest<HTMLElement>('.hp-principle')
-  if (quote && pin && !still) {
-    const words = [...quote.querySelectorAll<HTMLElement>('span')]
-    let lit = words.length
-    offs.push(
-      onFrame(() => {
-        const r = pin.getBoundingClientRect()
-        const vh = window.innerHeight
-        // Only while the pin is on screen; otherwise every word keeps its full color.
-        const inPin = r.top < vh && r.bottom > 0
-        // The section starts a screen above its pin, under the dark section. The words light while the
-        // dark section slides off it, finishing just before it is fully gone.
-        const p = inPin ? clamp(-r.top / (vh * 0.8)) : 1
-        const next = Math.round(p * words.length)
-        if (next === lit) return
-        lit = next
-        words.forEach((w, i) => w.classList.toggle('is-dim', i >= lit))
       }),
     )
   }
