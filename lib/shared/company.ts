@@ -62,7 +62,7 @@ export function normalizeLinkedin(input: string): string | null {
 export function companyStatusCopy(status: OrgStatus, name: string) {
   switch (status) {
     case 'pending':
-      return `Your company is under review. Teams can’t see ${name} until it’s approved, usually within 1–2 days. We’ll email you. Meanwhile, set up your profile and questions.`
+      return `Your company is under review. Teams can’t see ${name} until it’s approved, usually within a day. We’ll email you. Meanwhile, set up your profile and questions.`
     case 'rejected':
       return `Teams can’t see or pitch ${name}.`
     case 'suspended':

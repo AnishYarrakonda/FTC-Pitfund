@@ -549,9 +549,10 @@ export function CellVerify() {
 }
 
 /**
- * The team page link pasted into an email to a sponsor, unfurled into the share card FTC Pitfund
- * actually serves for it (lib/server/og.tsx renderTeamCard): dark, the accent edge, the mark, the
- * number, the name, the summary and the deck's first page.
+ * The team page link pasted into an email to a sponsor, unfurled the way an email client shows it:
+ * the share card FTC Pitfund actually serves (lib/server/og.tsx renderTeamCard: white, the lavender
+ * field, a hairline frame, the wordmark, number and place, name, summary and the deck's first page),
+ * then the link's title and domain.
  */
 export function CellShare() {
   return (
@@ -560,7 +561,13 @@ export function CellShare() {
         <p className="pm-mail__body">
           Hi Sam, here’s our team page with this season’s deck: <u>pitfund.org/t/31579</u>
         </p>
-        <OgCard />
+        <div className="pm-unfurl">
+          <OgCard />
+          <p className="pm-unfurl__meta">
+            <b>Exodius · FTC Team 31579</b>
+            <span>pitfund.org</span>
+          </p>
+        </div>
       </div>
     </div>
   )
@@ -572,18 +579,23 @@ function OgCard() {
       <div className="pm-ogc__text">
         <span className="pm-ogc__brand">
           <MarkGlyph />
-          FTC Pitfund
+          pitfund
         </span>
-        <span className="pm-ogc__sub">Team 31579</span>
+        <span className="pm-ogc__sub">Team 31579 · Austin, TX</span>
         <b>Exodius</b>
-        <small>A third-year community team building a reliable robot and running free workshops.</small>
+        <small>Third-year Austin community team building a fast, reliable robot and free workshops for 600+ local students.</small>
       </div>
       <div className="pm-ogc__page">
-        <i className="pm-ogc__kick" />
-        <i />
-        <i className="pm-ogc__short" />
-        <i />
-        <i className="pm-ogc__short" />
+        <div className="pm-ogc__cover">
+          <b>Exodius</b>
+          <span>FTC Team 31579 · Austin, TX</span>
+        </div>
+        <div className="pm-ogc__lines">
+          <i className="pm-ogc__head" />
+          <i />
+          <i />
+          <i className="pm-ogc__short" />
+        </div>
       </div>
     </div>
   )

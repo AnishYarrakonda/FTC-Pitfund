@@ -111,7 +111,7 @@ describe('pitch states for coaches', () => {
     expect(directoryState('s1', { id: 'p1', status: 'changes_requested' })).toMatchObject({ label: 'Needs changes', href: '/sponsors/s1/pitch' })
     expect(directoryState('s1', { id: 'p1', status: 'sent' })).toMatchObject({ label: 'Sent', href: '/pitches/p1' })
     expect(directoryState('s1', { id: 'p1', status: 'declined' })).toMatchObject({ label: 'Pitched this season' })
-    expect(nextStep('in_review', 'Acme')).toBe('Waiting for Pitfund review, usually within a day')
+    expect(nextStep('in_review', 'Acme')).toBe('Waiting for review, usually within a day')
     expect(nextStep('sent', 'Acme')).toBe('Waiting for Acme')
     expect(formatAsk({ type: 'amount', amountCents: 150_000, note: null })).toBe('$1,500')
     expect(formatAsk({ type: 'none', amountCents: null, note: null })).toBeNull()

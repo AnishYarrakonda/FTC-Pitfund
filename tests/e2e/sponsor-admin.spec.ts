@@ -132,7 +132,7 @@ test('a pending company is invisible to coaches until an admin approves it', asy
   await pending.page.waitForURL('**/welcome/pending')
 
   await coach.page.goto(`/sponsors/${SEED.atlasPending}`)
-  await expect(coach.page.getByRole('heading', { name: 'We couldn\'t find that page' })).toBeVisible()
+  await expect(coach.page.getByRole('heading', { name: 'We couldn’t find that page' })).toBeVisible()
   await coach.page.goto('/sponsors?q=Allele')
   await expect(coach.page.getByText('No companies match')).toBeVisible()
 
@@ -187,7 +187,7 @@ test.describe('company isolation', () => {
   test('another company’s pitches are a 404, and a coach can’t open the inbox', async ({ page, browser }) => {
     for (const id of [SEED.pitches.exodiusMatched, SEED.pitches.quokkasToRibosomeSent, SEED.pitches.lotusToRibosomeInReview]) {
       await page.goto(`/inbox/${id}`)
-      await expect(page.getByRole('heading', { name: 'We couldn\'t find that page' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'We couldn’t find that page' })).toBeVisible()
     }
     await expect(page.getByText('Exodius')).toHaveCount(0)
     const coach = await as(browser, 'coach')

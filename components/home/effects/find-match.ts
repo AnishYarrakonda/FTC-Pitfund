@@ -84,7 +84,7 @@ const AUTHORED: Authored[] = [
   },
   {
     id: 'review',
-    text: 'A Pitfund reviewer reads every pitch before the company sees it, and sends it back with one note when something needs work. Teams and companies are checked the same way.',
+    text: 'An FTC Pitfund reviewer reads every pitch before the company sees it, and sends it back with one note when something needs work. Teams and companies are checked the same way.',
     cta: 'How review works',
     href: '#bento-review',
     also: 'How review works',

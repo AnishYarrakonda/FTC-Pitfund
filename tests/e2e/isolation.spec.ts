@@ -83,7 +83,7 @@ test.describe('coach pitch isolation and the season rule', () => {
   test('another team’s pitch or draft is a 404, and its answers never leak into my composer', async ({ page }) => {
     for (const id of [SEED.pitches.exodiusDraft, SEED.pitches.exodiusMatched]) {
       await page.goto(`/pitches/${id}`)
-      await expect(page.getByRole('heading', { name: 'We couldn\'t find that page' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'We couldn’t find that page' })).toBeVisible()
     }
     // Exodius has a Summit draft; this team's own Summit pitch (matched) opens instead.
     await page.goto(`/sponsors/${SEED.summit}/pitch`)
@@ -91,7 +91,7 @@ test.describe('coach pitch isolation and the season rule', () => {
     await expect(page.getByText(/6061 aluminum/)).toHaveCount(0)
     // Pending companies are invisible to coaches.
     await page.goto(`/sponsors/${SEED.atlasPending}`)
-    await expect(page.getByRole('heading', { name: 'We couldn\'t find that page' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'We couldn’t find that page' })).toBeVisible()
   })
 })
 

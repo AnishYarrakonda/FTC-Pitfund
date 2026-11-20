@@ -676,6 +676,8 @@ button.hp-nav__link {
   height: calc(100svh - var(--hp-head));
   overflow: hidden;
   pointer-events: none;
+  /* Fades out instead of ending on a hard line as the hero scrolls away. */
+  mask-image: linear-gradient(to bottom, #000 70%, transparent);
 }
 .hp-hero__glow,
 .hp-hero__lines {
@@ -1879,6 +1881,10 @@ button.hp-nav__link {
 @media (max-width: 420px) {
   .hp-find__form {
     flex-direction: column;
+  }
+  /* flex: 1 in a column is a zero basis, which collapsed the field to its text height. */
+  .hp-find__form input {
+    flex: none;
   }
 }
 
@@ -3131,24 +3137,48 @@ button.hp-nav__link {
   color: #2463e2;
   text-underline-offset: 2px;
 }
-/* The share card, as lib/server/og.tsx draws it (1200 × 630). */
+.pm-unfurl {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid #e4e7ec;
+  border-radius: 10px;
+}
+.pm-unfurl__meta {
+  display: grid;
+  gap: 1px;
+  padding: 8px 10px;
+  border-top: 1px solid #e4e7ec;
+  background: #fafafb;
+  font-size: 11px;
+  line-height: 15px;
+}
+.pm-unfurl__meta b {
+  font-weight: 500;
+  color: #1c1d1f;
+}
+.pm-unfurl__meta span {
+  color: #646d7b;
+}
+/* The share card, as lib/server/og.tsx draws it (1200 × 630), at about a third of its size. */
 .pm-ogc {
   position: relative;
   display: flex;
-  gap: 14px;
+  gap: 16px;
   aspect-ratio: 1200 / 630;
-  padding: 14px 14px 14px 20px;
+  padding: 22px 26px;
   overflow: hidden;
-  border-radius: 8px;
-  background: #101010;
-  color: #f7f7f7;
+  background:
+    radial-gradient(ellipse 120% 90% at 50% 125%, #b4c3ff 0%, #d9e1ff 40%, rgb(255 255 255 / 0) 85%),
+    #ffffff;
+  color: #1c1d1f;
 }
 .pm-ogc::before {
   content: '';
   position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  background: #ffff8b;
+  inset: 8px;
+  border: 1px solid #e4e7ec;
+  border-radius: 7px;
+  pointer-events: none;
 }
 .pm-ogc__text {
   display: flex;
@@ -3159,66 +3189,98 @@ button.hp-nav__link {
 .pm-ogc__brand {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 10px;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
 }
 .pm-ogc__brand svg {
-  width: 16px;
-  height: 16px;
-  color: #ffff8b;
+  width: 17px;
+  height: 17px;
+  color: #2463e2;
 }
 .pm-ogc__sub {
   margin-top: auto;
   font-size: 9px;
-  color: #969696;
+  line-height: 12px;
+  color: #646d7b;
 }
-.pm-ogc b {
-  font-size: 19px;
-  line-height: 22px;
-  font-weight: 500;
-  letter-spacing: -0.02em;
+.pm-ogc__text b {
+  margin-top: 2px;
+  font-size: 21px;
+  line-height: 23px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
 }
-.pm-ogc small {
+.pm-ogc__text small {
   display: -webkit-box;
-  margin-top: 3px;
+  margin-top: 4px;
   overflow: hidden;
   font-size: 9px;
   line-height: 12px;
-  color: #b4b4b4;
-  -webkit-line-clamp: 2;
+  color: #6f7988;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
+/* The deck's first page: the team's own cover, as the real card shows its thumbnail. */
 .pm-ogc__page {
   display: flex;
   flex: none;
   flex-direction: column;
-  gap: 4px;
-  width: 31%;
-  padding: 8px;
+  align-self: center;
+  width: 30%;
+  aspect-ratio: 400 / 486;
+  overflow: hidden;
+  border: 1px solid #e4e7ec;
   border-radius: 4px;
-  border: 1px solid #2a2a2a;
   background: #ffffff;
+  box-shadow:
+    0 1px 2px rgb(11 13 24 / 0.04),
+    0 6px 14px rgb(11 13 24 / 0.12);
 }
-.pm-ogc__page i {
+.pm-ogc__cover {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  height: 46%;
+  padding: 0 9px;
+  background: #1e40af;
+  color: #ffffff;
+}
+.pm-ogc__cover b {
+  font-size: 11px;
+  line-height: 12px;
+  font-weight: 700;
+}
+.pm-ogc__cover {
+  min-width: 0;
+}
+.pm-ogc__cover span {
+  overflow: hidden;
+  font-size: 5px;
+  line-height: 7px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.pm-ogc__lines {
+  display: grid;
+  gap: 4px;
+  padding: 8px 9px;
+}
+.pm-ogc__lines i {
   display: block;
-  height: 4px;
-  border-radius: 2px;
-  background: #1c1d1f;
-}
-.pm-ogc__page i.pm-ogc__kick {
-  width: 45%;
-  height: 3px;
-  background: #a4adba;
-}
-.pm-ogc__page i:nth-child(n + 4) {
   height: 2px;
+  border-radius: 1px;
   background: #d3d8df;
 }
-.pm-ogc__page i:nth-child(4) {
-  margin-top: auto;
-}
-.pm-ogc__page i.pm-ogc__short {
+.pm-ogc__lines i.pm-ogc__head {
   width: 70%;
+  height: 4px;
+  margin-bottom: 2px;
+  background: #1c1d1f;
+}
+.pm-ogc__lines i.pm-ogc__short {
+  width: 60%;
 }
 .pm-card--wide {
   max-width: 400px;

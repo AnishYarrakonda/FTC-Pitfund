@@ -92,7 +92,7 @@ export function CompanySetup({ defaultName, defaultJobTitle }: { defaultName: st
           </p>
         ) : null}
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-small text-text-tertiary">Teams can’t see your company until an admin approves it, usually within 1–2 days.</p>
+          <p className="text-small text-text-tertiary">Teams can’t see your company until an admin approves it, usually within a day.</p>
           <Button type="submit" size="lg" data-action-button="" loading={pending} loadingLabel="Creating company…">
             Create company
           </Button>

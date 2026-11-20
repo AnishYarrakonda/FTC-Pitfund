@@ -1,7 +1,10 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { Wordmark } from '@/components/app/wordmark'
 import { buttonVariants } from '@/components/ui/button'
+
+export const metadata: Metadata = { title: 'Page not found' }
 
 export default function NotFound() {
   return (
@@ -12,7 +15,7 @@ export default function NotFound() {
       <main id="main" className="mx-auto flex w-full max-w-form flex-1 flex-col justify-center gap-5 px-4 pb-24 sm:px-6">
         <p className="text-small font-medium text-text-tertiary tabular">404</p>
         <div className="grid gap-2">
-          <h1 className="text-h1 font-semibold tracking-tighter text-text">We couldn&apos;t find that page</h1>
+          <h1 className="text-h1 font-semibold tracking-tighter text-text">We couldn’t find that page</h1>
           <p className="text-lead text-text-secondary">It may have moved, or you may not have access to it.</p>
         </div>
         <div>

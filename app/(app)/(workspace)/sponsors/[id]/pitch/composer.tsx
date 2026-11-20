@@ -323,7 +323,7 @@ export function Composer({
           <h1 className="text-h2 font-semibold tracking-tighter text-text user-text">
             {resubmit ? 'Edit and resubmit' : 'Pitch'} {company.name}
           </h1>
-          <p className="text-body text-text-secondary">Answer {company.name}’s questions. A Pitfund reviewer reads every pitch before it reaches them.</p>
+          <p className="text-body text-text-secondary">Answer {company.name}’s questions. An FTC Pitfund reviewer reads every pitch before it reaches them.</p>
         </div>
         <SaveStatus state={save} dirty={dirty} onRetry={() => void persist()} />
       </header>
@@ -442,7 +442,7 @@ export function Composer({
               </Button>
             }
             title={`Send this pitch to ${company.name} for review?`}
-            consequence={`A Pitfund reviewer reads every pitch before it reaches ${company.name}, usually within a day. You can’t edit it while it’s in review.`}
+            consequence={`An FTC Pitfund reviewer reads every pitch before it reaches ${company.name}, usually within a day. You can’t edit it while it’s in review.`}
             confirmLabel={resubmit ? 'Resubmit' : 'Submit'}
             pendingLabel="Submitting…"
             onConfirm={submit}

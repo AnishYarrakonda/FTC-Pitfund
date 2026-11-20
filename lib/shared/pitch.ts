@@ -65,7 +65,7 @@ export function nextStep(status: PitchStatus, company: string): string {
     case 'changes_requested':
       return 'Edit and resubmit'
     case 'in_review':
-      return 'Waiting for Pitfund review, usually within a day'
+      return 'Waiting for review, usually within a day'
     case 'sent':
       return `Waiting for ${company}`
     case 'matched':

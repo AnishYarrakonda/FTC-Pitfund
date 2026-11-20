@@ -127,7 +127,7 @@ test('a new coach goes from sign-in to a submitted pitch, withdraws it, and can 
   const confirm = page.getByRole('dialog', { name: 'Send this pitch to Mitochondria Machine Works for review?' })
   await confirm.getByRole('button', { name: 'Submit' }).click()
   await page.waitForURL(`**/pitches/${draft.id}`)
-  await expect(page.getByText('Waiting for Pitfund review, usually within a day').first()).toBeVisible()
+  await expect(page.getByText('Waiting for review, usually within a day').first()).toBeVisible()
   await expect(page.getByText('Submitted for review')).toBeVisible()
 
   // Admins get the instant email.

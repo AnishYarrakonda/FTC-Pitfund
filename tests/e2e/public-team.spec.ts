@@ -74,7 +74,7 @@ test('Report this page stores a report and thanks the reporter', async ({ page, 
 test('in a production build a missing team is a soft 404: the 404 page with noindex', async ({ page }) => {
   const response = await page.goto(`${PROD_URL}/t/99999`)
   expect(response?.status()).toBe(200)
-  await expect(page.getByRole('heading', { name: 'We couldn\'t find that page' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'We couldn’t find that page' })).toBeVisible()
   const robots = await page.locator('meta[name="robots"]').evaluateAll((els) => els.map((el) => el.getAttribute('content')))
   expect(robots.length).toBeGreaterThan(0)
   expect(robots.every((c) => c?.startsWith('noindex'))).toBe(true)
@@ -90,7 +90,7 @@ test('missing and suspended teams are a 404 (dev server: real status)', async ({
   await expireCaches(request)
   const response = await page.goto(`/t/${SEED.ironLotus.number}`)
   expect(response?.status()).toBe(404)
-  await expect(page.getByRole('heading', { name: 'We couldn\'t find that page' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'We couldn’t find that page' })).toBeVisible()
 
   await db()`update teams set suspended_at = null where id = ${SEED.ironLotus.id}`
   await expireCaches(request)

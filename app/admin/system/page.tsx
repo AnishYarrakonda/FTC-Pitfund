@@ -150,6 +150,9 @@ export default async function AdminSystemPage() {
   )
 }
 
+/** Counts a job reports, in words; anything unlisted is split from its camelCase or snake_case key. */
+const JOB_COUNT_LABELS: Record<string, string> = { emailsSent24h: 'emails sent in the last 24 h' }
+
 function describeJob(detail: Record<string, unknown>): string {
   if (typeof detail.error === 'string') return detail.error
   const result = detail.result as Record<string, unknown> | number | null | undefined
@@ -158,7 +161,7 @@ function describeJob(detail: Record<string, unknown>): string {
   if (result.skipped === true && typeof result.reason === 'string') return result.reason
   return Object.entries(result)
     .filter(([k, v]) => typeof v === 'number' && k !== 'rounds' && k !== 'admins')
-    .map(([k, v]) => `${v} ${k.replace(/_/g, ' ')}`)
+    .map(([k, v]) => `${v} ${JOB_COUNT_LABELS[k] ?? k.replace(/_/g, ' ').replace(/([a-z])([A-Z0-9])/g, '$1 $2').toLowerCase()}`)
     .join(' · ')
 }
 

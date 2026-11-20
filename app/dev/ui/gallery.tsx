@@ -696,7 +696,7 @@ function OverlaysSection() {
               </Button>
             }
             title="Send this pitch to Ribosome Robotics for review?"
-            consequence="A Pitfund reviewer reads every pitch before it reaches Ribosome Robotics, usually within a day. You can't edit it while it's in review."
+            consequence="An FTC Pitfund reviewer reads every pitch before it reaches Ribosome Robotics, usually within a day. You can't edit it while it's in review."
             confirmLabel="Submit pitch"
             pendingLabel="Submitting…"
             onConfirm={() => fakeSlowSuccess({})}

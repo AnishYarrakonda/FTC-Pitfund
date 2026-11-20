@@ -27,7 +27,7 @@ export const FAQS = [
   {
     id: 'changes',
     q: 'What if a pitch needs changes?',
-    a: 'The reviewer sends it back with a note on what to fix. It isn’t a rejection: you edit and resubmit, and it goes back to the front of the review queue.',
+    a: 'The reviewer sends it back with a note on what to fix. It isn’t a rejection: you edit and resubmit, and it goes back into the review queue.',
   },
   {
     id: 'photos',
@@ -108,7 +108,7 @@ export const CHAPTERS = [
     lead: 'A person reads it first.',
     rest: 'Every pitch is read by a reviewer before the company sees it. If something is missing, it comes back with a note on what to fix.',
     cells: [
-      { title: 'A note, never a silent no.', body: 'Returned pitches say exactly what to change. Fix it, resubmit, and it goes back to the front of the queue.' },
+      { title: 'A note, never a silent no.', body: 'Returned pitches say exactly what to change. Fix it, resubmit, and a reviewer reads it again.' },
       { title: 'Companies are checked too.', body: 'Teams only ever see companies a reviewer has approved. Pending companies are invisible.' },
     ],
   },
@@ -116,7 +116,7 @@ export const CHAPTERS = [
     id: 'answers',
     nav: 'The company answers',
     lead: 'Interested, or not a fit.',
-    rest: 'Companies see only reviewed pitches and answer each one with a click. No limbo, and no chasing a reply for weeks.',
+    rest: 'Companies see only reviewed pitches and answer each one with a click: Interested, or Not a fit. Either way, the team is told.',
     cells: null,
   },
   {

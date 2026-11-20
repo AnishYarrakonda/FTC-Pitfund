@@ -62,8 +62,9 @@ export function initScroll(root: HTMLElement): Cleanup {
     let tone = 'light'
     offs.push(
       onFrame(() => {
-        // A little below the bar's edge, so a dark band that ends the page still turns it dark.
-        const line = nav.getBoundingClientRect().bottom + 12
+        // The section directly under the bar's bottom edge decides, so the bar never turns dark over a
+        // strip of light page (at the very end of the page the last light section still shows a few px).
+        const line = nav.getBoundingClientRect().bottom + 1
         const next = darks.some((d) => {
           const r = d.getBoundingClientRect()
           return r.top <= line && r.bottom > line
